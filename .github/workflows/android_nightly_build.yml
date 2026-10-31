@@ -1,4 +1,5 @@
 name: Android Nightly Debug Build
+# CI trigger: build for GT4 testing (harmless comment, safe to remove)
 
 on:
   push:
