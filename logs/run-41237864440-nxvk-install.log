@@ -1,0 +1,2 @@
+ERROR: run 'make' first
+make: *** [Makefile:168: install] Error 1

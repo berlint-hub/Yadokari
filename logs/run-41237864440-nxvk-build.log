@@ -1,0 +1,3 @@
+>> toolchain image nxvk missing; building it
+/bin/bash: line 3: podman: command not found
+make: *** [Makefile:84: ensure-image] Error 127
