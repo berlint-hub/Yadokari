@@ -1,4 +1,5 @@
 name: Android Nightly Debug Build
+# CI trigger: build for GT4 testing (harmless comment, safe to remove)
 
 on:
   push:
@@ -80,15 +81,62 @@ jobs:
           name: ${{ steps.package_info.outputs.PACKAGE_NAME }}
           path: ${{ steps.rename_apk.outputs.APK_FILE_NIGHTLY }}
 
+  publish:
+    permissions:
+      contents: write
+      actions: read
+
+    needs: [ build ]
+
+    if: github.repository == 'berlint-hub/Yadokari'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ needs.build.outputs.package_name }}
+          path: artifact
+
+      - name: Push nightly APK to ci-artifacts branch (direct git/codeload download)
+        run: |
+          set -e
+          APK_FILE=$(find artifact -type f -name '*.apk' -print -quit)
+          if [ -z "$APK_FILE" ]; then
+            echo "CRITICAL ERROR: nightly APK not found in artifact."
+            exit 1
+          fi
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          git checkout --orphan ci-artifacts
+          git rm -rf --quiet .
+          mkdir -p artifacts
+          cp "$APK_FILE" artifacts/armsx2-nightly.apk
+          printf 'run_id=%s\nsha=%s\nhead_ref=%s\nrun_url=%s\n' \
+            "${{ github.run_id }}" "${{ github.sha }}" "${{ github.head_ref }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > artifacts/build-info.txt
+          git add artifacts
+          git commit -m "nightly APK from run ${{ github.run_id }}"
+          git push --force origin HEAD:ci-artifacts
+          echo "Pushed APK to ci-artifacts branch"
+
   release:
     permissions:
       contents: write
 
     needs: [ build ]
 
+    continue-on-error: ${{ github.repository == 'berlint-hub/Yadokari' }}
+
     if: >
-      github.repository == 'ARMSX2/ARMSX2' &&
-      github.ref == 'refs/heads/master'
+      github.repository == 'berlint-hub/Yadokari' ||
+      (github.repository == 'ARMSX2/ARMSX2' &&
+      github.ref == 'refs/heads/master')
 
     runs-on: ubuntu-latest
 

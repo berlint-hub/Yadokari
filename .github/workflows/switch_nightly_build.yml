@@ -1,0 +1,390 @@
+name: Switch Nightly Build (NRO)
+# Builds the Nintendo Switch homebrew .nro (armsx2nx.nro).
+# - job "nxvk": builds the NXVK Vulkan portlib with `make CONTAINER=docker` on the runner
+#   (the nxvk toolchain image FROM devkitpro/devkita64 handles rust/llvm/meson deps),
+#   stages it into portlibs/switch and passes it to the build job as an artifact.
+# - job "build": compiles the emulator in the devkitpro/devkita64 container.
+# On berlint-hub/Yadokari the NRO is also published to the ci-artifacts-switch branch
+# and as a GitHub release, so it can be downloaded via github.com/codeload/git.
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - '**/*.md'
+
+  workflow_dispatch:
+
+jobs:
+  nxvk:
+    permissions:
+      contents: write
+      actions: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+
+      - name: Docker sanity check
+        run: |
+          docker version --format 'docker {{.Server.Version}}'
+          docker system df
+
+      - name: Clone NXVK
+        id: nxvk
+        run: |
+          git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
+          echo "sha=$(git -C "$GITHUB_WORKSPACE/nxvk" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_WORKSPACE/nxvk/VERSION"
+
+      - name: Restore NXVK build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            nxvk/switch/build
+            nxvk/switch/rust/sysroot
+          key: nxvk-build-${{ steps.nxvk.outputs.sha }}
+          restore-keys: |
+            nxvk-build-
+
+      - name: Build NXVK (inside nxvk toolchain docker image)
+        run: |
+          cd "$GITHUB_WORKSPACE/nxvk"
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          # Run make as root: the docker container steps write root-owned files into the
+          # bind-mounted workspace, and host-side stamp/package steps must be able to write there too.
+          # CONTAINER=docker: use the host docker daemon (preinstalled on GH runners).
+          # AR=ar: host binutils ar can bundle aarch64 archives just fine.
+          # DEVKITPRO=/opt/devkitpro: bakes the correct prefix into nxvk.pc (used in the build container).
+          sudo -E make CONTAINER=docker AR=ar DEVKITPRO=/opt/devkitpro -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-make.log"
+          exit "${PIPESTATUS[0]}"
+
+      - name: Stage NXVK portlib for the build job
+        run: |
+          cd "$GITHUB_WORKSPACE/nxvk"
+          sudo -E make CONTAINER=docker AR=ar DEVKITPRO="$GITHUB_WORKSPACE/dkp-stage" install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
+          find "$GITHUB_WORKSPACE/dkp-stage" -maxdepth 4 | head -20
+          cat "$GITHUB_WORKSPACE/dkp-stage/portlibs/switch/lib/pkgconfig/nxvk.pc"
+
+      - name: Upload NXVK portlib artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: nxvk-portlib
+          path: dkp-stage/portlibs/switch
+
+      - name: Upload nxvk logs artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: nxvk-logs-${{ github.run_id }}
+          path: logs/
+          if-no-files-found: warn
+
+      - name: Push nxvk logs (on failure, for debugging)
+        if: failure() && github.repository == 'berlint-hub/Yadokari'
+        run: |
+          set -e
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sudo chown -R "$(id -u):$(id -g)" logs nxvk 2>/dev/null || true
+          mkdir -p logs
+          for f in logs/*.log; do
+            if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
+          done
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=nxvk status=failure" > "logs/run-${{ github.run_id }}-info.txt"
+          if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
+            git fetch origin ci-artifacts-switch
+            git checkout ci-artifacts-switch
+          else
+            git checkout --orphan ci-artifacts-switch
+            git rm -rf --quiet .
+          fi
+          git add logs
+          git commit -m "nxvk logs run ${{ github.run_id }}" || true
+          git push --force origin HEAD:ci-artifacts-switch
+
+  build:
+    permissions:
+      contents: write
+      actions: read
+    needs: [ nxvk ]
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    container:
+      image: devkitpro/devkita64:latest
+    env:
+      DEVKITPRO: /opt/devkitpro
+
+    outputs:
+      nro_path: ${{ steps.locate.outputs.NRO_PATH }}
+
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install host build tools
+        run: |
+          set -x
+          git config --global --add safe.directory '*'
+          export DEBIAN_FRONTEND=noninteractive
+          mkdir -p logs
+          apt-get update -qq 2>&1 | tee logs/apt.log
+          apt-get install -y -qq --no-install-recommends \
+            git ca-certificates curl wget xz-utils file \
+            make build-essential cmake ninja-build pkg-config \
+            python3 python3-mako python3-yaml bison flex ccache 2>&1 | tee logs/apt-install.log
+          git --version && cmake --version | head -1
+
+      - name: Install Switch packages (switch-dev + portlibs)
+        run: |
+          set -x
+          mkdir -p logs
+          dkp-pacman -Syu --noconfirm 2>&1 | tee logs/dkp-syu.log
+          dkp-pacman -S --noconfirm --needed \
+            switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4 \
+            switch-expat switch-zlib \
+            2>&1 | tee logs/dkp-install.log
+          ls -la /opt/devkitpro/cmake/Switch.cmake
+          echo "/opt/devkitpro/pacman/bin" >> "$GITHUB_PATH"
+          echo "/opt/devkitpro/tools/bin" >> "$GITHUB_PATH"
+
+      - name: Download NXVK artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+
+      - name: Install NXVK portlib from nxvk job artifact
+        run: |
+          set -e
+          echo "--- artifact layout ---"
+          find nxvk-portlib -maxdepth 4 | head -30
+          if [ -d nxvk-portlib/lib ]; then
+            SRC=nxvk-portlib
+          elif [ -d nxvk-portlib/dkp-stage/portlibs/switch ]; then
+            SRC=nxvk-portlib/dkp-stage/portlibs/switch
+          else
+            SRC=nxvk-portlib
+          fi
+          echo "staging from: $SRC"
+          cp -a "$SRC"/. /opt/devkitpro/portlibs/switch/
+          echo "--- installed ---"
+          ls /opt/devkitpro/portlibs/switch/lib/pkgconfig/ | grep -i nxvk || { echo "nxvk.pc NOT installed"; exit 1; }
+          ls /opt/devkitpro/portlibs/switch/lib/ | grep -i nvk || { echo "libnvk NOT installed"; exit 1; }
+          export PATH="/opt/devkitpro/tools/bin:$PATH"
+          export PKG_CONFIG_LIBDIR="/opt/devkitpro/portlibs/switch/lib/pkgconfig"
+          pkg-config --modversion nxvk || { echo "pkg-config check failed"; exit 1; }
+          pkg-config --libs nxvk || true
+
+      - name: Clone uam sources (UAM_ROOT)
+        run: |
+          git clone --depth 1 https://github.com/devkitPro/uam "$GITHUB_WORKSPACE/uam"
+          echo "UAM_ROOT=$GITHUB_WORKSPACE/uam" >> "$GITHUB_ENV"
+
+      - name: Ensure uam host tool in DEVKITPRO/tools/bin
+        run: |
+          set -x
+          if [ -x "$DEVKITPRO/tools/bin/uam" ]; then
+            echo "uam already shipped with switch-tools: $("$DEVKITPRO/tools/bin/uam" --version 2>/dev/null || echo ok)"
+            exit 0
+          fi
+          echo "uam missing, building from source"
+          cmake -S "$UAM_ROOT" -B "$GITHUB_WORKSPACE/uam-host-build" -DCMAKE_BUILD_TYPE=Release 2>&1 | tee logs/uam-configure.log
+          cmake --build "$GITHUB_WORKSPACE/uam-host-build" -j"$(nproc)" 2>&1 | tee logs/uam-build.log
+          UAM_BIN=$(find "$GITHUB_WORKSPACE/uam-host-build" -type f -name uam -executable | head -n 1)
+          echo "built: $UAM_BIN"
+          cp "$UAM_BIN" "$DEVKITPRO/tools/bin/uam"
+          ls -la "$DEVKITPRO/tools/bin/uam"
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: switch-nro-ccache-${{ github.sha }}
+          restore-keys: |
+            switch-nro-ccache-
+
+      - name: Configure Switch core
+        shell: bash
+        run: |
+          set +e
+          export DEVKITPRO=/opt/devkitpro
+          export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
+          export PKG_CONFIG_LIBDIR="/opt/devkitpro/portlibs/switch/lib/pkgconfig"
+          mkdir -p logs
+          cmake -S app/src/main/cpp -B build/switch-core \
+            -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DUSE_OPENGL=OFF \
+            -DUSE_VULKAN=ON \
+            -DUAM_ROOT="$UAM_ROOT" > logs/configure.log 2>&1
+          status=$?
+          echo "CMAKE_CONFIGURE_EXIT=$status" >> logs/configure.log
+          tail -30 logs/configure.log
+          exit "$status"
+
+      - name: Build armsx2_nro
+        shell: bash
+        run: |
+          set +e
+          export DEVKITPRO=/opt/devkitpro
+          export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
+          mkdir -p logs build/switch-core
+          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" > logs/build.log 2>&1
+          status=$?
+          echo "CMAKE_BUILD_EXIT=$status" >> logs/build.log
+          cp logs/build.log build/switch-core/build.log 2>/dev/null || true
+          tail -30 logs/build.log
+          exit "$status"
+
+      - name: Locate NRO
+        id: locate
+        run: |
+          NRO=$(find build/switch-core -type f -name '*.nro' -print -quit)
+          if [ -z "$NRO" ]; then
+            echo "CRITICAL ERROR: .nro not found"
+            exit 1
+          fi
+          echo "NRO_PATH=$NRO" >> "$GITHUB_OUTPUT"
+          cp "$NRO" armsx2nx.nro
+          ls -la armsx2nx.nro
+          echo "magic: $(head -c 4 armsx2nx.nro)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: armsx2nx-nro
+          path: armsx2nx.nro
+
+      - name: Upload logs artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: switch-build-logs-${{ github.run_id }}
+          path: logs/
+          if-no-files-found: warn
+
+      - name: Push logs to ci-artifacts-switch (on failure, for debugging)
+        if: failure() && github.repository == 'berlint-hub/Yadokari'
+        run: |
+          set -ex
+          AUTH_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf /tmp/logrepo
+          if git ls-remote --exit-code "$AUTH_URL" refs/heads/ci-artifacts-switch >/dev/null 2>&1; then
+            git clone --depth 1 --branch ci-artifacts-switch "$AUTH_URL" /tmp/logrepo
+          else
+            mkdir -p /tmp/logrepo
+            cd /tmp/logrepo
+            git init -q
+            git checkout -q --orphan ci-artifacts-switch
+          fi
+          cd /tmp/logrepo
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          mkdir -p logs
+          for f in "$GITHUB_WORKSPACE"/logs/*.log; do
+            if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
+          done
+          if [ -f "$GITHUB_WORKSPACE/build/switch-core/build.log" ]; then
+            cp "$GITHUB_WORKSPACE/build/switch-core/build.log" "logs/run-${{ github.run_id }}-build.log"
+          fi
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=build status=failure" > "logs/run-${{ github.run_id }}-info.txt"
+          git add logs
+          git commit -m "build logs run ${{ github.run_id }}" || true
+          git push --force "$AUTH_URL" HEAD:ci-artifacts-switch
+
+  publish:
+    permissions:
+      contents: write
+      actions: read
+    needs: [ build ]
+    if: github.repository == 'berlint-hub/Yadokari'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: armsx2nx-nro
+          path: artifact
+
+      - name: Push NRO to ci-artifacts-switch branch (direct git/codeload download)
+        run: |
+          set -e
+          NRO_FILE=$(find artifact -type f -name '*.nro' -print -quit)
+          if [ -z "$NRO_FILE" ]; then
+            echo "CRITICAL ERROR: nro not found in artifact."
+            exit 1
+          fi
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          mkdir -p artifacts
+          cp "$NRO_FILE" artifacts/armsx2nx.nro
+          printf 'run_id=%s\nsha=%s\nhead_ref=%s\nworkflow=Switch Nightly Build (NRO)\nrun_url=%s\n' \
+            "${{ github.run_id }}" "${{ github.sha }}" "${{ github.head_ref }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > artifacts/build-info.txt
+          if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
+            git fetch origin ci-artifacts-switch
+            git checkout ci-artifacts-switch
+            git add artifacts
+            git commit -m "armsx2nx.nro from run ${{ github.run_id }}"
+            git push origin ci-artifacts-switch
+          else
+            git checkout --orphan ci-artifacts-switch
+            git rm -rf --quiet .
+            git add artifacts
+            git commit -m "armsx2nx.nro from run ${{ github.run_id }}"
+            git push --force origin HEAD:ci-artifacts-switch
+          fi
+          echo "Pushed NRO to ci-artifacts-switch branch"
+
+  release:
+    permissions:
+      contents: write
+    needs: [ build ]
+    continue-on-error: ${{ github.repository == 'berlint-hub/Yadokari' }}
+    if: >
+      github.repository == 'berlint-hub/Yadokari' ||
+      (github.repository == 'ARMSX2/ARMSX2' && github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: armsx2nx-nro
+          path: artifact
+
+      - name: Create the Release on GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: switch-nightly-${{ github.run_id }}-${{ github.run_attempt }}
+          name: Switch Nightly Build (NRO) - run ${{ github.run_id }}
+          body: |
+            ## Automatic Switch Nightly Release (DEBUG)
+
+            Automated build of the Nintendo Switch homebrew **.nro** for community testing.
+
+            * **Branch:** ${{ github.ref_name }}
+            * **Commit:** ${{ github.sha }}
+            * **Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            **Download `armsx2nx.nro` from the assets below** and place it on your Switch's SD card.
+            You still need a BIOS dump from a legitimately-owned PS2 console.
+          draft: false
+          prerelease: true
+          files: artifact/*.nro
