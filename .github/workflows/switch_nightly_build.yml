@@ -1,6 +1,9 @@
 name: Switch Nightly Build (NRO)
-# Builds the Nintendo Switch homebrew .nro (armsx2nx.nro) inside the official
-# devkitpro/devkita64 container (avoids the apt.devkitpro.org bot filter).
+# Builds the Nintendo Switch homebrew .nro (armsx2nx.nro).
+# - job "nxvk": builds the NXVK Vulkan portlib with `make CONTAINER=docker` on the runner
+#   (the nxvk toolchain image FROM devkitpro/devkita64 handles rust/llvm/meson deps),
+#   stages it into portlibs/switch and passes it to the build job as an artifact.
+# - job "build": compiles the emulator in the devkitpro/devkita64 container.
 # On berlint-hub/Yadokari the NRO is also published to the ci-artifacts-switch branch
 # and as a GitHub release, so it can be downloaded via github.com/codeload/git.
 
@@ -20,10 +23,74 @@ on:
   workflow_dispatch:
 
 jobs:
+  nxvk:
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+
+      - name: Docker sanity check
+        run: docker version --format 'docker {{.Server.Version}}'
+
+      - name: Clone NXVK
+        run: |
+          git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
+          cat "$GITHUB_WORKSPACE/nxvk/VERSION"
+
+      - name: Build NXVK (inside nxvk toolchain docker image)
+        run: |
+          cd "$GITHUB_WORKSPACE/nxvk"
+          mkdir -p "$GITHUB_WORKSPACE/logs"
+          # CONTAINER=docker: use the host docker daemon (preinstalled on GH runners).
+          # AR=ar: host binutils ar can bundle aarch64 archives just fine.
+          # DEVKITPRO=/opt/devkitpro: bakes the correct prefix into nxvk.pc (used in the build container).
+          make CONTAINER=docker AR=ar DEVKITPRO=/opt/devkitpro -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-make.log"
+          exit "${PIPESTATUS[0]}"
+
+      - name: Stage NXVK portlib for the build job
+        run: |
+          cd "$GITHUB_WORKSPACE/nxvk"
+          make CONTAINER=docker AR=ar DEVKITPRO="$GITHUB_WORKSPACE/dkp-stage" install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
+          find "$GITHUB_WORKSPACE/dkp-stage" -maxdepth 4 | head -20
+          cat "$GITHUB_WORKSPACE/dkp-stage/portlibs/switch/lib/pkgconfig/nxvk.pc"
+
+      - name: Upload NXVK portlib artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: nxvk-portlib
+          path: dkp-stage/portlibs/switch
+
+      - name: Push nxvk logs (on failure, for debugging)
+        if: failure() && github.repository == 'berlint-hub/Yadokari'
+        run: |
+          set -e
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          mkdir -p logs
+          for f in logs/*.log; do
+            if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
+          done
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=nxvk status=failure" > "logs/run-${{ github.run_id }}-info.txt"
+          if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
+            git fetch origin ci-artifacts-switch
+            git checkout ci-artifacts-switch
+          else
+            git checkout --orphan ci-artifacts-switch
+            git rm -rf --quiet .
+          fi
+          git add logs
+          git commit -m "nxvk logs run ${{ github.run_id }}" || true
+          git push --force origin HEAD:ci-artifacts-switch
+
   build:
     permissions:
       contents: write
       actions: read
+    needs: [ nxvk ]
     runs-on: ubuntu-latest
     timeout-minutes: 300
     container:
@@ -45,7 +112,6 @@ jobs:
           set -x
           git config --global --add safe.directory '*'
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update -qq 2>&1 | tee logs-host-apt.log || true
           mkdir -p logs
           apt-get update -qq 2>&1 | tee logs/apt.log
           apt-get install -y -qq --no-install-recommends \
@@ -61,10 +127,29 @@ jobs:
           dkp-pacman -Syu --noconfirm 2>&1 | tee logs/dkp-syu.log
           dkp-pacman -S --noconfirm --needed \
             switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4 \
+            switch-expat switch-zlib \
             2>&1 | tee logs/dkp-install.log
           ls -la /opt/devkitpro/cmake/Switch.cmake
           echo "/opt/devkitpro/pacman/bin" >> "$GITHUB_PATH"
           echo "/opt/devkitpro/tools/bin" >> "$GITHUB_PATH"
+
+      - name: Download NXVK artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+
+      - name: Install NXVK portlib from nxvk job artifact
+        run: |
+          set -e
+          ls nxvk-portlib/lib/pkgconfig/ 2>/dev/null || true
+          cp -a nxvk-portlib/. /opt/devkitpro/portlibs/switch/
+          echo "--- after install ---"
+          ls /opt/devkitpro/portlibs/switch/lib/pkgconfig/ | grep -i nxvk
+          ls /opt/devkitpro/portlibs/switch/lib/ | grep -i nvk
+          export PATH="/opt/devkitpro/tools/bin:$PATH"
+          pkg-config --modversion nxvk
+          pkg-config --libs nxvk
 
       - name: Clone uam sources (UAM_ROOT)
         run: |
@@ -75,7 +160,7 @@ jobs:
         run: |
           set -x
           if [ -x "$DEVKITPRO/tools/bin/uam" ]; then
-            echo "uam already shipped with switch-tools"
+            echo "uam already shipped with switch-tools: $("$DEVKITPRO/tools/bin/uam" --version 2>/dev/null || echo ok)"
             exit 0
           fi
           echo "uam missing, building from source"
@@ -85,18 +170,6 @@ jobs:
           echo "built: $UAM_BIN"
           cp "$UAM_BIN" "$DEVKITPRO/tools/bin/uam"
           ls -la "$DEVKITPRO/tools/bin/uam"
-
-      - name: Build and install NXVK (Vulkan portlib)
-        run: |
-          set -x
-          export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
-          git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
-          cd "$GITHUB_WORKSPACE/nxvk"
-          make -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-build.log"
-          make install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
-          echo "--- nxvk pkg-config files ---"
-          ls "/opt/devkitpro/portlibs/switch/lib/pkgconfig/" | grep -i nxvk || true
-          pkg-config --modversion nxvk || true
 
       - name: Restore ccache
         uses: actions/cache@v4
@@ -156,11 +229,11 @@ jobs:
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
           mkdir -p logs
-          for f in logs/*.log logs-host-apt.log; do
+          for f in logs/*.log; do
             if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
           done
           if [ -f build/switch-core/build.log ]; then cp build/switch-core/build.log "logs/run-${{ github.run_id }}-build.log"; fi
-          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} status=failure" > "logs/run-${{ github.run_id }}-info.txt"
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=build status=failure" > "logs/run-${{ github.run_id }}-info.txt"
           if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
             git fetch origin ci-artifacts-switch
             git checkout ci-artifacts-switch
@@ -169,7 +242,7 @@ jobs:
             git rm -rf --quiet .
           fi
           git add logs
-          git commit -m "logs run ${{ github.run_id }}" || true
+          git commit -m "build logs run ${{ github.run_id }}" || true
           git push --force origin HEAD:ci-artifacts-switch
 
   publish:
