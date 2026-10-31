@@ -47,16 +47,18 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/nxvk"
           mkdir -p "$GITHUB_WORKSPACE/logs"
+          # Run make as root: the docker container steps write root-owned files into the
+          # bind-mounted workspace, and host-side stamp/package steps must be able to write there too.
           # CONTAINER=docker: use the host docker daemon (preinstalled on GH runners).
           # AR=ar: host binutils ar can bundle aarch64 archives just fine.
           # DEVKITPRO=/opt/devkitpro: bakes the correct prefix into nxvk.pc (used in the build container).
-          make CONTAINER=docker AR=ar DEVKITPRO=/opt/devkitpro -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-make.log"
+          sudo -E make CONTAINER=docker AR=ar DEVKITPRO=/opt/devkitpro -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-make.log"
           exit "${PIPESTATUS[0]}"
 
       - name: Stage NXVK portlib for the build job
         run: |
           cd "$GITHUB_WORKSPACE/nxvk"
-          make CONTAINER=docker AR=ar DEVKITPRO="$GITHUB_WORKSPACE/dkp-stage" install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
+          sudo -E make CONTAINER=docker AR=ar DEVKITPRO="$GITHUB_WORKSPACE/dkp-stage" install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
           find "$GITHUB_WORKSPACE/dkp-stage" -maxdepth 4 | head -20
           cat "$GITHUB_WORKSPACE/dkp-stage/portlibs/switch/lib/pkgconfig/nxvk.pc"
 
@@ -80,6 +82,8 @@ jobs:
           set -e
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          sudo chown -R "$(id -u):$(id -g)" logs nxvk 2>/dev/null || true
           mkdir -p logs
           for f in logs/*.log; do
             if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
