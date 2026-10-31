@@ -39,9 +39,21 @@ jobs:
           docker system df
 
       - name: Clone NXVK
+        id: nxvk
         run: |
           git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
+          echo "sha=$(git -C "$GITHUB_WORKSPACE/nxvk" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           cat "$GITHUB_WORKSPACE/nxvk/VERSION"
+
+      - name: Restore NXVK build cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            nxvk/switch/build
+            nxvk/switch/rust/sysroot
+          key: nxvk-build-${{ steps.nxvk.outputs.sha }}
+          restore-keys: |
+            nxvk-build-
 
       - name: Build NXVK (inside nxvk toolchain docker image)
         run: |
@@ -131,7 +143,7 @@ jobs:
           apt-get install -y -qq --no-install-recommends \
             git ca-certificates curl wget xz-utils file \
             make build-essential cmake ninja-build pkg-config \
-            python3 bison flex ccache 2>&1 | tee logs/apt-install.log
+            python3 python3-mako python3-yaml bison flex ccache 2>&1 | tee logs/apt-install.log
           git --version && cmake --version | head -1
 
       - name: Install Switch packages (switch-dev + portlibs)
