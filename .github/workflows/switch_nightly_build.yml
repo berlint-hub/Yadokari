@@ -1,7 +1,8 @@
 name: Switch Nightly Build (NRO)
-# Builds the Nintendo Switch homebrew .nro (armsx2nx.nro) with devkitPro + NXVK.
+# Builds the Nintendo Switch homebrew .nro (armsx2nx.nro) inside the official
+# devkitpro/devkita64 container (avoids the apt.devkitpro.org bot filter).
 # On berlint-hub/Yadokari the NRO is also published to the ci-artifacts-switch branch
-# and as a GitHub release, so it can be downloaded via github.com/codeload (no Azure blob needed).
+# and as a GitHub release, so it can be downloaded via github.com/codeload/git.
 
 on:
   push:
@@ -25,6 +26,10 @@ jobs:
       actions: read
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    container:
+      image: devkitpro/devkita64:latest
+    env:
+      DEVKITPRO: /opt/devkitpro
 
     outputs:
       nro_path: ${{ steps.locate.outputs.NRO_PATH }}
@@ -37,23 +42,29 @@ jobs:
 
       - name: Install host build tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build pkg-config bison flex python3 ccache wget curl unzip ca-certificates
+          set -x
+          git config --global --add safe.directory '*'
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update -qq 2>&1 | tee logs-host-apt.log || true
+          mkdir -p logs
+          apt-get update -qq 2>&1 | tee logs/apt.log
+          apt-get install -y -qq --no-install-recommends \
+            git ca-certificates curl wget xz-utils file \
+            make build-essential cmake ninja-build pkg-config \
+            python3 bison flex ccache 2>&1 | tee logs/apt-install.log
+          git --version && cmake --version | head -1
 
-      - name: Install devkitPro pacman + switch-dev
+      - name: Install Switch packages (switch-dev + portlibs)
         run: |
           set -x
           mkdir -p logs
-          export DEBIAN_FRONTEND=noninteractive
-          wget -q https://apt.devkitpro.org/install-devkitpro-pacman -O /tmp/install-devkitpro-pacman
-          chmod +x /tmp/install-devkitpro-pacman
-          sudo /tmp/install-devkitpro-pacman 2>&1 | tee logs/install-pacman.log
-          echo "DEVKITPRO=/opt/devkitpro" >> "$GITHUB_ENV"
+          dkp-pacman -Syu --noconfirm 2>&1 | tee logs/dkp-syu.log
+          dkp-pacman -S --noconfirm --needed \
+            switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4 \
+            2>&1 | tee logs/dkp-install.log
+          ls -la /opt/devkitpro/cmake/Switch.cmake
           echo "/opt/devkitpro/pacman/bin" >> "$GITHUB_PATH"
           echo "/opt/devkitpro/tools/bin" >> "$GITHUB_PATH"
-          sudo dkp-pacman -Syu --noconfirm 2>&1 | tee logs/dkp-syu.log
-          sudo dkp-pacman -S --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4 2>&1 | tee logs/dkp-install.log
-          ls -la /opt/devkitpro/cmake/Switch.cmake
 
       - name: Clone uam sources (UAM_ROOT)
         run: |
@@ -62,27 +73,27 @@ jobs:
 
       - name: Ensure uam host tool in DEVKITPRO/tools/bin
         run: |
-          export DEVKITPRO=/opt/devkitpro
+          set -x
           if [ -x "$DEVKITPRO/tools/bin/uam" ]; then
-            echo "uam already shipped with switch-dev"
+            echo "uam already shipped with switch-tools"
             exit 0
           fi
           echo "uam missing, building from source"
-          cmake -S "$UAM_ROOT" -B "$GITHUB_WORKSPACE/uam-host-build" -DCMAKE_BUILD_TYPE=Release
-          cmake --build "$GITHUB_WORKSPACE/uam-host-build" -j"$(nproc)"
+          cmake -S "$UAM_ROOT" -B "$GITHUB_WORKSPACE/uam-host-build" -DCMAKE_BUILD_TYPE=Release 2>&1 | tee logs/uam-configure.log
+          cmake --build "$GITHUB_WORKSPACE/uam-host-build" -j"$(nproc)" 2>&1 | tee logs/uam-build.log
           UAM_BIN=$(find "$GITHUB_WORKSPACE/uam-host-build" -type f -name uam -executable | head -n 1)
           echo "built: $UAM_BIN"
-          sudo cp "$UAM_BIN" "$DEVKITPRO/tools/bin/uam"
-          "$DEVKITPRO/tools/bin/uam" --help 2>&1 | head -3 || true
+          cp "$UAM_BIN" "$DEVKITPRO/tools/bin/uam"
+          ls -la "$DEVKITPRO/tools/bin/uam"
 
       - name: Build and install NXVK (Vulkan portlib)
         run: |
-          export DEVKITPRO=/opt/devkitpro
+          set -x
           export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
           cd "$GITHUB_WORKSPACE/nxvk"
           make -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-build.log"
-          sudo make install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
+          make install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
           echo "--- nxvk pkg-config files ---"
           ls "/opt/devkitpro/portlibs/switch/lib/pkgconfig/" | grep -i nxvk || true
           pkg-config --modversion nxvk || true
@@ -98,6 +109,7 @@ jobs:
       - name: Configure Switch core
         run: |
           export DEVKITPRO=/opt/devkitpro
+          export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           mkdir -p logs
           cmake -S app/src/main/cpp -B build/switch-core \
             -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
@@ -111,6 +123,7 @@ jobs:
       - name: Build armsx2_nro
         run: |
           export DEVKITPRO=/opt/devkitpro
+          export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           mkdir -p logs build/switch-core
           cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee logs/build.log
           status="${PIPESTATUS[0]}"
@@ -128,7 +141,7 @@ jobs:
           echo "NRO_PATH=$NRO" >> "$GITHUB_OUTPUT"
           cp "$NRO" armsx2nx.nro
           ls -la armsx2nx.nro
-          head -c 4 armsx2nx.nro | xxd | head -1
+          echo "magic: $(head -c 4 armsx2nx.nro)"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5
@@ -143,7 +156,7 @@ jobs:
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
           mkdir -p logs
-          for f in logs/*.log; do
+          for f in logs/*.log logs-host-apt.log; do
             if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
           done
           if [ -f build/switch-core/build.log ]; then cp build/switch-core/build.log "logs/run-${{ github.run_id }}-build.log"; fi
