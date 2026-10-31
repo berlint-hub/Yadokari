@@ -1,0 +1,4 @@
+run_id=41245700172
+sha=375406f1d6f593af6408ff60366f2f54db3c7145
+head_ref=arena/af308883-yadokari
+run_url=https://github.com/berlint-hub/Yadokari/actions/runs/41245700172
