@@ -42,19 +42,18 @@ jobs:
 
       - name: Install devkitPro pacman + switch-dev
         run: |
-          DEB_URL=$(curl -s https://api.github.com/repos/devkitPro/pacman/releases/latest \
-            | grep -o '"browser_download_url": *"[^"]*amd64\.deb"' | cut -d '"' -f 4 | head -n 1)
-          echo "pacman deb: $DEB_URL"
-          wget -q "$DEB_URL" -O /tmp/dkp-pacman.deb
-          sudo apt-get install -y /tmp/dkp-pacman.deb
+          set -x
+          mkdir -p logs
+          export DEBIAN_FRONTEND=noninteractive
+          wget -q https://apt.devkitpro.org/install-devkitpro-pacman -O /tmp/install-devkitpro-pacman
+          chmod +x /tmp/install-devkitpro-pacman
+          sudo /tmp/install-devkitpro-pacman 2>&1 | tee logs/install-pacman.log
           echo "DEVKITPRO=/opt/devkitpro" >> "$GITHUB_ENV"
           echo "/opt/devkitpro/pacman/bin" >> "$GITHUB_PATH"
           echo "/opt/devkitpro/tools/bin" >> "$GITHUB_PATH"
-          sudo dkp-pacman-key --init || true
-          sudo dkp-pacman-key --populate || true
-          sudo dkp-pacman -Syu --noconfirm
-          sudo dkp-pacman -S --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4
-          ls /opt/devkitpro/cmake/Switch.cmake
+          sudo dkp-pacman -Syu --noconfirm 2>&1 | tee logs/dkp-syu.log
+          sudo dkp-pacman -S --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4 2>&1 | tee logs/dkp-install.log
+          ls -la /opt/devkitpro/cmake/Switch.cmake
 
       - name: Clone uam sources (UAM_ROOT)
         run: |
@@ -82,8 +81,8 @@ jobs:
           export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           git clone --depth 1 https://github.com/PalindromicBreadLoaf/nxvk "$GITHUB_WORKSPACE/nxvk"
           cd "$GITHUB_WORKSPACE/nxvk"
-          make -j"$(nproc)"
-          sudo make install
+          make -j"$(nproc)" 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-build.log"
+          sudo make install 2>&1 | tee "$GITHUB_WORKSPACE/logs/nxvk-install.log"
           echo "--- nxvk pkg-config files ---"
           ls "/opt/devkitpro/portlibs/switch/lib/pkgconfig/" | grep -i nxvk || true
           pkg-config --modversion nxvk || true
@@ -99,20 +98,24 @@ jobs:
       - name: Configure Switch core
         run: |
           export DEVKITPRO=/opt/devkitpro
+          mkdir -p logs
           cmake -S app/src/main/cpp -B build/switch-core \
             -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DUSE_OPENGL=OFF \
             -DUSE_VULKAN=ON \
-            -DUAM_ROOT="$UAM_ROOT"
+            -DUAM_ROOT="$UAM_ROOT" 2>&1 | tee logs/configure.log
+          exit "${PIPESTATUS[0]}"
 
       - name: Build armsx2_nro
         run: |
           export DEVKITPRO=/opt/devkitpro
-          mkdir -p build/switch-core
-          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee build/switch-core/build.log
-          exit "${PIPESTATUS[0]}"
+          mkdir -p logs build/switch-core
+          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee logs/build.log
+          status="${PIPESTATUS[0]}"
+          cp logs/build.log build/switch-core/build.log 2>/dev/null || true
+          exit "$status"
 
       - name: Locate NRO
         id: locate
@@ -133,27 +136,28 @@ jobs:
           name: armsx2nx-nro
           path: armsx2nx.nro
 
-      - name: Push build log to ci-artifacts-switch (on failure, for debugging)
+      - name: Push logs to ci-artifacts-switch (on failure, for debugging)
         if: failure() && github.repository == 'berlint-hub/Yadokari'
         run: |
           set -e
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
           mkdir -p logs
-          [ -f build/switch-core/build.log ] && cp build/switch-core/build.log "logs/build-run-${{ github.run_id }}.log" || echo "no build log" > "logs/build-run-${{ github.run_id }}.log"
+          for f in logs/*.log; do
+            if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
+          done
+          if [ -f build/switch-core/build.log ]; then cp build/switch-core/build.log "logs/run-${{ github.run_id }}-build.log"; fi
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} status=failure" > "logs/run-${{ github.run_id }}-info.txt"
           if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
             git fetch origin ci-artifacts-switch
             git checkout ci-artifacts-switch
-            git add logs
-            git commit -m "build log run ${{ github.run_id }}" || true
-            git push origin ci-artifacts-switch
           else
             git checkout --orphan ci-artifacts-switch
             git rm -rf --quiet .
-            git add logs
-            git commit -m "build log run ${{ github.run_id }}"
-            git push --force origin HEAD:ci-artifacts-switch
           fi
+          git add logs
+          git commit -m "logs run ${{ github.run_id }}" || true
+          git push --force origin HEAD:ci-artifacts-switch
 
   publish:
     permissions:
