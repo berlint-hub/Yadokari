@@ -204,7 +204,9 @@ jobs:
             switch-nro-ccache-
 
       - name: Configure Switch core
+        shell: bash
         run: |
+          set +e
           export DEVKITPRO=/opt/devkitpro
           export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           export PKG_CONFIG_LIBDIR="/opt/devkitpro/portlibs/switch/lib/pkgconfig"
@@ -215,17 +217,24 @@ jobs:
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DUSE_OPENGL=OFF \
             -DUSE_VULKAN=ON \
-            -DUAM_ROOT="$UAM_ROOT" 2>&1 | tee logs/configure.log
-          exit "${PIPESTATUS[0]}"
+            -DUAM_ROOT="$UAM_ROOT" > logs/configure.log 2>&1
+          status=$?
+          echo "CMAKE_CONFIGURE_EXIT=$status" >> logs/configure.log
+          tail -30 logs/configure.log
+          exit "$status"
 
       - name: Build armsx2_nro
+        shell: bash
         run: |
+          set +e
           export DEVKITPRO=/opt/devkitpro
           export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
           mkdir -p logs build/switch-core
-          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee logs/build.log
-          status="${PIPESTATUS[0]}"
+          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" > logs/build.log 2>&1
+          status=$?
+          echo "CMAKE_BUILD_EXIT=$status" >> logs/build.log
           cp logs/build.log build/switch-core/build.log 2>/dev/null || true
+          tail -30 logs/build.log
           exit "$status"
 
       - name: Locate NRO
