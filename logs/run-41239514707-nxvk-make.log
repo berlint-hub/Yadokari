@@ -1,0 +1,1865 @@
+>> toolchain image nxvk missing; building it
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 3.39kB 0.0s done
+#1 DONE 0.0s
+
+#2 [auth] devkitpro/devkita64:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/devkitpro/devkita64:latest
+#3 DONE 0.4s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 5.53kB done
+#5 DONE 0.0s
+
+#6 [ 1/13] FROM docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282
+#6 resolve docker.io/devkitpro/devkita64:latest@sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282 done
+#6 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 24.12MB / 28.23MB 0.1s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 3.15MB / 265.08MB 0.1s
+#6 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 27.26MB / 28.38MB 0.1s
+#6 sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282 1.61kB / 1.61kB done
+#6 sha256:82575ea78651b530b2e232bb3799cfd1fe331514e053d5f724bb4b28191fb79d 1.06kB / 1.06kB done
+#6 sha256:551247dfe0524421b8cb608117a767c77823e76608fa2058f0eb5d5398293641 4.79kB / 4.79kB done
+#6 sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 28.23MB / 28.23MB 0.1s done
+#6 sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 28.38MB / 28.38MB 0.1s done
+#6 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 0.1s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 22.02MB / 382.98MB 0.2s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 28.31MB / 265.08MB 0.3s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 54.53MB / 382.98MB 0.3s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 61.87MB / 265.08MB 0.4s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 95.42MB / 382.98MB 0.4s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 94.37MB / 265.08MB 0.5s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 136.31MB / 382.98MB 0.5s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 123.73MB / 265.08MB 0.6s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 169.87MB / 382.98MB 0.6s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 164.63MB / 265.08MB 0.7s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 205.52MB / 382.98MB 0.7s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 232.78MB / 265.08MB 0.9s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 295.70MB / 382.98MB 0.9s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 265.08MB / 265.08MB 1.1s
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 381.68MB / 382.98MB 1.1s
+#6 sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 265.08MB / 265.08MB 2.3s done
+#6 extracting sha256:59e22667830bf04fb35e15ed9c70023e9d121719bb87f0db7f3159ee7c7e0b8d 2.3s done
+#6 sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 382.98MB / 382.98MB 2.3s done
+#6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 0.1s
+#6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 5.4s
+#6 extracting sha256:74701f26999d7854982cfa51dafd83beeaf644031b943c4cbd0a245139a742a4 6.2s done
+#6 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8
+#6 extracting sha256:ea5d3216df1fb580c54c016ee13ff58eb965c0a0b0ef08afd8dfd5a1c03e95a8 0.3s done
+#6 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 0.1s
+#6 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 5.2s
+#6 extracting sha256:da5be4661c9ac4e389f9e5f939e58bff7d32bc60569fa7c14e849d5246881691 6.5s done
+#6 DONE 20.9s
+
+#7 [ 2/13] RUN apt-get update && apt-get install -y --no-install-recommends         python3-pip bison flex curl ca-certificates pkg-config git     && rm -rf /var/lib/apt/lists/*
+#7 0.197 Get:1 http://deb.debian.org/debian bookworm-backports InRelease [59.4 kB]
+#7 0.205 Get:2 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#7 0.205 Get:3 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#7 0.206 Get:4 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+#7 0.297 Get:5 http://deb.debian.org/debian bookworm-backports/main amd64 Packages.diff/Index [63.3 kB]
+#7 0.298 Ign:5 http://deb.debian.org/debian bookworm-backports/main amd64 Packages.diff/Index
+#7 0.300 Get:6 http://deb.debian.org/debian bookworm-backports/main amd64 Packages [300 kB]
+#7 0.360 Get:7 http://deb.debian.org/debian bookworm/main amd64 Packages [8,790 kB]
+#7 0.419 Get:8 http://deb.debian.org/debian bookworm-updates/main amd64 Packages.diff/Index [21.8 kB]
+#7 0.420 Ign:8 http://deb.debian.org/debian bookworm-updates/main amd64 Packages.diff/Index
+#7 0.424 Get:9 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6,924 B]
+#7 0.471 Get:10 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [360 kB]
+#7 0.542 Hit:11 https://apt.devkitpro.org stable InRelease
+#7 1.178 Fetched 9,843 kB in 1s (9,956 kB/s)
+#7 1.178 Reading package lists...
+#7 1.654 Reading package lists...
+#7 2.127 Building dependency tree...
+#7 2.253 Reading state information...
+#7 2.353 pkg-config is already the newest version (1.8.1-1).
+#7 2.353 The following additional packages will be installed:
+#7 2.354   git-man libcurl3-gnutls libcurl4 m4 python3-distutils python3-lib2to3
+#7 2.354   python3-pkg-resources python3-setuptools python3-wheel
+#7 2.355 Suggested packages:
+#7 2.355   bison-doc flex-doc git-daemon-run | git-daemon-sysvinit git-doc git-email
+#7 2.355   git-gui gitk gitweb git-cvs git-mediawiki git-svn m4-doc
+#7 2.355   python-setuptools-doc
+#7 2.355 Recommended packages:
+#7 2.355   libfl-dev less ssh-client python3-dev
+#7 2.434 The following NEW packages will be installed:
+#7 2.435   bison flex m4 python3-distutils python3-lib2to3 python3-pip
+#7 2.435   python3-setuptools python3-wheel
+#7 2.435 The following packages will be upgraded:
+#7 2.436   ca-certificates curl git git-man libcurl3-gnutls libcurl4
+#7 2.436   python3-pkg-resources
+#7 2.455 7 upgraded, 8 newly installed, 0 to remove and 73 not upgraded.
+#7 2.455 Need to get 14.8 MB of archives.
+#7 2.455 After this operation, 15.7 MB of additional disk space will be used.
+#7 2.455 Get:1 http://deb.debian.org/debian bookworm/main amd64 m4 amd64 1.4.19-3 [287 kB]
+#7 2.465 Get:2 http://deb.debian.org/debian bookworm/main amd64 flex amd64 2.6.4-8.2 [422 kB]
+#7 2.468 Get:3 http://deb.debian.org/debian-security bookworm-security/main amd64 ca-certificates all 20250419~deb12u2 [161 kB]
+#7 2.469 Get:4 http://deb.debian.org/debian bookworm/main amd64 bison amd64 2:3.8.2+dfsg-1+b1 [1,175 kB]
+#7 2.475 Get:5 http://deb.debian.org/debian bookworm/main amd64 curl amd64 7.88.1-10+deb12u15 [316 kB]
+#7 2.477 Get:6 http://deb.debian.org/debian bookworm/main amd64 libcurl4 amd64 7.88.1-10+deb12u15 [392 kB]
+#7 2.480 Get:7 http://deb.debian.org/debian bookworm/main amd64 libcurl3-gnutls amd64 7.88.1-10+deb12u15 [386 kB]
+#7 2.482 Get:8 http://deb.debian.org/debian bookworm/main amd64 git-man all 1:2.39.5-0+deb12u3 [2,053 kB]
+#7 2.493 Get:9 http://deb.debian.org/debian bookworm/main amd64 git amd64 1:2.39.5-0+deb12u3 [7,264 kB]
+#7 2.524 Get:10 http://deb.debian.org/debian bookworm/main amd64 python3-lib2to3 all 3.11.2-3 [76.3 kB]
+#7 2.525 Get:11 http://deb.debian.org/debian bookworm/main amd64 python3-distutils all 3.11.2-3 [131 kB]
+#7 2.526 Get:12 http://deb.debian.org/debian bookworm/main amd64 python3-pkg-resources all 66.1.1-1+deb12u2 [297 kB]
+#7 2.527 Get:13 http://deb.debian.org/debian bookworm/main amd64 python3-setuptools all 66.1.1-1+deb12u2 [522 kB]
+#7 2.530 Get:14 http://deb.debian.org/debian bookworm/main amd64 python3-wheel all 0.38.4-2 [30.8 kB]
+#7 2.531 Get:15 http://deb.debian.org/debian bookworm/main amd64 python3-pip all 23.0.1+dfsg-1 [1,325 kB]
+#7 3.105 Preconfiguring packages ...
+#7 3.581 Fetched 14.8 MB in 0s (154 MB/s)
+#7 3.595 Selecting previously unselected package m4.
+#7 3.595 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 21137 files and directories currently installed.)
+#7 3.609 Preparing to unpack .../00-m4_1.4.19-3_amd64.deb ...
+#7 3.610 Unpacking m4 (1.4.19-3) ...
+#7 3.639 Selecting previously unselected package flex.
+#7 3.641 Preparing to unpack .../01-flex_2.6.4-8.2_amd64.deb ...
+#7 3.642 Unpacking flex (2.6.4-8.2) ...
+#7 3.686 Preparing to unpack .../02-ca-certificates_20250419~deb12u2_all.deb ...
+#7 3.688 Unpacking ca-certificates (20250419~deb12u2) over (20230311+deb12u1) ...
+#7 3.806 Selecting previously unselected package bison.
+#7 3.809 Preparing to unpack .../03-bison_2%3a3.8.2+dfsg-1+b1_amd64.deb ...
+#7 3.812 Unpacking bison (2:3.8.2+dfsg-1+b1) ...
+#7 3.876 Preparing to unpack .../04-curl_7.88.1-10+deb12u15_amd64.deb ...
+#7 3.878 Unpacking curl (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+#7 3.911 Preparing to unpack .../05-libcurl4_7.88.1-10+deb12u15_amd64.deb ...
+#7 3.914 Unpacking libcurl4:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+#7 3.952 Preparing to unpack .../06-libcurl3-gnutls_7.88.1-10+deb12u15_amd64.deb ...
+#7 3.954 Unpacking libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) over (7.88.1-10+deb12u12) ...
+#7 3.991 Preparing to unpack .../07-git-man_1%3a2.39.5-0+deb12u3_all.deb ...
+#7 3.993 Unpacking git-man (1:2.39.5-0+deb12u3) over (1:2.39.5-0+deb12u2) ...
+#7 4.084 Preparing to unpack .../08-git_1%3a2.39.5-0+deb12u3_amd64.deb ...
+#7 4.098 Unpacking git (1:2.39.5-0+deb12u3) over (1:2.39.5-0+deb12u2) ...
+#7 4.486 Selecting previously unselected package python3-lib2to3.
+#7 4.489 Preparing to unpack .../09-python3-lib2to3_3.11.2-3_all.deb ...
+#7 4.489 Unpacking python3-lib2to3 (3.11.2-3) ...
+#7 4.515 Selecting previously unselected package python3-distutils.
+#7 4.518 Preparing to unpack .../10-python3-distutils_3.11.2-3_all.deb ...
+#7 4.521 Unpacking python3-distutils (3.11.2-3) ...
+#7 4.549 Preparing to unpack .../11-python3-pkg-resources_66.1.1-1+deb12u2_all.deb ...
+#7 4.609 Unpacking python3-pkg-resources (66.1.1-1+deb12u2) over (66.1.1-1+deb12u1) ...
+#7 4.667 Selecting previously unselected package python3-setuptools.
+#7 4.670 Preparing to unpack .../12-python3-setuptools_66.1.1-1+deb12u2_all.deb ...
+#7 4.670 Unpacking python3-setuptools (66.1.1-1+deb12u2) ...
+#7 4.724 Selecting previously unselected package python3-wheel.
+#7 4.727 Preparing to unpack .../13-python3-wheel_0.38.4-2_all.deb ...
+#7 4.728 Unpacking python3-wheel (0.38.4-2) ...
+#7 4.751 Selecting previously unselected package python3-pip.
+#7 4.753 Preparing to unpack .../14-python3-pip_23.0.1+dfsg-1_all.deb ...
+#7 4.754 Unpacking python3-pip (23.0.1+dfsg-1) ...
+#7 4.884 Setting up python3-pkg-resources (66.1.1-1+deb12u2) ...
+#7 5.087 Setting up m4 (1.4.19-3) ...
+#7 5.089 Setting up libcurl3-gnutls:amd64 (7.88.1-10+deb12u15) ...
+#7 5.091 Setting up ca-certificates (20250419~deb12u2) ...
+#7 6.460 Updating certificates in /etc/ssl/certs...
+#7 7.194 rehash: warning: skipping ca-certificates.crt,it does not contain exactly one certificate or CRL
+#7 7.200 21 added, 15 removed; done.
+#7 7.213 Setting up bison (2:3.8.2+dfsg-1+b1) ...
+#7 7.217 update-alternatives: using /usr/bin/bison.yacc to provide /usr/bin/yacc (yacc) in auto mode
+#7 7.217 update-alternatives: warning: skip creation of /usr/share/man/man1/yacc.1.gz because associated file /usr/share/man/man1/bison.yacc.1.gz (of link group yacc) doesn't exist
+#7 7.219 Setting up libcurl4:amd64 (7.88.1-10+deb12u15) ...
+#7 7.221 Setting up git-man (1:2.39.5-0+deb12u3) ...
+#7 7.223 Setting up curl (7.88.1-10+deb12u15) ...
+#7 7.225 Setting up python3-lib2to3 (3.11.2-3) ...
+#7 7.312 Setting up python3-distutils (3.11.2-3) ...
+#7 7.410 Setting up flex (2.6.4-8.2) ...
+#7 7.413 Setting up python3-setuptools (66.1.1-1+deb12u2) ...
+#7 7.789 Setting up python3-wheel (0.38.4-2) ...
+#7 7.898 Setting up git (1:2.39.5-0+deb12u3) ...
+#7 7.906 Setting up python3-pip (23.0.1+dfsg-1) ...
+#7 8.770 Processing triggers for libc-bin (2.36-9+deb12u10) ...
+#7 8.785 Processing triggers for ca-certificates (20250419~deb12u2) ...
+#7 8.789 Updating certificates in /etc/ssl/certs...
+#7 9.260 0 added, 0 removed; done.
+#7 9.260 Running hooks in /etc/ca-certificates/update.d...
+#7 9.261 done.
+#7 DONE 9.3s
+
+#8 [ 3/13] RUN python3 -m pip install --break-system-packages --no-cache-dir 'meson>=1.4' mako pyyaml
+#8 0.510 Collecting meson>=1.4
+#8 0.568   Downloading meson-1.12.1-py3-none-any.whl (1.1 MB)
+#8 0.671      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 10.9 MB/s eta 0:00:00
+#8 0.701 Collecting mako
+#8 0.710   Downloading mako-1.4.3-py3-none-any.whl (80 kB)
+#8 0.713      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 80.2/80.2 kB 62.9 MB/s eta 0:00:00
+#8 0.783 Collecting pyyaml
+#8 0.796   Downloading pyyaml-6.0.3-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (806 kB)
+#8 0.853      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 806.6/806.6 kB 14.4 MB/s eta 0:00:00
+#8 0.972 Collecting MarkupSafe>=2.0
+#8 0.982   Downloading markupsafe-3.0.4-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (22 kB)
+#8 1.004 Installing collected packages: pyyaml, meson, MarkupSafe, mako
+#8 1.733 Successfully installed MarkupSafe-3.0.4 mako-1.4.3 meson-1.12.1 pyyaml-6.0.3
+#8 1.734 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+#8 DONE 1.8s
+
+#9 [ 4/13] RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |         sh -s -- -y --default-toolchain nightly-2026-07-02 --profile minimal --component rust-src     && rustc --version && cargo --version
+#9 0.257 info: downloading installer
+#9 0.416 info: profile set to minimal
+#9 0.416 info: default host tuple is x86_64-unknown-linux-gnu
+#9 0.416 info: syncing channel updates for nightly-2026-07-02-x86_64-unknown-linux-gnu
+#9 0.526 info: latest update on 2026-07-02 for version 1.98.0-nightly (4c9d2bfe4 2026-07-01)
+#9 0.526 info: downloading 4 components
+#9 12.44 info: default toolchain set to nightly-2026-07-02-x86_64-unknown-linux-gnu
+#9 12.44 
+#9 12.45   nightly-2026-07-02-x86_64-unknown-linux-gnu installed - rustc 1.98.0-nightly (4c9d2bfe4 2026-07-01)
+#9 12.45 
+#9 12.45 
+#9 12.45 Rust is installed now. Great!
+#9 12.45 
+#9 12.45 To get started you may need to restart your current shell.
+#9 12.45 This would reload your PATH environment variable to include
+#9 12.45 Cargo's bin directory (/opt/rust/cargo/bin).
+#9 12.45 
+#9 12.45 To configure your current shell, you need to source the
+#9 12.45 corresponding env file under /opt/rust/cargo.
+#9 12.45 
+#9 12.45 Consider running the right command for your shell (note the leading DOT):
+#9 12.45 . "/opt/rust/cargo/env" # For sh/ash/dash/pdksh/bash
+#9 12.45 cargo:rerun-if-env-changed=CC_x86_64-unknown-linux-gnu
+#9 12.45 CC_x86_64-unknown-linux-gnu = None
+#9 12.45 cargo:rerun-if-env-changed=CC_x86_64_unknown_linux_gnu
+#9 12.45 CC_x86_64_unknown_linux_gnu = None
+#9 12.45 cargo:rerun-if-env-changed=HOST_CC
+#9 12.45 HOST_CC = None
+#9 12.45 cargo:rerun-if-env-changed=CC
+#9 12.45 CC = None
+#9 12.45 cargo:rerun-if-env-changed=CC_ENABLE_DEBUG_OUTPUT
+#9 12.46 cargo:rerun-if-env-changed=CRATE_CC_NO_DEFAULTS
+#9 12.46 CRATE_CC_NO_DEFAULTS = None
+#9 12.46 cargo:rerun-if-env-changed=CFLAGS
+#9 12.46 CFLAGS = None
+#9 12.46 cargo:rerun-if-env-changed=HOST_CFLAGS
+#9 12.46 HOST_CFLAGS = None
+#9 12.46 cargo:rerun-if-env-changed=CFLAGS_x86_64_unknown_linux_gnu
+#9 12.46 CFLAGS_x86_64_unknown_linux_gnu = None
+#9 12.46 cargo:rerun-if-env-changed=CFLAGS_x86_64-unknown-linux-gnu
+#9 12.46 CFLAGS_x86_64-unknown-linux-gnu = None
+#9 12.49 rustc 1.98.0-nightly (4c9d2bfe4 2026-07-01)
+#9 12.50 cargo 1.98.0-nightly (a335d47ff 2026-06-26)
+#9 DONE 14.0s
+
+#10 [ 5/13] RUN cargo install --locked bindgen-cli cbindgen && bindgen --version && cbindgen --version
+#10 0.138     Updating crates.io index
+#10 0.186  Downloading crates ...
+#10 0.217   Downloaded bindgen-cli v0.73.2
+#10 0.229     Updating crates.io index
+#10 0.238  Downloading crates ...
+#10 0.252   Downloaded cbindgen v0.29.4
+#10 0.407   Installing bindgen-cli v0.73.2
+#10 0.409     Updating crates.io index
+#10 0.549     Updating crates.io index
+#10 0.584  Downloading crates ...
+#10 0.597   Downloaded aho-corasick v1.1.5
+#10 0.605   Downloaded anstream v0.6.21
+#10 0.608   Downloaded syn v2.0.119
+#10 0.629   Downloaded annotate-snippets v0.11.5
+#10 0.633   Downloaded anstyle-parse v0.2.7
+#10 0.635   Downloaded prettyplease v0.2.37
+#10 0.641   Downloaded anstyle v1.0.14
+#10 0.644   Downloaded clap_derive v4.4.7
+#10 0.647   Downloaded bitflags v2.13.1
+#10 0.653   Downloaded anstyle-query v1.1.5
+#10 0.655   Downloaded clang-sys v1.9.1
+#10 0.658   Downloaded rustc-hash v2.1.1
+#10 0.660   Downloaded cfg-if v1.0.4
+#10 0.662   Downloaded colorchoice v1.0.5
+#10 0.664   Downloaded log v0.4.34
+#10 0.667   Downloaded clap_lex v0.6.0
+#10 0.668   Downloaded glob v0.3.4
+#10 0.671   Downloaded is-terminal v0.4.17
+#10 0.672   Downloaded is_terminal_polyfill v1.70.2
+#10 0.673   Downloaded proc-macro2 v1.0.107
+#10 0.678   Downloaded shlex v2.0.1
+#10 0.680   Downloaded termcolor v1.4.1
+#10 0.681   Downloaded utf8parse v0.2.2
+#10 0.683   Downloaded cexpr v0.6.0
+#10 0.686   Downloaded libloading v0.8.9
+#10 0.689   Downloaded strsim v0.10.0
+#10 0.691   Downloaded env_logger v0.10.2
+#10 0.695   Downloaded heck v0.4.1
+#10 0.697   Downloaded humantime v2.4.0
+#10 0.700   Downloaded quote v1.0.47
+#10 0.703   Downloaded unicode-ident v1.0.24
+#10 0.707   Downloaded clap v4.4.18
+#10 0.721   Downloaded minimal-lexical v0.2.1
+#10 0.728   Downloaded memchr v2.8.3
+#10 0.736   Downloaded clap_complete v4.4.10
+#10 0.740   Downloaded nom v7.1.3
+#10 0.747   Downloaded clap_builder v4.4.18
+#10 0.755   Downloaded regex v1.13.1
+#10 0.763   Downloaded unicode-width v0.2.2
+#10 0.769   Downloaded regex-syntax v0.8.11
+#10 0.779   Downloaded regex-automata v0.4.18
+#10 0.797   Downloaded bindgen v0.73.2
+#10 0.806   Downloaded libc v0.2.189
+#10 0.889    Compiling proc-macro2 v1.0.107
+#10 0.889    Compiling unicode-ident v1.0.24
+#10 0.889    Compiling memchr v2.8.3
+#10 0.889    Compiling quote v1.0.47
+#10 0.953    Compiling libc v0.2.189
+#10 1.054    Compiling anstyle v1.0.14
+#10 1.194    Compiling utf8parse v0.2.2
+#10 1.248    Compiling anstyle-parse v0.2.7
+#10 1.395    Compiling anstyle-query v1.1.5
+#10 1.400    Compiling colorchoice v1.0.5
+#10 1.445    Compiling glob v0.3.4
+#10 1.732    Compiling is_terminal_polyfill v1.70.2
+#10 1.742    Compiling clang-sys v1.9.1
+#10 1.773    Compiling anstream v0.6.21
+#10 1.816    Compiling syn v2.0.119
+#10 1.952    Compiling aho-corasick v1.1.5
+#10 3.466    Compiling regex-syntax v0.8.11
+#10 4.778    Compiling strsim v0.10.0
+#10 5.607    Compiling prettyplease v0.2.37
+#10 5.697    Compiling clap_lex v0.6.0
+#10 5.931    Compiling heck v0.4.1
+#10 5.991    Compiling clap_builder v4.4.18
+#10 6.080    Compiling clap_derive v4.4.7
+#10 7.875    Compiling regex-automata v0.4.18
+#10 9.663    Compiling cfg-if v1.0.4
+#10 9.692    Compiling minimal-lexical v0.2.1
+#10 9.982    Compiling nom v7.1.3
+#10 11.44    Compiling regex v1.13.1
+#10 12.29    Compiling libloading v0.8.9
+#10 13.03    Compiling clap v4.4.18
+#10 13.07    Compiling bindgen v0.73.2
+#10 13.20    Compiling log v0.4.34
+#10 13.41    Compiling unicode-width v0.2.2
+#10 22.05    Compiling annotate-snippets v0.11.5
+#10 25.63    Compiling clap_complete v4.4.10
+#10 27.64    Compiling cexpr v0.6.0
+#10 29.63    Compiling is-terminal v0.4.17
+#10 29.68    Compiling termcolor v1.4.1
+#10 29.82    Compiling humantime v2.4.0
+#10 30.13    Compiling bitflags v2.13.1
+#10 30.28    Compiling shlex v2.0.1
+#10 30.47    Compiling rustc-hash v2.1.1
+#10 30.55    Compiling env_logger v0.10.2
+#10 48.39    Compiling bindgen-cli v0.73.2
+#10 49.65     Finished `release` profile [optimized] target(s) in 49.52s
+#10 49.65   Installing /opt/rust/cargo/bin/bindgen
+#10 49.65    Installed package `bindgen-cli v0.73.2` (executable `bindgen`)
+#10 49.70   Installing cbindgen v0.29.4
+#10 49.70     Updating crates.io index
+#10 49.82     Updating crates.io index
+#10 49.85  Downloading crates ...
+#10 49.88   Downloaded anstream v0.6.19
+#10 49.89   Downloaded serde v1.0.228
+#10 49.89   Downloaded anstyle-query v1.1.3
+#10 49.90   Downloaded fastrand v2.3.0
+#10 49.90   Downloaded cfg-if v1.0.1
+#10 49.90   Downloaded equivalent v1.0.2
+#10 49.90   Downloaded clap_builder v4.5.41
+#10 49.91   Downloaded bitflags v2.9.1
+#10 49.92   Downloaded toml_datetime v0.7.0
+#10 49.92   Downloaded is_terminal_polyfill v1.70.1
+#10 49.92   Downloaded strsim v0.11.1
+#10 49.92   Downloaded once_cell v1.21.3
+#10 49.93   Downloaded colorchoice v1.0.4
+#10 49.93   Downloaded quote v1.0.40
+#10 49.93   Downloaded clap_lex v0.7.5
+#10 49.93   Downloaded heck v0.5.0
+#10 49.94   Downloaded serde_spanned v1.0.0
+#10 49.94   Downloaded indexmap v2.5.0
+#10 49.94   Downloaded ryu v1.0.20
+#10 49.95   Downloaded toml_parser v1.0.1
+#10 49.95   Downloaded anstyle v1.0.11
+#10 49.95   Downloaded itoa v1.0.15
+#10 49.96   Downloaded serde_derive v1.0.228
+#10 49.96   Downloaded tempfile v3.20.0
+#10 49.96   Downloaded toml v0.9.2
+#10 49.97   Downloaded proc-macro2 v1.0.95
+#10 49.97   Downloaded syn v2.0.104
+#10 49.99   Downloaded rustix v1.0.8
+#10 50.03   Downloaded errno v0.3.13
+#10 50.03   Downloaded hashbrown v0.14.5
+#10 50.03   Downloaded unicode-ident v1.0.18
+#10 50.04   Downloaded winnow v0.7.12
+#10 50.05   Downloaded clap v4.5.41
+#10 50.06   Downloaded log v0.4.27
+#10 50.07   Downloaded getrandom v0.3.3
+#10 50.07   Downloaded serde_json v1.0.140
+#10 50.08   Downloaded libc v0.2.174
+#10 50.12   Downloaded serde_core v1.0.228
+#10 50.12   Downloaded toml_writer v1.0.2
+#10 50.12   Downloaded memchr v2.7.5
+#10 50.13   Downloaded linux-raw-sys v0.9.4
+#10 50.22    Compiling proc-macro2 v1.0.95
+#10 50.22    Compiling unicode-ident v1.0.18
+#10 50.22    Compiling serde_core v1.0.228
+#10 50.22    Compiling serde v1.0.228
+#10 50.28    Compiling libc v0.2.174
+#10 50.40    Compiling utf8parse v0.2.2
+#10 50.52    Compiling anstyle-parse v0.2.7
+#10 50.67    Compiling rustix v1.0.8
+#10 50.68    Compiling is_terminal_polyfill v1.70.1
+#10 50.72    Compiling getrandom v0.3.3
+#10 50.88    Compiling quote v1.0.40
+#10 50.91    Compiling anstyle v1.0.11
+#10 51.12    Compiling syn v2.0.104
+#10 51.13    Compiling colorchoice v1.0.4
+#10 51.13    Compiling anstyle-query v1.1.3
+#10 51.18    Compiling anstream v0.6.19
+#10 52.46    Compiling strsim v0.11.1
+#10 53.30    Compiling clap_lex v0.7.5
+#10 53.35    Compiling linux-raw-sys v0.9.4
+#10 53.61    Compiling bitflags v2.9.1
+#10 53.66    Compiling serde_json v1.0.140
+#10 53.73    Compiling winnow v0.7.12
+#10 53.75    Compiling cfg-if v1.0.1
+#10 53.81    Compiling serde_derive v1.0.228
+#10 53.98    Compiling clap_builder v4.5.41
+#10 55.90    Compiling toml_parser v1.0.1
+#10 57.50    Compiling once_cell v1.21.3
+#10 57.71    Compiling toml_datetime v0.7.0
+#10 57.79    Compiling serde_spanned v1.0.0
+#10 57.88    Compiling ryu v1.0.20
+#10 58.09    Compiling memchr v2.7.5
+#10 58.11    Compiling hashbrown v0.14.5
+#10 58.16    Compiling itoa v1.0.15
+#10 58.25    Compiling fastrand v2.3.0
+#10 58.50    Compiling cbindgen v0.29.4
+#10 58.70    Compiling equivalent v1.0.2
+#10 58.87    Compiling indexmap v2.5.0
+#10 59.48    Compiling tempfile v3.20.0
+#10 59.68    Compiling toml v0.9.2
+#10 61.80    Compiling clap v4.5.41
+#10 61.84    Compiling log v0.4.27
+#10 62.09    Compiling heck v0.5.0
+#10 95.28     Finished `release` profile [optimized] target(s) in 1m 35s
+#10 95.28   Installing /opt/rust/cargo/bin/cbindgen
+#10 95.28    Installed package `cbindgen v0.29.4` (executable `cbindgen`)
+#10 95.34      Summary Successfully installed bindgen-cli, cbindgen!
+#10 95.34 bindgen 0.73.2
+#10 95.35 cbindgen 0.29.4
+#10 DONE 95.4s
+
+#11 [ 6/13] RUN rustup component add rustfmt && rustfmt --version
+#11 0.206 info: downloading component rustfmt
+#11 0.571 rustfmt 1.9.0-nightly (4c9d2bfe4a 2026-07-01)
+#11 DONE 0.6s
+
+#12 [ 7/13] RUN apt-get update && apt-get install -y --no-install-recommends         build-essential cmake         llvm-15-dev clang-15 libclang-15-dev         libclc-15-dev libclc-15         llvm-spirv-15 libllvmspirvlib-15-dev         libdrm-dev         glslang-tools     && rm -rf /var/lib/apt/lists/*     && glslangValidator --version
+#12 0.184 Get:1 http://deb.debian.org/debian bookworm-backports InRelease [59.4 kB]
+#12 0.193 Get:2 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#12 0.193 Get:3 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#12 0.194 Get:4 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+#12 0.296 Get:5 http://deb.debian.org/debian bookworm-backports/main amd64 Packages [300 kB]
+#12 0.356 Get:6 http://deb.debian.org/debian bookworm/main amd64 Packages [8,790 kB]
+#12 0.421 Get:7 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6,924 B]
+#12 0.475 Get:8 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [360 kB]
+#12 0.494 Get:9 https://apt.devkitpro.org stable InRelease [2,600 B]
+#12 0.647 Get:10 https://apt.devkitpro.org stable/main amd64 Packages [468 B]
+#12 1.185 Fetched 9,761 kB in 1s (9,675 kB/s)
+#12 1.185 Reading package lists...
+#12 1.671 Reading package lists...
+#12 2.165 Building dependency tree...
+#12 2.309 Reading state information...
+#12 2.435 build-essential is already the newest version (12.9).
+#12 2.435 cmake is already the newest version (3.31.6-2~bpo12+1).
+#12 2.435 The following additional packages will be installed:
+#12 2.435   icu-devtools lib32gcc-s1 lib32stdc++6 libc-bin libc-dev-bin libc-l10n libc6
+#12 2.435   libc6-dev libc6-i386 libclang-common-15-dev libclang-cpp15 libclang1-15
+#12 2.435   libcurl3-nss libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm-nouveau2
+#12 2.435   libdrm-radeon1 libdrm2 libffi-dev libgc1 libicu-dev libllvm15
+#12 2.435   libllvmspirvlib15 libncurses-dev libncurses6 libnspr4 libnss3 libobjc-12-dev
+#12 2.435   libobjc4 libpciaccess-dev libpciaccess0 libpfm4 libtinfo-dev libxml2
+#12 2.435   libxml2-dev libyaml-0-2 libz3-dev llvm-15 llvm-15-linker-tools
+#12 2.436   llvm-15-runtime llvm-15-tools locales nss-plugin-pem python3-yaml
+#12 2.436   spirv-tools
+#12 2.437 Suggested packages:
+#12 2.437   clang-15-doc wasi-libc glibc-doc libnss-nis libnss-nisplus manpages-dev
+#12 2.437   icu-doc ncurses-doc pciutils llvm-15-doc
+#12 2.437 Recommended packages:
+#12 2.437   manpages manpages-dev libc-devtools libgpm2 binfmt-support | systemd
+#12 2.738 The following NEW packages will be installed:
+#12 2.739   clang-15 glslang-tools icu-devtools lib32gcc-s1 lib32stdc++6 libc6-i386
+#12 2.739   libclang-15-dev libclang-common-15-dev libclang-cpp15 libclang1-15 libclc-15
+#12 2.739   libclc-15-dev libcurl3-nss libdrm-amdgpu1 libdrm-common libdrm-dev
+#12 2.739   libdrm-intel1 libdrm-nouveau2 libdrm-radeon1 libdrm2 libffi-dev libgc1
+#12 2.739   libicu-dev libllvm15 libllvmspirvlib-15-dev libllvmspirvlib15 libncurses-dev
+#12 2.739   libncurses6 libnspr4 libnss3 libobjc-12-dev libobjc4 libpciaccess-dev
+#12 2.739   libpciaccess0 libpfm4 libtinfo-dev libxml2-dev libyaml-0-2 libz3-dev llvm-15
+#12 2.739   llvm-15-dev llvm-15-linker-tools llvm-15-runtime llvm-15-tools llvm-spirv-15
+#12 2.739   nss-plugin-pem python3-yaml spirv-tools
+#12 2.740 The following packages will be upgraded:
+#12 2.740   libc-bin libc-dev-bin libc-l10n libc6 libc6-dev libxml2 locales
+#12 2.762 7 upgraded, 48 newly installed, 0 to remove and 66 not upgraded.
+#12 2.762 Need to get 169 MB of archives.
+#12 2.762 After this operation, 1,112 MB of additional disk space will be used.
+#12 2.762 Get:1 http://deb.debian.org/debian bookworm/main amd64 libc6-dev amd64 2.36-9+deb12u14 [1,904 kB]
+#12 2.782 Get:2 http://deb.debian.org/debian bookworm/main amd64 libc-dev-bin amd64 2.36-9+deb12u14 [48.1 kB]
+#12 2.784 Get:3 http://deb.debian.org/debian bookworm/main amd64 libc6 amd64 2.36-9+deb12u14 [2,759 kB]
+#12 2.805 Get:4 http://deb.debian.org/debian bookworm/main amd64 libc-bin amd64 2.36-9+deb12u14 [609 kB]
+#12 2.816 Get:5 http://deb.debian.org/debian bookworm/main amd64 libc-l10n all 2.36-9+deb12u14 [676 kB]
+#12 2.819 Get:6 http://deb.debian.org/debian bookworm/main amd64 locales all 2.36-9+deb12u14 [3,906 kB]
+#12 2.838 Get:7 http://deb.debian.org/debian bookworm/main amd64 libxml2 amd64 2.9.14+dfsg-1.3~deb12u6 [689 kB]
+#12 2.841 Get:8 http://deb.debian.org/debian bookworm/main amd64 libllvm15 amd64 1:15.0.6-4+b1 [23.1 MB]
+#12 2.937 Get:9 http://deb.debian.org/debian bookworm/main amd64 libclang-cpp15 amd64 1:15.0.6-4+b1 [11.6 MB]
+#12 2.981 Get:10 http://deb.debian.org/debian bookworm/main amd64 libgc1 amd64 1:8.2.2-3 [245 kB]
+#12 2.982 Get:11 http://deb.debian.org/debian bookworm/main amd64 libobjc4 amd64 12.2.0-14+deb12u1 [43.2 kB]
+#12 2.983 Get:12 http://deb.debian.org/debian bookworm/main amd64 libobjc-12-dev amd64 12.2.0-14+deb12u1 [170 kB]
+#12 2.984 Get:13 http://deb.debian.org/debian bookworm/main amd64 libc6-i386 amd64 2.36-9+deb12u14 [2,458 kB]
+#12 2.994 Get:14 http://deb.debian.org/debian bookworm/main amd64 lib32gcc-s1 amd64 12.2.0-14+deb12u1 [59.7 kB]
+#12 2.995 Get:15 http://deb.debian.org/debian bookworm/main amd64 lib32stdc++6 amd64 12.2.0-14+deb12u1 [643 kB]
+#12 2.999 Get:16 http://deb.debian.org/debian bookworm/main amd64 libclang-common-15-dev amd64 1:15.0.6-4+b1 [5,855 kB]
+#12 3.028 Get:17 http://deb.debian.org/debian bookworm/main amd64 llvm-15-linker-tools amd64 1:15.0.6-4+b1 [1,299 kB]
+#12 3.035 Get:18 http://deb.debian.org/debian bookworm/main amd64 libclang1-15 amd64 1:15.0.6-4+b1 [6,346 kB]
+#12 3.065 Get:19 http://deb.debian.org/debian bookworm/main amd64 clang-15 amd64 1:15.0.6-4+b1 [105 kB]
+#12 3.065 Get:20 http://deb.debian.org/debian bookworm/main amd64 spirv-tools amd64 2023.1-2 [3,729 kB]
+#12 3.102 Get:21 http://deb.debian.org/debian bookworm/main amd64 glslang-tools amd64 12.0.0-2 [2,117 kB]
+#12 3.114 Get:22 http://deb.debian.org/debian bookworm/main amd64 icu-devtools amd64 72.1-3+deb12u1 [206 kB]
+#12 3.116 Get:23 http://deb.debian.org/debian bookworm/main amd64 libclang-15-dev amd64 1:15.0.6-4+b1 [24.2 MB]
+#12 3.231 Get:24 http://deb.debian.org/debian bookworm/main amd64 libclc-15-dev all 1:15.0.6-4 [53.6 kB]
+#12 3.232 Get:25 http://deb.debian.org/debian bookworm/main amd64 libclc-15 all 1:15.0.6-4 [10.1 MB]
+#12 3.300 Get:26 http://deb.debian.org/debian bookworm/main amd64 libnspr4 amd64 2:4.35-1 [113 kB]
+#12 3.301 Get:27 http://deb.debian.org/debian-security bookworm-security/main amd64 libnss3 amd64 2:3.87.1-1+deb12u4 [1,331 kB]
+#12 3.304 Get:28 http://deb.debian.org/debian bookworm/main amd64 nss-plugin-pem amd64 1.0.8+1-1 [54.6 kB]
+#12 3.305 Get:29 http://deb.debian.org/debian bookworm/main amd64 libcurl3-nss amd64 7.88.1-10+deb12u15 [396 kB]
+#12 3.307 Get:30 http://deb.debian.org/debian bookworm/main amd64 libdrm-common all 2.4.114-1 [7,112 B]
+#12 3.308 Get:31 http://deb.debian.org/debian bookworm/main amd64 libdrm2 amd64 2.4.114-1+b1 [37.5 kB]
+#12 3.308 Get:32 http://deb.debian.org/debian bookworm/main amd64 libdrm-amdgpu1 amd64 2.4.114-1+b1 [20.9 kB]
+#12 3.309 Get:33 http://deb.debian.org/debian bookworm/main amd64 libpciaccess0 amd64 0.17-2 [51.4 kB]
+#12 3.309 Get:34 http://deb.debian.org/debian bookworm/main amd64 libdrm-intel1 amd64 2.4.114-1+b1 [64.0 kB]
+#12 3.310 Get:35 http://deb.debian.org/debian bookworm/main amd64 libdrm-radeon1 amd64 2.4.114-1+b1 [21.8 kB]
+#12 3.310 Get:36 http://deb.debian.org/debian bookworm/main amd64 libdrm-nouveau2 amd64 2.4.114-1+b1 [19.1 kB]
+#12 3.312 Get:37 http://deb.debian.org/debian bookworm/main amd64 libpciaccess-dev amd64 0.17-2 [54.8 kB]
+#12 3.316 Get:38 http://deb.debian.org/debian bookworm/main amd64 libdrm-dev amd64 2.4.114-1+b1 [287 kB]
+#12 3.318 Get:39 http://deb.debian.org/debian bookworm/main amd64 libffi-dev amd64 3.4.4-1 [59.4 kB]
+#12 3.352 Get:40 http://deb.debian.org/debian bookworm/main amd64 libicu-dev amd64 72.1-3+deb12u1 [10.3 MB]
+#12 3.391 Get:41 http://deb.debian.org/debian bookworm/main amd64 libllvmspirvlib15 amd64 15.0.0-2 [719 kB]
+#12 3.394 Get:42 http://deb.debian.org/debian bookworm/main amd64 libllvmspirvlib-15-dev amd64 15.0.0-2 [9,268 B]
+#12 3.394 Get:43 http://deb.debian.org/debian bookworm/main amd64 libncurses6 amd64 6.4-4 [103 kB]
+#12 3.394 Get:44 http://deb.debian.org/debian bookworm/main amd64 libncurses-dev amd64 6.4-4 [349 kB]
+#12 3.396 Get:45 http://deb.debian.org/debian bookworm/main amd64 libpfm4 amd64 4.13.0-1 [294 kB]
+#12 3.398 Get:46 http://deb.debian.org/debian bookworm/main amd64 libtinfo-dev amd64 6.4-4 [924 B]
+#12 3.398 Get:47 http://deb.debian.org/debian bookworm/main amd64 libxml2-dev amd64 2.9.14+dfsg-1.3~deb12u6 [785 kB]
+#12 3.401 Get:48 http://deb.debian.org/debian bookworm/main amd64 libyaml-0-2 amd64 0.2.5-1 [53.6 kB]
+#12 3.401 Get:49 http://deb.debian.org/debian bookworm/main amd64 libz3-dev amd64 4.8.12-3.1 [90.6 kB]
+#12 3.403 Get:50 http://deb.debian.org/debian bookworm/main amd64 llvm-15-runtime amd64 1:15.0.6-4+b1 [495 kB]
+#12 3.409 Get:51 http://deb.debian.org/debian bookworm/main amd64 llvm-15 amd64 1:15.0.6-4+b1 [12.6 MB]
+#12 3.454 Get:52 http://deb.debian.org/debian bookworm/main amd64 python3-yaml amd64 6.0-3+b2 [119 kB]
+#12 3.457 Get:53 http://deb.debian.org/debian bookworm/main amd64 llvm-15-tools amd64 1:15.0.6-4+b1 [436 kB]
+#12 3.461 Get:54 http://deb.debian.org/debian bookworm/main amd64 llvm-15-dev amd64 1:15.0.6-4+b1 [36.8 MB]
+#12 3.663 Get:55 http://deb.debian.org/debian bookworm/main amd64 llvm-spirv-15 amd64 15.0.0-2 [387 kB]
+#12 4.722 Preconfiguring packages ...
+#12 4.786 Fetched 169 MB in 1s (184 MB/s)
+#12 4.799 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22612 files and directories currently installed.)
+#12 4.813 Preparing to unpack .../libc6-dev_2.36-9+deb12u14_amd64.deb ...
+#12 4.816 Unpacking libc6-dev:amd64 (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 5.250 Preparing to unpack .../libc-dev-bin_2.36-9+deb12u14_amd64.deb ...
+#12 5.253 Unpacking libc-dev-bin (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 5.278 Preparing to unpack .../libc6_2.36-9+deb12u14_amd64.deb ...
+#12 5.356 Unpacking libc6:amd64 (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 5.695 Setting up libc6:amd64 (2.36-9+deb12u14) ...
+#12 6.789 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22612 files and directories currently installed.)
+#12 6.801 Preparing to unpack .../libc-bin_2.36-9+deb12u14_amd64.deb ...
+#12 6.803 Unpacking libc-bin (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 6.874 Setting up libc-bin (2.36-9+deb12u14) ...
+#12 6.906 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 22612 files and directories currently installed.)
+#12 6.919 Preparing to unpack .../00-libc-l10n_2.36-9+deb12u14_all.deb ...
+#12 6.921 Unpacking libc-l10n (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 6.986 Preparing to unpack .../01-locales_2.36-9+deb12u14_all.deb ...
+#12 6.989 Unpacking locales (2.36-9+deb12u14) over (2.36-9+deb12u10) ...
+#12 7.577 Preparing to unpack .../02-libxml2_2.9.14+dfsg-1.3~deb12u6_amd64.deb ...
+#12 7.580 Unpacking libxml2:amd64 (2.9.14+dfsg-1.3~deb12u6) over (2.9.14+dfsg-1.3~deb12u2) ...
+#12 7.636 Selecting previously unselected package libllvm15:amd64.
+#12 7.638 Preparing to unpack .../03-libllvm15_1%3a15.0.6-4+b1_amd64.deb ...
+#12 7.639 Unpacking libllvm15:amd64 (1:15.0.6-4+b1) ...
+#12 8.380 Selecting previously unselected package libclang-cpp15.
+#12 8.382 Preparing to unpack .../04-libclang-cpp15_1%3a15.0.6-4+b1_amd64.deb ...
+#12 8.387 Unpacking libclang-cpp15 (1:15.0.6-4+b1) ...
+#12 8.831 Selecting previously unselected package libgc1:amd64.
+#12 8.833 Preparing to unpack .../05-libgc1_1%3a8.2.2-3_amd64.deb ...
+#12 8.834 Unpacking libgc1:amd64 (1:8.2.2-3) ...
+#12 8.859 Selecting previously unselected package libobjc4:amd64.
+#12 8.862 Preparing to unpack .../06-libobjc4_12.2.0-14+deb12u1_amd64.deb ...
+#12 8.862 Unpacking libobjc4:amd64 (12.2.0-14+deb12u1) ...
+#12 8.878 Selecting previously unselected package libobjc-12-dev:amd64.
+#12 8.881 Preparing to unpack .../07-libobjc-12-dev_12.2.0-14+deb12u1_amd64.deb ...
+#12 8.881 Unpacking libobjc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#12 8.910 Selecting previously unselected package libc6-i386.
+#12 8.912 Preparing to unpack .../08-libc6-i386_2.36-9+deb12u14_amd64.deb ...
+#12 8.916 Unpacking libc6-i386 (2.36-9+deb12u14) ...
+#12 9.131 Selecting previously unselected package lib32gcc-s1.
+#12 9.133 Preparing to unpack .../09-lib32gcc-s1_12.2.0-14+deb12u1_amd64.deb ...
+#12 9.134 Unpacking lib32gcc-s1 (12.2.0-14+deb12u1) ...
+#12 9.153 Selecting previously unselected package lib32stdc++6.
+#12 9.155 Preparing to unpack .../10-lib32stdc++6_12.2.0-14+deb12u1_amd64.deb ...
+#12 9.156 Unpacking lib32stdc++6 (12.2.0-14+deb12u1) ...
+#12 9.210 Selecting previously unselected package libclang-common-15-dev.
+#12 9.213 Preparing to unpack .../11-libclang-common-15-dev_1%3a15.0.6-4+b1_amd64.deb ...
+#12 9.214 Unpacking libclang-common-15-dev (1:15.0.6-4+b1) ...
+#12 9.529 Selecting previously unselected package llvm-15-linker-tools.
+#12 9.532 Preparing to unpack .../12-llvm-15-linker-tools_1%3a15.0.6-4+b1_amd64.deb ...
+#12 9.533 Unpacking llvm-15-linker-tools (1:15.0.6-4+b1) ...
+#12 9.629 Selecting previously unselected package libclang1-15.
+#12 9.631 Preparing to unpack .../13-libclang1-15_1%3a15.0.6-4+b1_amd64.deb ...
+#12 9.633 Unpacking libclang1-15 (1:15.0.6-4+b1) ...
+#12 10.02 Selecting previously unselected package clang-15.
+#12 10.02 Preparing to unpack .../14-clang-15_1%3a15.0.6-4+b1_amd64.deb ...
+#12 10.02 Unpacking clang-15 (1:15.0.6-4+b1) ...
+#12 10.05 Selecting previously unselected package spirv-tools.
+#12 10.05 Preparing to unpack .../15-spirv-tools_2023.1-2_amd64.deb ...
+#12 10.05 Unpacking spirv-tools (2023.1-2) ...
+#12 10.29 Selecting previously unselected package glslang-tools.
+#12 10.30 Preparing to unpack .../16-glslang-tools_12.0.0-2_amd64.deb ...
+#12 10.30 Unpacking glslang-tools (12.0.0-2) ...
+#12 10.44 Selecting previously unselected package icu-devtools.
+#12 10.45 Preparing to unpack .../17-icu-devtools_72.1-3+deb12u1_amd64.deb ...
+#12 10.45 Unpacking icu-devtools (72.1-3+deb12u1) ...
+#12 10.48 Selecting previously unselected package libclang-15-dev.
+#12 10.48 Preparing to unpack .../18-libclang-15-dev_1%3a15.0.6-4+b1_amd64.deb ...
+#12 10.48 Unpacking libclang-15-dev (1:15.0.6-4+b1) ...
+#12 11.62 Selecting previously unselected package libclc-15-dev.
+#12 11.63 Preparing to unpack .../19-libclc-15-dev_1%3a15.0.6-4_all.deb ...
+#12 11.63 Unpacking libclc-15-dev (1:15.0.6-4) ...
+#12 11.68 Selecting previously unselected package libclc-15.
+#12 11.69 Preparing to unpack .../20-libclc-15_1%3a15.0.6-4_all.deb ...
+#12 11.69 Unpacking libclc-15 (1:15.0.6-4) ...
+#12 12.12 Selecting previously unselected package libnspr4:amd64.
+#12 12.12 Preparing to unpack .../21-libnspr4_2%3a4.35-1_amd64.deb ...
+#12 12.12 Unpacking libnspr4:amd64 (2:4.35-1) ...
+#12 12.14 Selecting previously unselected package libnss3:amd64.
+#12 12.14 Preparing to unpack .../22-libnss3_2%3a3.87.1-1+deb12u4_amd64.deb ...
+#12 12.15 Unpacking libnss3:amd64 (2:3.87.1-1+deb12u4) ...
+#12 12.25 Selecting previously unselected package nss-plugin-pem:amd64.
+#12 12.25 Preparing to unpack .../23-nss-plugin-pem_1.0.8+1-1_amd64.deb ...
+#12 12.25 Unpacking nss-plugin-pem:amd64 (1.0.8+1-1) ...
+#12 12.27 Selecting previously unselected package libcurl3-nss:amd64.
+#12 12.27 Preparing to unpack .../24-libcurl3-nss_7.88.1-10+deb12u15_amd64.deb ...
+#12 12.27 Unpacking libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+#12 12.30 Selecting previously unselected package libdrm-common.
+#12 12.31 Preparing to unpack .../25-libdrm-common_2.4.114-1_all.deb ...
+#12 12.31 Unpacking libdrm-common (2.4.114-1) ...
+#12 12.32 Selecting previously unselected package libdrm2:amd64.
+#12 12.33 Preparing to unpack .../26-libdrm2_2.4.114-1+b1_amd64.deb ...
+#12 12.33 Unpacking libdrm2:amd64 (2.4.114-1+b1) ...
+#12 12.34 Selecting previously unselected package libdrm-amdgpu1:amd64.
+#12 12.35 Preparing to unpack .../27-libdrm-amdgpu1_2.4.114-1+b1_amd64.deb ...
+#12 12.35 Unpacking libdrm-amdgpu1:amd64 (2.4.114-1+b1) ...
+#12 12.36 Selecting previously unselected package libpciaccess0:amd64.
+#12 12.37 Preparing to unpack .../28-libpciaccess0_0.17-2_amd64.deb ...
+#12 12.37 Unpacking libpciaccess0:amd64 (0.17-2) ...
+#12 12.39 Selecting previously unselected package libdrm-intel1:amd64.
+#12 12.39 Preparing to unpack .../29-libdrm-intel1_2.4.114-1+b1_amd64.deb ...
+#12 12.39 Unpacking libdrm-intel1:amd64 (2.4.114-1+b1) ...
+#12 12.41 Selecting previously unselected package libdrm-radeon1:amd64.
+#12 12.41 Preparing to unpack .../30-libdrm-radeon1_2.4.114-1+b1_amd64.deb ...
+#12 12.41 Unpacking libdrm-radeon1:amd64 (2.4.114-1+b1) ...
+#12 12.43 Selecting previously unselected package libdrm-nouveau2:amd64.
+#12 12.43 Preparing to unpack .../31-libdrm-nouveau2_2.4.114-1+b1_amd64.deb ...
+#12 12.43 Unpacking libdrm-nouveau2:amd64 (2.4.114-1+b1) ...
+#12 12.44 Selecting previously unselected package libpciaccess-dev:amd64.
+#12 12.45 Preparing to unpack .../32-libpciaccess-dev_0.17-2_amd64.deb ...
+#12 12.45 Unpacking libpciaccess-dev:amd64 (0.17-2) ...
+#12 12.46 Selecting previously unselected package libdrm-dev:amd64.
+#12 12.47 Preparing to unpack .../33-libdrm-dev_2.4.114-1+b1_amd64.deb ...
+#12 12.47 Unpacking libdrm-dev:amd64 (2.4.114-1+b1) ...
+#12 12.50 Selecting previously unselected package libffi-dev:amd64.
+#12 12.51 Preparing to unpack .../34-libffi-dev_3.4.4-1_amd64.deb ...
+#12 12.51 Unpacking libffi-dev:amd64 (3.4.4-1) ...
+#12 12.53 Selecting previously unselected package libicu-dev:amd64.
+#12 12.53 Preparing to unpack .../35-libicu-dev_72.1-3+deb12u1_amd64.deb ...
+#12 12.53 Unpacking libicu-dev:amd64 (72.1-3+deb12u1) ...
+#12 13.00 Selecting previously unselected package libllvmspirvlib15:amd64.
+#12 13.00 Preparing to unpack .../36-libllvmspirvlib15_15.0.0-2_amd64.deb ...
+#12 13.00 Unpacking libllvmspirvlib15:amd64 (15.0.0-2) ...
+#12 13.07 Selecting previously unselected package libllvmspirvlib-15-dev:amd64.
+#12 13.07 Preparing to unpack .../37-libllvmspirvlib-15-dev_15.0.0-2_amd64.deb ...
+#12 13.07 Unpacking libllvmspirvlib-15-dev:amd64 (15.0.0-2) ...
+#12 13.08 Selecting previously unselected package libncurses6:amd64.
+#12 13.09 Preparing to unpack .../38-libncurses6_6.4-4_amd64.deb ...
+#12 13.09 Unpacking libncurses6:amd64 (6.4-4) ...
+#12 13.11 Selecting previously unselected package libncurses-dev:amd64.
+#12 13.11 Preparing to unpack .../39-libncurses-dev_6.4-4_amd64.deb ...
+#12 13.11 Unpacking libncurses-dev:amd64 (6.4-4) ...
+#12 13.16 Selecting previously unselected package libpfm4:amd64.
+#12 13.16 Preparing to unpack .../40-libpfm4_4.13.0-1_amd64.deb ...
+#12 13.16 Unpacking libpfm4:amd64 (4.13.0-1) ...
+#12 13.20 Selecting previously unselected package libtinfo-dev:amd64.
+#12 13.20 Preparing to unpack .../41-libtinfo-dev_6.4-4_amd64.deb ...
+#12 13.20 Unpacking libtinfo-dev:amd64 (6.4-4) ...
+#12 13.22 Selecting previously unselected package libxml2-dev:amd64.
+#12 13.22 Preparing to unpack .../42-libxml2-dev_2.9.14+dfsg-1.3~deb12u6_amd64.deb ...
+#12 13.22 Unpacking libxml2-dev:amd64 (2.9.14+dfsg-1.3~deb12u6) ...
+#12 13.28 Selecting previously unselected package libyaml-0-2:amd64.
+#12 13.29 Preparing to unpack .../43-libyaml-0-2_0.2.5-1_amd64.deb ...
+#12 13.29 Unpacking libyaml-0-2:amd64 (0.2.5-1) ...
+#12 13.30 Selecting previously unselected package libz3-dev:amd64.
+#12 13.31 Preparing to unpack .../44-libz3-dev_4.8.12-3.1_amd64.deb ...
+#12 13.31 Unpacking libz3-dev:amd64 (4.8.12-3.1) ...
+#12 13.33 Selecting previously unselected package llvm-15-runtime.
+#12 13.33 Preparing to unpack .../45-llvm-15-runtime_1%3a15.0.6-4+b1_amd64.deb ...
+#12 13.33 Unpacking llvm-15-runtime (1:15.0.6-4+b1) ...
+#12 13.38 Selecting previously unselected package llvm-15.
+#12 13.38 Preparing to unpack .../46-llvm-15_1%3a15.0.6-4+b1_amd64.deb ...
+#12 13.38 Unpacking llvm-15 (1:15.0.6-4+b1) ...
+#12 13.92 Selecting previously unselected package python3-yaml.
+#12 13.92 Preparing to unpack .../47-python3-yaml_6.0-3+b2_amd64.deb ...
+#12 13.92 Unpacking python3-yaml (6.0-3+b2) ...
+#12 13.94 Selecting previously unselected package llvm-15-tools.
+#12 13.95 Preparing to unpack .../48-llvm-15-tools_1%3a15.0.6-4+b1_amd64.deb ...
+#12 13.95 Unpacking llvm-15-tools (1:15.0.6-4+b1) ...
+#12 14.06 Selecting previously unselected package llvm-15-dev.
+#12 14.07 Preparing to unpack .../49-llvm-15-dev_1%3a15.0.6-4+b1_amd64.deb ...
+#12 14.07 Unpacking llvm-15-dev (1:15.0.6-4+b1) ...
+#12 15.43 Selecting previously unselected package llvm-spirv-15.
+#12 15.43 Preparing to unpack .../50-llvm-spirv-15_15.0.0-2_amd64.deb ...
+#12 15.43 Unpacking llvm-spirv-15 (15.0.0-2) ...
+#12 15.49 Setting up libz3-dev:amd64 (4.8.12-3.1) ...
+#12 15.49 Setting up libpciaccess0:amd64 (0.17-2) ...
+#12 15.50 Setting up libclc-15-dev (1:15.0.6-4) ...
+#12 15.50 Setting up libc-l10n (2.36-9+deb12u14) ...
+#12 15.50 Setting up libpciaccess-dev:amd64 (0.17-2) ...
+#12 15.50 Setting up libyaml-0-2:amd64 (0.2.5-1) ...
+#12 15.50 Setting up python3-yaml (6.0-3+b2) ...
+#12 15.63 Setting up libffi-dev:amd64 (3.4.4-1) ...
+#12 15.63 Setting up locales (2.36-9+deb12u14) ...
+#12 16.09 Generating locales (this might take a while)...
+#12 16.10   en_US.UTF-8... done
+#12 17.33 Generation complete.
+#12 17.34 Setting up libpfm4:amd64 (4.13.0-1) ...
+#12 17.34 Setting up spirv-tools (2023.1-2) ...
+#12 17.34 Setting up libnspr4:amd64 (2:4.35-1) ...
+#12 17.34 Setting up libncurses6:amd64 (6.4-4) ...
+#12 17.35 Setting up icu-devtools (72.1-3+deb12u1) ...
+#12 17.35 Setting up libgc1:amd64 (1:8.2.2-3) ...
+#12 17.35 Setting up libc6-i386 (2.36-9+deb12u14) ...
+#12 17.35 Setting up libc-dev-bin (2.36-9+deb12u14) ...
+#12 17.35 Setting up libdrm-common (2.4.114-1) ...
+#12 17.36 Setting up libxml2:amd64 (2.9.14+dfsg-1.3~deb12u6) ...
+#12 17.36 Setting up glslang-tools (12.0.0-2) ...
+#12 17.36 Setting up libobjc4:amd64 (12.2.0-14+deb12u1) ...
+#12 17.36 Setting up libnss3:amd64 (2:3.87.1-1+deb12u4) ...
+#12 17.36 Setting up lib32gcc-s1 (12.2.0-14+deb12u1) ...
+#12 17.37 Setting up lib32stdc++6 (12.2.0-14+deb12u1) ...
+#12 17.37 Setting up libobjc-12-dev:amd64 (12.2.0-14+deb12u1) ...
+#12 17.37 Setting up libdrm2:amd64 (2.4.114-1+b1) ...
+#12 17.37 Setting up libllvm15:amd64 (1:15.0.6-4+b1) ...
+#12 17.37 Setting up libc6-dev:amd64 (2.36-9+deb12u14) ...
+#12 17.38 Setting up libicu-dev:amd64 (72.1-3+deb12u1) ...
+#12 17.38 Setting up libdrm-amdgpu1:amd64 (2.4.114-1+b1) ...
+#12 17.38 Setting up libncurses-dev:amd64 (6.4-4) ...
+#12 17.38 Setting up libdrm-nouveau2:amd64 (2.4.114-1+b1) ...
+#12 17.39 Setting up libllvmspirvlib15:amd64 (15.0.0-2) ...
+#12 17.39 Setting up libclang-common-15-dev (1:15.0.6-4+b1) ...
+#12 17.39 Setting up llvm-15-linker-tools (1:15.0.6-4+b1) ...
+#12 17.39 Setting up libdrm-radeon1:amd64 (2.4.114-1+b1) ...
+#12 17.39 Setting up libdrm-intel1:amd64 (2.4.114-1+b1) ...
+#12 17.39 Setting up nss-plugin-pem:amd64 (1.0.8+1-1) ...
+#12 17.40 Setting up libllvmspirvlib-15-dev:amd64 (15.0.0-2) ...
+#12 17.40 Setting up libclang1-15 (1:15.0.6-4+b1) ...
+#12 17.40 Setting up llvm-15-tools (1:15.0.6-4+b1) ...
+#12 17.40 Setting up libxml2-dev:amd64 (2.9.14+dfsg-1.3~deb12u6) ...
+#12 17.40 Setting up libclang-cpp15 (1:15.0.6-4+b1) ...
+#12 17.41 Setting up llvm-15-runtime (1:15.0.6-4+b1) ...
+#12 17.41 Setting up libcurl3-nss:amd64 (7.88.1-10+deb12u15) ...
+#12 17.41 Setting up llvm-spirv-15 (15.0.0-2) ...
+#12 17.41 Setting up libclc-15 (1:15.0.6-4) ...
+#12 17.42 Setting up libtinfo-dev:amd64 (6.4-4) ...
+#12 17.42 Setting up llvm-15 (1:15.0.6-4+b1) ...
+#12 17.42 Setting up libdrm-dev:amd64 (2.4.114-1+b1) ...
+#12 17.42 Setting up libclang-15-dev (1:15.0.6-4+b1) ...
+#12 17.42 Setting up clang-15 (1:15.0.6-4+b1) ...
+#12 17.43 Setting up llvm-15-dev (1:15.0.6-4+b1) ...
+#12 17.43 Processing triggers for libc-bin (2.36-9+deb12u14) ...
+#12 17.51 Glslang Version: 11:12.0.0
+#12 17.51 ESSL Version: OpenGL ES GLSL 3.20 glslang Khronos. 12.0.0
+#12 17.51 GLSL Version: 4.60 glslang Khronos. 12.0.0
+#12 17.51 SPIR-V Version 0x00010600, Revision 1
+#12 17.51 GLSL.std.450 Version 100, Revision 1
+#12 17.51 Khronos Tool ID 8
+#12 17.51 SPIR-V Generator Version 11
+#12 17.51 GL_KHR_vulkan_glsl version 100
+#12 17.51 ARB_GL_gl_spirv version 100
+#12 DONE 20.0s
+
+#13 [ 8/13] RUN echo "deb http://deb.debian.org/debian trixie main" > /etc/apt/sources.list.d/trixie.list     && printf 'Package: *\nPin: release n=trixie\nPin-Priority: 100\n' > /etc/apt/preferences.d/trixie-pin     && apt-get update     && apt-get install -y --no-install-recommends -t trixie spirv-tools     && rm -rf /var/lib/apt/lists/*
+#13 0.150 Get:1 http://deb.debian.org/debian bookworm-backports InRelease [59.4 kB]
+#13 0.159 Get:2 http://deb.debian.org/debian bookworm InRelease [151 kB]
+#13 0.160 Get:3 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+#13 0.161 Get:4 http://deb.debian.org/debian-security bookworm-security InRelease [34.8 kB]
+#13 0.162 Get:5 http://deb.debian.org/debian trixie InRelease [140 kB]
+#13 0.251 Get:6 http://deb.debian.org/debian bookworm-backports/main amd64 Packages [300 kB]
+#13 0.309 Get:7 http://deb.debian.org/debian bookworm/main amd64 Packages [8,790 kB]
+#13 0.351 Get:8 https://apt.devkitpro.org stable InRelease [2,600 B]
+#13 0.372 Get:9 http://deb.debian.org/debian bookworm-updates/main amd64 Packages [6,924 B]
+#13 0.422 Get:10 http://deb.debian.org/debian-security bookworm-security/main amd64 Packages [360 kB]
+#13 0.519 Get:11 http://deb.debian.org/debian trixie/main amd64 Packages [9,678 kB]
+#13 0.596 Get:12 https://apt.devkitpro.org stable/main amd64 Packages [468 B]
+#13 1.937 Fetched 19.6 MB in 2s (10.9 MB/s)
+#13 1.937 Reading package lists...
+#13 2.894 Reading package lists...
+#13 3.848 Building dependency tree...
+#13 4.072 Reading state information...
+#13 4.303 The following packages were automatically installed and are no longer required:
+#13 4.303   libnsl-dev libtirpc-dev
+#13 4.303 Use 'apt autoremove' to remove them.
+#13 4.304 The following additional packages will be installed:
+#13 4.304   base-files dpkg dpkg-dev gcc-14-base lib32gcc-s1 lib32stdc++6 libasan8
+#13 4.304   libatomic1 libc-bin libc-dev-bin libc-l10n libc6 libc6-dev libc6-i386
+#13 4.304   libcc1-0 libdpkg-perl libgcc-s1 libgomp1 libitm1 liblsan0 libobjc4
+#13 4.305   libquadmath0 libstdc++6 libtsan2 libubsan1 libzstd1 locales
+#13 4.306 Suggested packages:
+#13 4.306   debsig-verify debian-keyring debian-tag2upload-keyring libc-devtools
+#13 4.306   glibc-doc libnss-nis libnss-nisplus manpages-dev sensible-utils bzr
+#13 4.306 Recommended packages:
+#13 4.306   fakeroot libalgorithm-merge-perl manpages manpages-dev
+#13 4.306   libfile-fcntllock-perl liblocale-gettext-perl
+#13 4.413 The following NEW packages will be installed:
+#13 4.414   gcc-14-base
+#13 4.415 The following packages will be upgraded:
+#13 4.415   base-files dpkg dpkg-dev lib32gcc-s1 lib32stdc++6 libasan8 libatomic1
+#13 4.415   libc-bin libc-dev-bin libc-l10n libc6 libc6-dev libc6-i386 libcc1-0
+#13 4.416   libdpkg-perl libgcc-s1 libgomp1 libitm1 liblsan0 libobjc4 libquadmath0
+#13 4.416   libstdc++6 libtsan2 libubsan1 libzstd1 locales spirv-tools
+#13 4.440 27 upgraded, 1 newly installed, 0 to remove and 213 not upgraded.
+#13 4.440 Need to get 30.5 MB of archives.
+#13 4.440 After this operation, 14.1 MB of additional disk space will be used.
+#13 4.440 Get:1 http://deb.debian.org/debian trixie/main amd64 base-files amd64 13.8+deb13u7 [88.3 kB]
+#13 4.444 Get:2 http://deb.debian.org/debian trixie/main amd64 libc-l10n all 2.41-12+deb13u4 [740 kB]
+#13 4.456 Get:3 http://deb.debian.org/debian trixie/main amd64 locales all 2.41-12+deb13u4 [3,931 kB]
+#13 4.471 Get:4 http://deb.debian.org/debian trixie/main amd64 libc6-i386 amd64 2.41-12+deb13u4 [2,539 kB]
+#13 4.480 Get:5 http://deb.debian.org/debian trixie/main amd64 libc-dev-bin amd64 2.41-12+deb13u4 [60.0 kB]
+#13 4.480 Get:6 http://deb.debian.org/debian trixie/main amd64 dpkg-dev all 1.22.22 [1,337 kB]
+#13 4.485 Get:7 http://deb.debian.org/debian trixie/main amd64 libdpkg-perl all 1.22.22 [651 kB]
+#13 4.488 Get:8 http://deb.debian.org/debian trixie/main amd64 libc6-dev amd64 2.41-12+deb13u4 [1,995 kB]
+#13 4.495 Get:9 http://deb.debian.org/debian trixie/main amd64 libc6 amd64 2.41-12+deb13u4 [2,847 kB]
+#13 4.506 Get:10 http://deb.debian.org/debian trixie/main amd64 libc-bin amd64 2.41-12+deb13u4 [638 kB]
+#13 4.508 Get:11 http://deb.debian.org/debian trixie/main amd64 gcc-14-base amd64 14.2.0-19 [49.4 kB]
+#13 4.509 Get:12 http://deb.debian.org/debian trixie/main amd64 libgcc-s1 amd64 14.2.0-19 [72.8 kB]
+#13 4.510 Get:13 http://deb.debian.org/debian trixie/main amd64 libzstd1 amd64 1.5.7+dfsg-1 [304 kB]
+#13 4.511 Get:14 http://deb.debian.org/debian trixie/main amd64 dpkg amd64 1.22.22 [1,537 kB]
+#13 4.517 Get:15 http://deb.debian.org/debian trixie/main amd64 libstdc++6 amd64 14.2.0-19 [714 kB]
+#13 4.520 Get:16 http://deb.debian.org/debian trixie/main amd64 lib32gcc-s1 amd64 14.2.0-19 [88.4 kB]
+#13 4.521 Get:17 http://deb.debian.org/debian trixie/main amd64 lib32stdc++6 amd64 14.2.0-19 [745 kB]
+#13 4.523 Get:18 http://deb.debian.org/debian trixie/main amd64 libasan8 amd64 14.2.0-19 [2,725 kB]
+#13 4.533 Get:19 http://deb.debian.org/debian trixie/main amd64 libatomic1 amd64 14.2.0-19 [9,308 B]
+#13 4.533 Get:20 http://deb.debian.org/debian trixie/main amd64 libcc1-0 amd64 14.2.0-19 [42.8 kB]
+#13 4.534 Get:21 http://deb.debian.org/debian trixie/main amd64 libgomp1 amd64 14.2.0-19 [137 kB]
+#13 4.535 Get:22 http://deb.debian.org/debian trixie/main amd64 libitm1 amd64 14.2.0-19 [26.0 kB]
+#13 4.535 Get:23 http://deb.debian.org/debian trixie/main amd64 liblsan0 amd64 14.2.0-19 [1,204 kB]
+#13 4.540 Get:24 http://deb.debian.org/debian trixie/main amd64 libobjc4 amd64 14.2.0-19 [43.3 kB]
+#13 4.540 Get:25 http://deb.debian.org/debian trixie/main amd64 libquadmath0 amd64 14.2.0-19 [145 kB]
+#13 4.541 Get:26 http://deb.debian.org/debian trixie/main amd64 libtsan2 amd64 14.2.0-19 [2,460 kB]
+#13 4.551 Get:27 http://deb.debian.org/debian trixie/main amd64 libubsan1 amd64 14.2.0-19 [1,074 kB]
+#13 4.555 Get:28 http://deb.debian.org/debian trixie/main amd64 spirv-tools amd64 2025.1~rc1-1 [4,260 kB]
+#13 5.649 Preconfiguring packages ...
+#13 5.719 Fetched 30.5 MB in 0s (209 MB/s)
+#13 5.735 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28778 files and directories currently installed.)
+#13 5.753 Preparing to unpack .../base-files_13.8+deb13u7_amd64.deb ...
+#13 5.774 Unpacking base-files (13.8+deb13u7) over (12.4+deb12u11) ...
+#13 5.822 Setting up base-files (13.8+deb13u7) ...
+#13 5.823 Installing new version of config file /etc/debian_version ...
+#13 5.825 Installing new version of config file /etc/issue ...
+#13 5.826 Installing new version of config file /etc/issue.net ...
+#13 5.835 Updating /etc/profile to current default.
+#13 5.861 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28796 files and directories currently installed.)
+#13 5.877 Preparing to unpack .../0-libc-l10n_2.41-12+deb13u4_all.deb ...
+#13 5.879 Unpacking libc-l10n (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 5.951 Preparing to unpack .../1-locales_2.41-12+deb13u4_all.deb ...
+#13 5.954 Unpacking locales (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 6.537 Preparing to unpack .../2-libc6-i386_2.41-12+deb13u4_amd64.deb ...
+#13 6.542 Unpacking libc6-i386 (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 6.813 Preparing to unpack .../3-libc-dev-bin_2.41-12+deb13u4_amd64.deb ...
+#13 6.815 Unpacking libc-dev-bin (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 6.838 Preparing to unpack .../4-dpkg-dev_1.22.22_all.deb ...
+#13 6.841 Unpacking dpkg-dev (1.22.22) over (1.21.22) ...
+#13 6.932 Preparing to unpack .../5-libdpkg-perl_1.22.22_all.deb ...
+#13 6.934 Unpacking libdpkg-perl (1.22.22) over (1.21.22) ...
+#13 7.040 Preparing to unpack .../6-libc6-dev_2.41-12+deb13u4_amd64.deb ...
+#13 7.042 Unpacking libc6-dev:amd64 (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 7.461 Preparing to unpack .../7-libc6_2.41-12+deb13u4_amd64.deb ...
+#13 7.532 Checking for services that may need to be restarted...
+#13 7.539 Checking init scripts...
+#13 7.567 Unpacking libc6:amd64 (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 7.858 Setting up libc6:amd64 (2.41-12+deb13u4) ...
+#13 7.915 Checking for services that may need to be restarted...
+#13 7.922 Checking init scripts...
+#13 7.927 Nothing to restart.
+#13 7.957 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28882 files and directories currently installed.)
+#13 7.973 Preparing to unpack .../libc-bin_2.41-12+deb13u4_amd64.deb ...
+#13 7.976 Unpacking libc-bin (2.41-12+deb13u4) over (2.36-9+deb12u14) ...
+#13 8.045 Setting up libc-bin (2.41-12+deb13u4) ...
+#13 8.087 Selecting previously unselected package gcc-14-base:amd64.
+#13 8.087 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28882 files and directories currently installed.)
+#13 8.103 Preparing to unpack .../gcc-14-base_14.2.0-19_amd64.deb ...
+#13 8.104 Unpacking gcc-14-base:amd64 (14.2.0-19) ...
+#13 8.128 Setting up gcc-14-base:amd64 (14.2.0-19) ...
+#13 8.148 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28887 files and directories currently installed.)
+#13 8.162 Preparing to unpack .../libgcc-s1_14.2.0-19_amd64.deb ...
+#13 8.165 Unpacking libgcc-s1:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 8.193 Setting up libgcc-s1:amd64 (14.2.0-19) ...
+#13 8.213 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28887 files and directories currently installed.)
+#13 8.228 Preparing to unpack .../libzstd1_1.5.7+dfsg-1_amd64.deb ...
+#13 8.230 Unpacking libzstd1:amd64 (1.5.7+dfsg-1) over (1.5.4+dfsg2-5) ...
+#13 8.273 Setting up libzstd1:amd64 (1.5.7+dfsg-1) ...
+#13 8.293 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28887 files and directories currently installed.)
+#13 8.309 Preparing to unpack .../dpkg_1.22.22_amd64.deb ...
+#13 8.312 Unpacking dpkg (1.22.22) over (1.21.22) ...
+#13 8.430 Setting up dpkg (1.22.22) ...
+#13 8.562 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28872 files and directories currently installed.)
+#13 8.577 Preparing to unpack .../libstdc++6_14.2.0-19_amd64.deb ...
+#13 8.593 Unpacking libstdc++6:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 8.662 Setting up libstdc++6:amd64 (14.2.0-19) ...
+#13 8.682 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 28872 files and directories currently installed.)
+#13 8.697 Preparing to unpack .../00-lib32gcc-s1_14.2.0-19_amd64.deb ...
+#13 8.699 Unpacking lib32gcc-s1 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 8.724 Preparing to unpack .../01-lib32stdc++6_14.2.0-19_amd64.deb ...
+#13 8.726 Unpacking lib32stdc++6 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 8.791 Preparing to unpack .../02-libasan8_14.2.0-19_amd64.deb ...
+#13 8.794 Unpacking libasan8:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.001 Preparing to unpack .../03-libatomic1_14.2.0-19_amd64.deb ...
+#13 9.003 Unpacking libatomic1:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.023 Preparing to unpack .../04-libcc1-0_14.2.0-19_amd64.deb ...
+#13 9.025 Unpacking libcc1-0:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.045 Preparing to unpack .../05-libgomp1_14.2.0-19_amd64.deb ...
+#13 9.047 Unpacking libgomp1:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.074 Preparing to unpack .../06-libitm1_14.2.0-19_amd64.deb ...
+#13 9.076 Unpacking libitm1:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.096 Preparing to unpack .../07-liblsan0_14.2.0-19_amd64.deb ...
+#13 9.098 Unpacking liblsan0:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.197 Preparing to unpack .../08-libobjc4_14.2.0-19_amd64.deb ...
+#13 9.199 Unpacking libobjc4:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.221 Preparing to unpack .../09-libquadmath0_14.2.0-19_amd64.deb ...
+#13 9.223 Unpacking libquadmath0:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.250 Preparing to unpack .../10-libtsan2_14.2.0-19_amd64.deb ...
+#13 9.253 Unpacking libtsan2:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.433 Preparing to unpack .../11-libubsan1_14.2.0-19_amd64.deb ...
+#13 9.435 Unpacking libubsan1:amd64 (14.2.0-19) over (12.2.0-14+deb12u1) ...
+#13 9.525 Preparing to unpack .../12-spirv-tools_2025.1~rc1-1_amd64.deb ...
+#13 9.527 Unpacking spirv-tools (2025.1~rc1-1) over (2023.1-2) ...
+#13 9.815 Setting up libc-l10n (2.41-12+deb13u4) ...
+#13 9.818 Setting up libobjc4:amd64 (14.2.0-19) ...
+#13 9.820 Setting up libgomp1:amd64 (14.2.0-19) ...
+#13 9.822 Setting up locales (2.41-12+deb13u4) ...
+#13 9.823 Installing new version of config file /etc/locale.alias ...
+#13 10.30 Generating locales (this might take a while)...
+#13 10.30   en_US.UTF-8... done
+#13 11.54 Generation complete.
+#13 11.55 Setting up spirv-tools (2025.1~rc1-1) ...
+#13 11.55 Setting up libquadmath0:amd64 (14.2.0-19) ...
+#13 11.55 Setting up libatomic1:amd64 (14.2.0-19) ...
+#13 11.55 Setting up libdpkg-perl (1.22.22) ...
+#13 11.56 Setting up libubsan1:amd64 (14.2.0-19) ...
+#13 11.56 Setting up libasan8:amd64 (14.2.0-19) ...
+#13 11.56 Setting up libc6-i386 (2.41-12+deb13u4) ...
+#13 11.56 Setting up libtsan2:amd64 (14.2.0-19) ...
+#13 11.57 Setting up libc-dev-bin (2.41-12+deb13u4) ...
+#13 11.57 Setting up libcc1-0:amd64 (14.2.0-19) ...
+#13 11.57 Setting up liblsan0:amd64 (14.2.0-19) ...
+#13 11.57 Setting up libitm1:amd64 (14.2.0-19) ...
+#13 11.57 Setting up dpkg-dev (1.22.22) ...
+#13 11.58 Setting up lib32gcc-s1 (14.2.0-19) ...
+#13 11.58 Setting up lib32stdc++6 (14.2.0-19) ...
+#13 11.58 Setting up libc6-dev:amd64 (2.41-12+deb13u4) ...
+#13 11.58 Processing triggers for libc-bin (2.41-12+deb13u4) ...
+#13 11.59 Processing triggers for base-files (13.8+deb13u7) ...
+#13 DONE 11.7s
+
+#14 [ 9/13] RUN mkdir -p /opt/switch-cross-include/libdrm     && cp /usr/include/xf86drm.h /usr/include/xf86drmMode.h /opt/switch-cross-include/ 2>/dev/null || true     && cp -r /usr/include/libdrm/* /opt/switch-cross-include/ 2>/dev/null || true     && cp -r /usr/include/libdrm/* /opt/switch-cross-include/libdrm/ 2>/dev/null || true     && ls /opt/switch-cross-include/ | head
+#14 0.149 amdgpu_drm.h
+#14 0.149 amdgpu.h
+#14 0.149 drm_fourcc.h
+#14 0.149 drm.h
+#14 0.149 drm_mode.h
+#14 0.149 drm_sarea.h
+#14 0.149 i915_drm.h
+#14 0.149 intel_aub.h
+#14 0.149 intel_bufmgr.h
+#14 0.149 intel_debug.h
+#14 DONE 0.2s
+
+#15 [10/13] COPY cross-include/ /opt/switch-cross-include/
+#15 DONE 0.0s
+
+#16 [11/13] RUN XDIR=/opt/devkitpro/portlibs/switch/lib/pkgconfig; mkdir -p "$XDIR";     for name in libclc LLVMSPIRVLib SPIRV-Tools SPIRV-Tools-shared SPIRV-Headers; do       f=$(find /usr -name "$name.pc" 2>/dev/null | head -1);       if [ -n "$f" ]; then cp "$f" "$XDIR/"; echo "baked $f"; fi;     done
+#16 0.201 baked /usr/lib/pkgconfig/libclc.pc
+#16 0.269 baked /usr/lib/x86_64-linux-gnu/pkgconfig/LLVMSPIRVLib.pc
+#16 0.336 baked /usr/lib/x86_64-linux-gnu/pkgconfig/SPIRV-Tools.pc
+#16 DONE 0.5s
+
+#17 [12/13] RUN /opt/devkitpro/devkitA64/bin/aarch64-none-elf-ar rcs         /opt/devkitpro/portlibs/switch/lib/libdl.a
+#17 DONE 0.1s
+
+#18 [13/13] WORKDIR /work
+#18 DONE 0.0s
+
+#19 exporting to image
+#19 exporting layers
+#19 exporting layers 9.3s done
+#19 writing image sha256:6b772bdfc71e8015af7d6e321e87c4602103952e6e981728742931810397498a done
+#19 naming to docker.io/library/nxvk done
+#19 DONE 9.3s
+>> building native tools
+>> building Rust std sysroot for aarch64-switch-horizon
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded rustc-demangle v0.1.27
+  Downloaded adler2 v2.0.1
+  Downloaded foldhash v0.2.0
+  Downloaded rustc-literal-escaper v0.0.8
+  Downloaded gimli v0.32.3
+  Downloaded addr2line v0.25.1
+  Downloaded hashbrown v0.17.1
+  Downloaded libc v0.2.185
+  Downloaded miniz_oxide v0.8.9
+  Downloaded getopts v0.2.24
+  Downloaded object v0.37.3
+  Downloaded memchr v2.7.6
+   Compiling compiler_builtins v0.1.160 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
+   Compiling core v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core)
+   Compiling libc v0.2.185
+   Compiling object v0.37.3
+   Compiling std v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std)
+The Meson build system
+Version: 1.12.1
+Source dir: /work
+Build dir: /work/switch/build/native
+Build type: native build
+Project name: mesa
+Project version: 26.2.2
+C compiler for the host machine: cc (gcc 12.2.0 "cc (Debian 12.2.0-14+deb12u1) 12.2.0")
+C linker for the host machine: cc ld.bfd 2.40
+C++ compiler for the host machine: c++ (gcc 12.2.0 "c++ (Debian 12.2.0-14+deb12u1) 12.2.0")
+C++ linker for the host machine: c++ ld.bfd 2.40
+Host machine cpu family: x86_64
+Host machine cpu: x86_64
+Checking for size of "void*" : 8 
+Checking if "-mtls-dialect=gnu2" runs: YES
+Checking if "split TLSDESC" links: YES 
+Dependency libglvnd for host machine skipped: feature glvnd disabled
+Program glslangValidator found: YES (/usr/bin/glslangValidator)
+Dependency libva for host machine skipped: feature gallium-va disabled
+Program python3.16 found: NO
+Program python3.15 found: NO
+Program python3.14 found: NO
+Program python3.13 found: NO
+Program python3.12 found: NO
+Program python3.11 found: YES 3.11.2 3.11.2 (/usr/bin/python3.11)
+Fetching value of define "ETIME" : 62 
+Compiler for C supports arguments -gsplit-dwarf: YES 
+Compiler for C supports link arguments -Wl,--gdb-index: NO 
+Checking for function "bswap32" : YES 
+Checking for function "bswap64" : YES 
+Checking for function "clz" : YES 
+Checking for function "clzll" : YES 
+Checking for function "ctz" : YES 
+Checking for function "expect" : YES 
+Checking for function "ffs" : YES 
+Checking for function "ffsll" : YES 
+Checking for function "popcount" : YES 
+Checking for function "popcountll" : YES 
+Checking for function "unreachable" : YES 
+Checking for function "types_compatible_p" : YES 
+Checking for function "__builtin_add_overflow" : YES 
+Checking for function "__builtin_add_overflow_p" : YES 
+Checking for function "__builtin_sub_overflow_p" : YES 
+Checking for function "__builtin_arm_get_fpscr" : NO 
+Checking for function "__builtin_arm_set_fpscr" : NO 
+Checking for function "__builtin_aarch64_get_fpcr" : NO 
+Checking for function "__builtin_aarch64_set_fpcr" : NO 
+Compiler for C supports function attribute const: YES 
+Compiler for C supports function attribute flatten: YES 
+Compiler for C supports function attribute malloc: YES 
+Compiler for C supports function attribute pure: YES 
+Compiler for C supports function attribute unused: YES 
+Compiler for C supports function attribute warn_unused_result: YES 
+Compiler for C supports function attribute weak: YES 
+Compiler for C supports function attribute format: YES 
+Compiler for C supports function attribute packed: YES 
+Compiler for C supports function attribute returns_nonnull: YES 
+Compiler for C supports function attribute alias: YES 
+Compiler for C supports function attribute noreturn: YES 
+Compiler for C supports function attribute optimize: YES 
+Compiler for C supports function attribute cold: YES 
+Compiler for C supports function attribute visibility:hidden: YES 
+Checking if "__uint128_t" compiles: YES 
+Checking for function "reallocarray" : YES 
+Checking for function "fmemopen" : YES 
+Checking if "gc-sections" links: YES 
+Compiler for C supports arguments -Werror=implicit-function-declaration: YES 
+Compiler for C supports arguments -Werror=missing-prototypes: YES 
+Compiler for C supports arguments -Werror=return-type: YES 
+Compiler for C supports arguments -Werror=empty-body: YES 
+Compiler for C supports arguments -Werror=incompatible-pointer-types: YES 
+Compiler for C supports arguments -Werror=int-conversion: YES 
+Compiler for C supports arguments -Wimplicit-fallthrough: YES 
+Compiler for C supports arguments -Wmisleading-indentation: YES 
+Compiler for C supports arguments -Wno-error=maybe-uninitialized: YES 
+Compiler for C supports arguments -Wno-missing-field-initializers: YES 
+Compiler for C supports arguments -Wno-format-truncation: YES 
+Compiler for C supports arguments -Wno-nonnull-compare: YES 
+Compiler for C supports arguments -fno-math-errno: YES 
+Compiler for C supports arguments -fno-trapping-math: YES 
+Compiler for C supports arguments -Qunused-arguments: NO 
+Compiler for C supports arguments -fno-common: YES 
+Compiler for C supports arguments -Wno-unknown-pragmas: YES 
+Compiler for C supports arguments -Wno-microsoft-enum-value: NO 
+Compiler for C supports arguments -Wno-unused-function: YES 
+Compiler for C supports arguments -Werror=format: YES 
+Compiler for C supports arguments -Wformat-security: YES 
+Compiler for C supports arguments -Werror=thread-safety: NO 
+Compiler for C supports arguments -ffunction-sections: YES 
+Compiler for C supports arguments -fdata-sections: YES 
+Compiler for C supports arguments -Wno-unused-variable: YES 
+Compiler for C supports arguments -Wno-unused-but-set-variable: YES 
+Compiler for C supports arguments /wd4189: NO 
+Compiler for C++ supports arguments -Werror=return-type: YES 
+Compiler for C++ supports arguments -Werror=empty-body: YES 
+Compiler for C++ supports arguments -Wmisleading-indentation: YES 
+Compiler for C++ supports arguments -Wno-error=maybe-uninitialized: YES 
+Compiler for C++ supports arguments -Wno-non-virtual-dtor: YES 
+Compiler for C++ supports arguments -Wno-missing-field-initializers: YES 
+Compiler for C++ supports arguments -Wno-format-truncation: YES 
+Compiler for C++ supports arguments -fno-math-errno: YES 
+Compiler for C++ supports arguments -fno-trapping-math: YES 
+Compiler for C++ supports arguments -Qunused-arguments: NO 
+Compiler for C++ supports arguments -flifetime-dse=1: YES 
+Compiler for C++ supports arguments -Wno-unknown-pragmas: YES 
+Compiler for C++ supports arguments -Wno-microsoft-enum-value: NO 
+Compiler for C++ supports arguments -Werror=format: YES 
+Compiler for C++ supports arguments -Wformat-security: YES 
+Compiler for C++ supports arguments -ffunction-sections: YES 
+Compiler for C++ supports arguments -fdata-sections: YES 
+Compiler for C++ supports arguments -Wno-unused-variable: YES 
+Compiler for C++ supports arguments -Wno-unused-but-set-variable: YES 
+Compiler for C++ supports arguments /wd4189: NO 
+Compiler for C supports arguments -Wno-override-init: YES 
+Compiler for C supports arguments -Wno-initializer-overrides: NO 
+Compiler for C supports arguments -Werror=pointer-arith: YES 
+Compiler for C supports arguments -Werror=vla: YES 
+Compiler for C supports arguments -Werror=gnu-empty-initializer: NO 
+Compiler for C supports arguments -Wgnu-pointer-arith: NO 
+Compiler for C++ supports arguments -Werror=pointer-arith: YES 
+Compiler for C++ supports arguments -Werror=vla: YES 
+Compiler for C++ supports arguments -Werror=gnu-empty-initializer: NO 
+Compiler for C++ supports arguments -Wgnu-pointer-arith: NO 
+Compiler for C supports arguments -Werror=date-time: YES 
+Compiler for C supports arguments -Werror=gnu-alignof-expression: NO 
+Compiler for C supports arguments -Werror=ignored-qualifiers: YES 
+Compiler for C supports arguments -Werror=implicit-fallthrough: YES 
+Compiler for C supports arguments -Werror=int-conversion: YES (cached)
+Compiler for C supports arguments -Werror=missing-prototypes: YES (cached)
+Compiler for C supports arguments -Werror=pragma-pack: NO 
+Compiler for C supports arguments -Werror=pragma-pack-suspicious-include: NO 
+Compiler for C supports arguments -Werror=sizeof-array-div: YES 
+Compiler for C supports arguments -Werror=string-plus-int: NO 
+Compiler for C supports arguments -Werror=unreachable-code-loop-increment: NO 
+Compiler for C++ supports arguments -D_LIBCPP_ENABLE_THREAD_SAFETY_ANNOTATIONS: YES 
+Compiler for C++ supports arguments -Werror=date-time: YES 
+Compiler for C++ supports arguments -Werror=gnu-alignof-expression: NO 
+Compiler for C++ supports arguments -Werror=ignored-qualifiers: YES 
+Compiler for C++ supports arguments -Werror=implicit-fallthrough: YES 
+Compiler for C++ supports arguments -Werror=pragma-pack: NO 
+Compiler for C++ supports arguments -Werror=pragma-pack-suspicious-include: NO 
+Compiler for C++ supports arguments -Werror=sizeof-array-div: YES 
+Compiler for C++ supports arguments -Werror=string-plus-int: NO 
+Compiler for C++ supports arguments -Werror=unreachable-code-loop-increment: NO 
+Compiler for C++ supports arguments -Werror=missing-declarations: YES 
+Checking for function "__builtin_ia32_clflushopt" : YES 
+Checking if "GCC atomic builtins" compiles: YES 
+Checking if "GCC atomic builtins required -latomic" links: YES 
+Checking if "GCC 64bit atomics" with dependency  links: YES 
+Library ws2_32 found: NO
+Header "sys/sysmacros.h" has symbol "major" : YES 
+Header "sys/sysmacros.h" has symbol "minor" : YES 
+Header "sys/sysmacros.h" has symbol "makedev" : YES 
+Header "sys/mkdev.h" has symbol "major" : NO 
+Check usable header "sched.h" : YES 
+Checking for function "sched_getaffinity" : YES 
+Check usable header "xlocale.h" : NO 
+Check usable header "linux/futex.h" : YES 
+Check usable header "endian.h" : YES 
+Check usable header "dlfcn.h" : YES 
+Check usable header "sys/shm.h" : YES 
+Check usable header "cet.h" : YES 
+Check usable header "pthread_np.h" : NO 
+Check usable header "poll.h" : YES 
+Check usable header "sys/inotify.h" : YES 
+Check usable header "linux/udmabuf.h" : YES 
+Checking for function "strtof" : YES 
+Checking for function "mkostemp" : YES 
+Checking for function "memfd_create" : YES 
+Checking for function "random_r" : YES 
+Checking for function "flock" : YES 
+Checking for function "strtok_r" : YES 
+Checking for function "getrandom" : YES 
+Checking for function "qsort_s" : NO 
+Checking for function "posix_fallocate" : YES 
+Checking for function "secure_getenv" : YES 
+Checking for function "sysconf" : YES 
+Checking if "GNU qsort_r" links: YES 
+Header "time.h" has symbol "struct timespec" : YES 
+Checking for function "thrd_create" : YES 
+Header "errno.h" has symbol "program_invocation_name" : YES 
+Header "math.h" has symbol "issignaling" : YES 
+Checking for function "posix_memalign" : YES 
+Checking whether type "struct dirent" has member "d_type" : YES 
+Checking if "strtod has locale support" links: YES 
+Checking if "Bsymbolic" links: YES 
+Checking if "version-script" links: YES 
+Checking if "dynamic-list" links: YES 
+Compiler for C supports link arguments -Wl,--build-id=sha1: YES 
+Checking for function "dlopen" : YES 
+Checking for function "dladdr" with dependency : YES 
+Checking for function "dl_iterate_phdr" : YES 
+Checking for function "clock_gettime" : YES 
+Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+Found CMake: /usr/bin/cmake (3.31.6)
+Run-time dependency zlib found: NO  (tried pkg-config and system)
+Looking for a fallback subproject for the dependency zlib
+Downloading zlib source from http://zlib.net/fossils/zlib-1.3.1.tar.gz
+Downloading zlib patch from https://wrapdb.mesonbuild.com/v2/zlib_1.3.1-1/get_patch
+
+Executing subproject zlib for machine: host 
+
+zlib| Project name: zlib
+zlib| Project version: 1.3.1
+zlib| C compiler for the host machine: cc (gcc 12.2.0 "cc (Debian 12.2.0-14+deb12u1) 12.2.0")
+zlib| C linker for the host machine: cc ld.bfd 2.40
+zlib| Compiler for C supports link arguments -Wl,--version-script,/work/subprojects/zlib-1.3.1/zlib.map: YES
+zlib| Found pkg-config: YES (/usr/bin/pkg-config) 1.8.1
+zlib| Build targets in project: 2
+zlib| Subproject zlib finished.
+
+Dependency zlib for host machine from subproject subprojects/zlib-1.3.1 found: YES 1.3.1
+Run-time dependency libdisplay-info found: NO  (tried pkg-config and cmake)
+Run-time dependency libzstd found: NO  (tried pkg-config and cmake)
+Run-time dependency threads found: YES
+Checking for function "pthread_setaffinity_np" with dependency threads: YES 
+Run-time dependency expat found: NO  (tried pkg-config)
+Looking for a fallback subproject for the dependency expat
+Downloading expat source from https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.xz
+Downloading expat patch from https://wrapdb.mesonbuild.com/v2/expat_2.5.0-3/get_patch
+
+Executing subproject expat for machine: host 
+
+expat| Project name: expat
+expat| Project version: 2.5.0
+expat| C compiler for the host machine: cc (gcc 12.2.0 "cc (Debian 12.2.0-14+deb12u1) 12.2.0")
+expat| C linker for the host machine: cc ld.bfd 2.40
+expat| Run-time dependency libbsd-overlay found: NO  (tried pkg-config and cmake)
+expat| Checking for function "arc4random_buf" with dependency libbsd-overlay: YES
+expat| Checking for function "arc4random" with dependency libbsd-overlay: YES
+expat| Has header "dlfcn.h" : YES
+expat| Has header "fcntl.h" : YES
+expat| Has header "inttypes.h" : YES
+expat| Has header "memory.h" : YES
+expat| Has header "stdint.h" : YES
+expat| Has header "stdlib.h" : YES
+expat| Has header "strings.h" : YES
+expat| Has header "string.h" : YES
+expat| Has header "sys/stat.h" : YES
+expat| Has header "sys/types.h" : YES
+expat| Has header "unistd.h" : YES
+expat| Has header "stdlib.h" : YES (cached)
+expat| Has header "stdarg.h" : YES
+expat| Has header "string.h" : YES (cached)
+expat| Has header "float.h" : YES
+expat| Checking for function "getpagesize" : YES
+expat| Checking for function "mmap" : YES
+expat| Checking for function "getrandom" : YES
+expat| Header "sys/types.h" has symbol "off_t" : YES
+expat| Header "sys/types.h" has symbol "size_t" : YES
+expat| Header "sys/syscall.h" has symbol "SYS_getrandom" : YES
+expat| Configuring expat_config.h using configuration
+expat| Compiler for C supports arguments -fno-strict-aliasing: YES
+expat| Configuring libexpat.def using configuration
+expat| Build targets in project: 3
+expat| Subproject expat finished.
+
+Dependency expat for host machine from subproject subprojects/expat-2.5.0 found: YES 2.5.0
+Library m found: YES
+Run-time dependency libdrm found: YES 2.4.114
+Run-time dependency libudev found: NO  (tried pkg-config and cmake)
+llvm-config found: YES (/usr/bin/llvm-config-15) 15.0.6
+Run-time dependency LLVM (modules: bitwriter, core, coverage, engine, executionengine, instcombine, irreader, libdriver, linker, lto, mcdisassembler, mcjit, native, option, scalaropts, target, transformutils, all-targets, coroutines, frontenddriver(missing but optional), frontendhlsl(missing but optional), lto, windowsdriver) found: YES 15.0.6
+Run-time dependency llvmspirvlib found: YES 15.0.0.0
+Run-time dependency spirv-tools found: YES 2025.1.1
+Library clang-cpp found: NO
+Library clangBasic found: YES
+Library clangAST found: YES
+Library clangCodeGen found: YES
+Library clangLex found: YES
+Library clangDriver found: YES
+Library clangFrontend found: YES
+Library clangFrontendTool found: YES
+Library clangHandleCXX found: YES
+Library clangHandleLLVM found: YES
+Library clangSerialization found: YES
+Library clangSema found: YES
+Library clangParse found: YES
+Library clangEdit found: YES
+Library clangAnalysis found: YES
+Library clangSupport found: YES
+Run-time dependency lua54 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua5.4 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua-5.4 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua53 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua5.3 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua-5.3 found: NO  (tried pkg-config and cmake)
+Run-time dependency lua found: NO  (tried pkg-config)
+Run-time dependency libelf found: NO  (tried pkg-config and cmake)
+Library elf found: NO
+Run-time dependency valgrind found: NO  (tried pkg-config)
+Program bison found: YES (/usr/bin/bison)
+Program bison found: YES 3.8.2 3.8.2 (/usr/bin/bison)
+Program flex found: YES (/usr/bin/flex)
+Program ln found: YES (/usr/bin/ln)
+Run-time dependency libunwind found: NO  (tried pkg-config and cmake)
+Run-time dependency OpenMP found: YES 4.5
+Library sensors found: NO
+Program nm found: YES (/usr/bin/nm)
+Program symbols-check.py found: YES (/usr/bin/python3 /work/bin/symbols-check.py)
+Program install_megadrivers.py found: YES (/usr/bin/python3 /work/bin/install_megadrivers.py)
+Checking for size of "void *" : 8 
+Compiler for C supports arguments -Wno-error: YES 
+Compiler for C supports arguments -Wno-misleading-indentation: YES 
+Checking whether type "spvtools::LinkerOptions" has member "SetAllowPtrTypeMismatch(true)" with dependency SPIRV-Tools: YES 
+Checking if "spvtools::LinkerOptions::SetUseHighestVersion" with dependency SPIRV-Tools compiles: YES 
+Compiler for C supports link arguments -fPIC: YES 
+Program decode.py found: YES (/work/src/compiler/isaspec/decode.py)
+Program encode.py found: YES (/work/src/compiler/isaspec/encode.py)
+Program sphinx-build skipped: feature html-docs disabled
+Build targets in project: 41
+
+mesa 26.2.2
+
+  Directories
+    prefix          : /work/switch/build/native-tools
+    libdir          : lib/x86_64-linux-gnu
+    includedir      : include
+
+  Common C and C++ arguments
+    c_cpp_args      : -mtls-dialect=gnu2
+
+  OpenGL
+    OpenGL          : NO
+    ES1             : NO
+    ES2             : NO
+    GLVND           : NO
+
+  DRI
+    Platform        : drm
+    Driver dir      : /work/switch/build/native-tools/lib/x86_64-linux-gnu/dri
+
+  GLX
+    Enabled         : NO
+    Provider        : None
+
+  EGL
+    Enabled         : NO
+
+  GBM
+    Enabled         : NO
+
+  Vulkan
+    Drivers         : NO
+
+  Video
+    Codecs          : NO
+    APIs            : NO
+    Encoding        : NO
+
+  LLVM
+    Required        : enabled
+    Version         : 15.0.6
+
+  Gallium
+    Enabled         : NO
+
+  Perfetto
+    Enabled         : NO
+
+  Teflon (TensorFlow Lite delegate)
+    Enabled         : NO
+
+  Subprojects (for host machine)
+    expat           : YES
+    zlib            : YES
+
+  User defined options
+    Native files    : /work/switch/crossfiles/native.txt
+    build-tests     : false
+    buildtype       : release
+    egl             : disabled
+    gallium-drivers : 
+    gbm             : disabled
+    gles1           : disabled
+    gles2           : disabled
+    glx             : disabled
+    install-mesa-clc: true
+    llvm            : enabled
+    mesa-clc        : enabled
+    opengl          : false
+    platforms       : 
+    precomp-compiler: auto
+    prefix          : /work/switch/build/native-tools
+    shared-llvm     : enabled
+    video-codecs    : 
+    vulkan-drivers  : 
+    vulkan-layers   : 
+
+Found ninja-1.11.1 at /usr/bin/ninja
+ninja: Entering directory `/work/switch/build/native'
+[1/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/adler32.c.o
+[2/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/crc32.c.o
+[3/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/inffast.c.o
+[4/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/zutil.c.o
+[5/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/compress.c.o
+[6/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/uncompr.c.o
+[7/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/inftrees.c.o
+[8/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/gzclose.c.o
+[9/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/infback.c.o
+[10/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/gzlib.c.o
+[11/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/trees.c.o
+[12/407] Compiling C object src/c11/impl/libmesa_util_c11.a.p/time.c.o
+[13/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/gzread.c.o
+[14/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/gzwrite.c.o
+[15/407] Compiling C object src/c11/impl/libmesa_util_c11.a.p/threads_posix.c.o
+[16/407] Linking static target src/c11/impl/libmesa_util_c11.a
+[17/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_sse2_x86-64_unix.S.o
+[18/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_sse41_x86-64_unix.S.o
+[19/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_avx2_x86-64_unix.S.o
+[20/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_avx512_x86-64_unix.S.o
+[21/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_portable.c.o
+[22/407] Compiling C object src/util/libmesa_util_clflush.a.p/cache_ops_x86.c.o
+[23/407] Linking static target src/util/libmesa_util_clflush.a
+[24/407] Compiling C object src/util/libmesa_util_clflushopt.a.p/cache_ops_x86_clflushopt.c.o
+[25/407] Linking static target src/util/libmesa_util_clflushopt.a
+[26/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/inflate.c.o
+[27/407] Compiling C object subprojects/zlib-1.3.1/libz.so.1.3.1.p/deflate.c.o
+[28/407] Linking target subprojects/zlib-1.3.1/libz.so.1.3.1
+[29/407] Generating src/util/shader_stats.h with a custom command (wrapped by meson to capture output)
+
+****
+lxml or rnc2rng missing, skipping validation
+If this script fails, install for diagnostics
+****
+
+
+[30/407] Generating symbol file subprojects/zlib-1.3.1/libz.so.1.3.1.p/libz.so.1.3.1.symbols
+[31/407] Compiling C object src/util/blake3/libblake3.a.p/blake3.c.o
+[32/407] Compiling C object src/util/libmesa_util_simd.a.p/streaming-load-memcpy.c.o
+[33/407] Linking static target src/util/libmesa_util_simd.a
+[34/407] Compiling C object src/util/blake3/libblake3.a.p/blake3_dispatch.c.o
+[35/407] Linking static target src/util/blake3/libblake3.a
+[36/407] Generating src/compiler/builtin_types.c with a custom command
+[37/407] Generating src/compiler/ir_expression_operation.h with a custom command (wrapped by meson to capture output)
+[38/407] Generating src/compiler/nir/nir_constant_expressions.c with a custom command (wrapped by meson to capture output)
+[39/407] Generating src/util/format/u_format_gen.h with a custom command (wrapped by meson to capture output)
+[40/407] Generating src/compiler/nir/nir_builder_opcodes.h with a custom command (wrapped by meson to capture output)
+[41/407] Generating src/util/format/u_format_pack.h with a custom command (wrapped by meson to capture output)
+[42/407] Generating src/compiler/nir/nir_opcodes.h with a custom command (wrapped by meson to capture output)
+[43/407] Compiling C object src/util/libmesa_util.a.p/bitscan.c.o
+[44/407] Generating src/compiler/nir/nir_opcodes.c with a custom command (wrapped by meson to capture output)
+[45/407] Compiling C object src/util/libmesa_util.a.p/build_id.c.o
+[46/407] Generating src/compiler/builtin_types.h with a custom command
+[47/407] Generating src/util/format/u_format_table.c with a custom command (wrapped by meson to capture output)
+[48/407] Compiling C object src/util/libmesa_util.a.p/anon_file.c.o
+[49/407] Compiling C object src/util/libmesa_util.a.p/cnd_monotonic.c.o
+[50/407] Compiling C object src/util/libmesa_util.a.p/compress.c.o
+[51/407] Compiling C object src/util/libmesa_util.a.p/blob.c.o
+[52/407] Compiling C object src/util/libmesa_util.a.p/crc32.c.o
+[53/407] Compiling C object src/util/libmesa_util.a.p/dag.c.o
+[54/407] Compiling C object src/util/libmesa_util.a.p/thread_sched.c.o
+[55/407] Compiling C object src/util/libmesa_util.a.p/disk_cache.c.o
+[56/407] Compiling C object src/util/libmesa_util.a.p/double.c.o
+[57/407] Compiling C object src/util/libmesa_util.a.p/fast_idiv_by_const.c.o
+[58/407] Compiling C object src/util/libmesa_util.a.p/disk_cache_os.c.o
+[59/407] Compiling C object src/util/libmesa_util.a.p/futex.c.o
+[60/407] Compiling C object src/util/libmesa_util.a.p/float8.c.o
+[61/407] Compiling C object src/util/libmesa_util.a.p/helpers.c.o
+[62/407] Compiling C object src/util/libmesa_util.a.p/half_float.c.o
+[63/407] Compiling C object src/util/libmesa_util.a.p/fossilize_db.c.o
+[64/407] Compiling C object src/util/libmesa_util.a.p/lut.c.o
+[65/407] Compiling C object src/util/libmesa_util.a.p/log.c.o
+[66/407] Compiling C object src/util/libmesa_util.a.p/memstream.c.o
+[67/407] Compiling C object src/util/libmesa_util.a.p/u_idalloc.c.o
+[68/407] Generating src/util/format_srgb with a custom command (wrapped by meson to capture output)
+[69/407] Compiling C object src/util/libmesa_util.a.p/os_time.c.o
+[70/407] Compiling C object src/util/libmesa_util.a.p/mesa-blake3.c.o
+[71/407] Compiling C object src/util/libmesa_util.a.p/os_file.c.o
+[72/407] Compiling C object src/util/libmesa_util.a.p/meson-generated_.._format_srgb.c.o
+[73/407] Compiling C object src/util/libmesa_util.a.p/os_memory_fd.c.o
+   Compiling rustc-std-workspace-core v1.99.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-core)
+[74/407] Compiling C object src/util/libmesa_util.a.p/hash_table.c.o
+[75/407] Compiling C object src/util/libmesa_util.a.p/os_socket.c.o
+[76/407] Compiling C object src/util/libmesa_util.a.p/os_file_notify.c.o
+   Compiling alloc v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc)
+[77/407] Compiling C object src/util/libmesa_util.a.p/os_misc.c.o
+   Compiling unwind v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/unwind)
+[78/407] Compiling C object src/util/libmesa_util.a.p/pb_slab.c.o
+[79/407] Compiling C object src/util/libmesa_util.a.p/rwlock.c.o
+   Compiling memchr v2.7.6
+[80/407] Compiling C object src/util/libmesa_util.a.p/u_process.c.o
+[81/407] Compiling C object src/util/libmesa_util.a.p/rand_xor.c.o
+[82/407] Compiling C++ object src/util/libmesa_util.a.p/u_qsort.cpp.o
+[83/407] Compiling C object src/util/libmesa_util.a.p/range_minimum_query.c.o
+   Compiling adler2 v2.0.1
+   Compiling rustc-demangle v0.1.27
+[84/407] Compiling C object src/util/libmesa_util.a.p/rb_tree.c.o
+   Compiling cfg-if v1.0.4
+   Compiling panic_abort v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_abort)
+   Compiling rustc-literal-escaper v0.0.8
+[85/407] Compiling C object src/util/libmesa_util.a.p/set.c.o
+[86/407] Compiling C object src/util/libmesa_util.a.p/register_allocate.c.o
+[87/407] Compiling C object src/util/libmesa_util.a.p/perf_u_trace.c.o
+[88/407] Compiling C object src/util/libmesa_util.a.p/ralloc.c.o
+[89/407] Compiling C object src/util/libmesa_util.a.p/simple_mtx.c.o
+[90/407] Compiling C object src/util/libmesa_util.a.p/rgtc.c.o
+[91/407] Compiling C object src/util/libmesa_util.a.p/strndup.c.o
+[92/407] Compiling C object src/util/libmesa_util.a.p/strtod.c.o
+[93/407] Compiling C object src/util/libmesa_util.a.p/string_buffer.c.o
+[94/407] Compiling C object src/util/libmesa_util.a.p/slab.c.o
+[95/407] Compiling C object src/util/libmesa_util.a.p/sparse_array.c.o
+[96/407] Compiling C object src/util/libmesa_util.a.p/u_atomic.c.o
+[97/407] Compiling C object src/util/libmesa_util.a.p/u_call_once.c.o
+[98/407] Compiling C object src/util/libmesa_util.a.p/u_dl.c.o
+[99/407] Compiling C object src/util/libmesa_util.a.p/u_dynarray.c.o
+[100/407] Compiling C object src/util/libmesa_util.a.p/u_hash_table.c.o
+[101/407] Compiling C object src/util/libmesa_util.a.p/u_queue.c.o
+[102/407] Compiling C object src/util/libmesa_util.a.p/u_range_remap.c.o
+[103/407] Compiling C object src/util/libmesa_util.a.p/softfloat.c.o
+[104/407] Compiling C object src/util/libmesa_util.a.p/u_string.c.o
+[105/407] Compiling C object src/util/libmesa_util.a.p/u_shader_variant_cache.c.o
+[106/407] Compiling C object src/util/libmesa_util.a.p/u_vector.c.o
+[107/407] Compiling C object src/util/libmesa_util.a.p/u_thread.c.o
+   Compiling rustc-std-workspace-alloc v1.99.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/rustc-std-workspace-alloc)
+   Compiling panic_unwind v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/panic_unwind)
+[108/407] Compiling C++ object src/util/libmesa_util.a.p/texcompress_astc_luts_wrap.cpp.o
+   Compiling gimli v0.32.3
+   Compiling hashbrown v0.17.1
+[109/407] Compiling C object src/util/libmesa_util.a.p/u_math.c.o
+[110/407] Compiling C object src/util/libmesa_util.a.p/u_mm.c.o
+[111/407] Compiling C object src/util/libmesa_util.a.p/u_debug_memory.c.o
+   Compiling miniz_oxide v0.8.9
+[112/407] Compiling C object src/util/libmesa_util.a.p/u_debug.c.o
+[113/407] Compiling C object src/util/libmesa_util.a.p/u_cpu_detect.c.o
+[114/407] Compiling C object src/util/libmesa_util.a.p/u_worklist.c.o
+[115/407] Compiling C object src/util/libmesa_util.a.p/vl_zscan_data.c.o
+   Compiling std_detect v0.1.5 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/std_detect)
+[116/407] Compiling C++ object src/util/libmesa_util.a.p/texcompress_astc_luts.cpp.o
+[117/407] Compiling C object src/util/libmesa_util.a.p/vma.c.o
+[118/407] Compiling C object src/util/libmesa_util.a.p/u_printf.c.o
+[119/407] Compiling C object src/util/libmesa_util.a.p/mesa_cache_db_multipart.c.o
+[120/407] Compiling C++ object src/util/libmesa_util.a.p/texcompress_astc.cpp.o
+[121/407] Compiling C object src/util/libmesa_util.a.p/mesa_cache_db.c.o
+[122/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_etc.c.o
+[123/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_latc.c.o
+[124/407] Compiling C object src/util/libmesa_util.a.p/format_u_format.c.o
+   Compiling addr2line v0.25.1
+[125/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_fxt1.c.o
+[126/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_tests.c.o
+[127/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_rgtc.c.o
+[128/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_unpack_neon.c.o
+[129/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_other.c.o
+[130/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_bptc.c.o
+[131/407] Compiling C object src/util/libmesa_util.a.p/u_debug_stack.c.o
+[132/407] Compiling C object src/util/libmesa_util.a.p/u_sync_provider.c.o
+[133/407] Compiling C object src/util/libmesa_util.a.p/u_debug_symbol.c.o
+[134/407] Compiling C object src/compiler/libcompiler.a.p/meson-generated_.._builtin_types.c.o
+[135/407] Compiling C object src/compiler/libcompiler.a.p/shader_enums.c.o
+[136/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_zs.c.o
+[137/407] Generating src/compiler/nir/nir_intrinsics.h with a custom command
+[138/407] Generating src/compiler/nir/nir_intrinsics_indices.h with a custom command
+[139/407] Generating src/compiler/nir/nir_intrinsic.c with a custom command
+[140/407] Compiling C object src/compiler/nir/libnir.a.p/meson-generated_.._nir_opcodes.c.o
+   Compiling proc_macro v0.0.0 (/opt/rust/rustup/toolchains/nightly-2026-07-02-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/proc_macro)
+[141/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_s3tc.c.o
+[142/407] Compiling C object src/compiler/nir/libnir.a.p/meson-generated_.._nir_intrinsics.c.o
+   Compiling stdsr v0.0.0 (/tmp/stdsr)
+[143/407] Compiling C object src/compiler/libcompiler.a.p/glsl_types.c.o
+[144/407] Linking static target src/compiler/libcompiler.a
+[145/407] Compiling C object src/compiler/nir/libnir.a.p/nir.c.o
+[146/407] Compiling C object src/compiler/nir/libnir.a.p/nir_builder.c.o
+    Finished `release` profile [optimized] target(s) in 41.40s
+=== sysroot std rlibs ===
+liballoc-077ba501b5d9ba5f.rlib
+liballoc-077ba501b5d9ba5f.rmeta
+libcore-8586bd031f89ad59.rlib
+libcore-8586bd031f89ad59.rmeta
+libstd-8690e504f01dcd45.rlib
+libstd-8690e504f01dcd45.rmeta
+libstd_detect-4574bda403b62978.rlib
+libstd_detect-4574bda403b62978.rmeta
+libstdsr-3055529ff924f94f.rlib
+libstdsr-3055529ff924f94f.rmeta
+=== plain rustc --sysroot test (no build-std) ===
+SYSROOT TEST: OK
+[147/407] Compiling C object src/compiler/nir/libnir.a.p/nir_convert_address_format.c.o
+touch: cannot touch 'switch/rust/sysroot/.stamp': Permission denied
+make: *** [Makefile:96: switch/rust/sysroot/.stamp] Error 1
+make: *** Waiting for unfinished jobs....
+[148/407] Compiling C object src/compiler/nir/libnir.a.p/nir_builtin_builder.c.o
+[149/407] Compiling C object src/util/libmesa_util.a.p/format_u_format_yuv.c.o
+[150/407] Compiling C object src/compiler/nir/libnir.a.p/nir_clip_cull_distance_io_utils.c.o
+[151/407] Compiling C object src/compiler/nir/libnir.a.p/nir_clone.c.o
+[152/407] Compiling C object src/compiler/nir/libnir.a.p/nir_control_flow.c.o
+[153/407] Compiling C object src/compiler/nir/libnir.a.p/nir_dominance.c.o
+[154/407] Compiling C object src/compiler/nir/libnir.a.p/nir_dominance_lca.c.o
+[155/407] Compiling C object src/compiler/nir/libnir.a.p/nir_divergence_analysis.c.o
+[156/407] Compiling C object src/compiler/nir/libnir.a.p/nir_deref.c.o
+[157/407] Compiling C object src/compiler/nir/libnir.a.p/nir_fixup_is_exported.c.o
+[158/407] Compiling C object src/compiler/nir/libnir.a.p/nir_downgrade_pls_vars.c.o
+[159/407] Compiling C object src/compiler/nir/libnir.a.p/nir_functions.c.o
+[160/407] Compiling C object src/compiler/nir/libnir.a.p/nir_from_ssa.c.o
+[161/407] Compiling C object src/compiler/nir/libnir.a.p/nir_format_convert.c.o
+[162/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gather_info.c.o
+[163/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gather_types.c.o
+[164/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gather_output_deps.c.o
+[165/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gather_tcs_info.c.o
+[166/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gather_xfb_info.c.o
+[167/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_group_loads.c.o
+[168/407] Compiling C object src/compiler/nir/libnir.a.p/nir_gs_count_vertices.c.o
+[169/407] Compiling C object src/compiler/nir/libnir.a.p/nir_inline_sysval.c.o
+[170/407] Compiling C object src/compiler/nir/libnir.a.p/nir_inline_uniforms.c.o
+[171/407] Compiling C object src/compiler/nir/libnir.a.p/nir_io_add_xfb_info.c.o
+[172/407] Compiling C object src/compiler/nir/libnir.a.p/nir_instr_set.c.o
+[173/407] Compiling C object src/compiler/nir/libnir.a.p/nir_legacy.c.o
+[174/407] Compiling C object src/compiler/nir/libnir.a.p/nir_linking_helpers.c.o
+[175/407] Compiling C object src/compiler/nir/libnir.a.p/nir_liveness.c.o
+[176/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_abort.c.o
+[177/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_alu.c.o
+[178/407] Compiling C object src/compiler/nir/libnir.a.p/nir_loop_analyze.c.o
+[179/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_alpha.c.o
+[180/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_amul.c.o
+[181/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_alu_width.c.o
+[182/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_bitmap.c.o
+[183/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_atomics_to_ssbo.c.o
+[184/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_bool_to_float.c.o
+[185/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_array_deref_of_vec.c.o
+[186/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_bool_to_int32.c.o
+[187/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_cl_images.c.o
+[188/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_calls_to_builtins.c.o
+[189/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_blend.c.o
+[190/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_clamp_color_outputs.c.o
+[191/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_clip_halfz.c.o
+[192/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_clip_disable.c.o
+[193/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_clip.c.o
+[194/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_const_arrays_to_uniforms.c.o
+[195/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_continue_constructs.c.o
+[196/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_convert_alu_types.c.o
+[197/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_variable_initializers.c.o
+[198/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_discard_if.c.o
+[199/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_cooperative_matrix.c.o
+[200/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_double_ops.c.o
+[201/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_fb_read.c.o
+[202/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_flatshade.c.o
+[203/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_floats.c.o
+[204/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_explicit_io.c.o
+[205/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_flrp.c.o
+[206/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_fragcoord_wtrans.c.o
+[207/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_fp16_conv.c.o
+[208/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_frag_coord_to_pixel_coord.c.o
+[209/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_fragcolor.c.o
+[210/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_frexp.c.o
+[211/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_global_vars_to_local.c.o
+[212/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_halt_to_return.c.o
+[213/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_goto_ifs.c.o
+[214/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_helper_writes.c.o
+[215/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_load_const_to_scalar.c.o
+[216/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_gs_intrinsics.c.o
+[217/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_idiv.c.o
+[218/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_image.c.o
+[219/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_locals_to_regs.c.o
+[220/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_image_atomics_to_global.c.o
+[221/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_indirect_derefs_to_if_else_trees.c.o
+[222/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_input_attachments.c.o
+[223/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_interpolation.c.o
+[224/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_int64.c.o
+[225/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_int_to_float.c.o
+[226/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io_array_vars_to_elements.c.o
+[227/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io_indirect_loads.c.o
+[228/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io.c.o
+[229/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io_vars_to_temporaries.c.o
+[230/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_is_helper_invocation.c.o
+[231/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io_to_scalar.c.o
+[232/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_io_vars_to_scalar.c.o
+[233/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_multiview.c.o
+[234/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_mediump.c.o
+[235/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_memcpy.c.o
+[236/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_memory_model.c.o
+[237/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_mem_access_bit_sizes.c.o
+[238/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_non_uniform_access.c.o
+[239/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_packing.c.o
+[240/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_passthrough_edgeflags.c.o
+[241/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_patch_vertices.c.o
+[242/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_pntc_ytransform.c.o
+[243/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_point_size.c.o
+[244/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_phis_to_scalar.c.o
+[245/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_point_smooth.c.o
+[246/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_poly_line_smooth.c.o
+[247/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_reg_intrinsics_to_ssa.c.o
+[248/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_printf.c.o
+[249/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_returns.c.o
+[250/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_readonly_images_to_tex.c.o
+[251/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_robust_access.c.o
+[252/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_sample_shading.c.o
+[253/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_samplers.c.o
+[254/407] Compiling C object src/util/libmesa_util.a.p/meson-generated_.._format_u_format_table.c.o
+[255/407] Linking static target src/util/libmesa_util.a
+[256/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_scratch.c.o
+[257/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_scratch_to_var.c.o
+[258/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_single_sampled.c.o
+[259/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_ssbo.c.o
+[260/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_system_values.c.o
+[261/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_task_shader.c.o
+[262/407] Generating src/compiler/nir/nir_opt_algebraic with a custom command
+[263/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_terminate_to_demote.c.o
+[264/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_tess_coord_z.c.o
+[265/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_tex_shadow.c.o
+[266/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_shader_calls.c.o
+[267/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_subgroups.c.o
+[268/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_texcoord_replace_late.c.o
+[269/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_texcoord_replace.c.o
+[270/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_two_sided_color.c.o
+[271/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_undef_to_zero.c.o
+[272/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_var_copies.c.o
+[273/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_vec_to_regs.c.o
+[274/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_vars_to_ssa.c.o
+[275/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_view_index_to_device_index.c.o
+[276/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_vec3_to_vec4.c.o
+[277/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_tex.c.o
+[278/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_viewport_transform.c.o
+[279/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_wpos_center.c.o
+[280/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_wpos_ytransform.c.o
+[281/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_wrmasks.c.o
+[282/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_bit_size.c.o
+[283/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_uniforms_to_ubo.c.o
+[284/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_ubo_vec4.c.o
+[285/407] Compiling C object src/compiler/nir/libnir.a.p/nir_metadata.c.o
+[286/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_sysvals_to_varyings.c.o
+[287/407] Compiling C object src/compiler/nir/libnir.a.p/nir_mod_analysis.c.o
+[288/407] Compiling C object src/compiler/nir/libnir.a.p/nir_move_vec_src_uses_to_dest.c.o
+[289/407] Compiling C object src/compiler/nir/libnir.a.p/nir_move_output_stores_to_end.c.o
+[290/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_workgroup_size.c.o
+[291/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_access.c.o
+[292/407] Compiling C object src/compiler/nir/libnir.a.p/nir_normalize_sin_cos.c.o
+[293/407] Compiling C object src/compiler/nir/libnir.a.p/nir_normalize_cubemap_coords.c.o
+[294/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_barriers.c.o
+[295/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_barycentric.c.o
+[296/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_clip_cull_const.c.o
+[297/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_call.c.o
+[298/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_comparison_pre.c.o
+[299/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_combine_stores.c.o
+[300/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_constant_folding.c.o
+[301/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_copy_propagate.c.o
+[302/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_cse.c.o
+[303/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_dce.c.o
+[304/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_dead_cf.c.o
+[305/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_dead_write_vars.c.o
+[306/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_find_array_copies.c.o
+[307/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_copy_prop_vars.c.o
+[308/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_fp_math_ctrl.c.o
+[309/407] Compiling C object src/compiler/nir/libnir.a.p/meson-generated_.._nir_constant_expressions.c.o
+[310/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_frag_coord_to_pixel_coord.c.o
+[311/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_fragdepth.c.o
+[312/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_generate_bfi.c.o
+[313/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_gcm.c.o
+[314/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_idiv_const.c.o
+[315/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_licm.c.o
+[316/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_load_skip_helpers.c.o
+[317/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_if.c.o
+[318/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_large_constants.c.o
+[319/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_intrinsics.c.o
+[320/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_loop.c.o
+[321/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_loop_unroll.c.o
+[322/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_move.c.o
+[323/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_memcpy.c.o
+[324/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_move_discards_to_top.c.o
+[325/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_mqsad.c.o
+[326/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_non_uniform_access.c.o
+[327/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_phi_precision.c.o
+[328/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_peephole_select.c.o
+[329/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_offsets.c.o
+[330/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_move_to_top.c.o
+[331/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_load_store_vectorize.c.o
+[332/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_ray_queries.c.o
+[333/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_phi_to_bool.c.o
+[334/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_preamble.c.o
+[335/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_reassociate_bfi.c.o
+[336/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_reassociate.c.o
+[337/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_rematerialize_compares.c.o
+[338/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_remove_phis.c.o
+[339/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_sink.c.o
+[340/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_shrink_stores.c.o
+[341/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_shrink_vectors.c.o
+[342/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_undef.c.o
+[343/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_uniform_atomics.c.o
+[344/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_shared_vars_to_subgroup.c.o
+[345/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_uub.c.o
+[346/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_uniform_subgroup.c.o
+[347/407] Compiling C object src/compiler/nir/libnir.a.p/nir_passthrough_gs.c.o
+[348/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_vectorize_io_vars.c.o
+[349/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_vectorize_io.c.o
+[350/407] Compiling C object src/compiler/nir/libnir.a.p/nir_passthrough_tcs.c.o
+[351/407] Compiling C object src/compiler/nir/libnir.a.p/nir_phi_builder.c.o
+[352/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_vectorize.c.o
+[353/407] Compiling C object src/compiler/nir/libnir.a.p/nir_propagate_invariant.c.o
+[354/407] Compiling C object src/compiler/nir/libnir.a.p/nir_recompute_io_bases.c.o
+[355/407] Compiling C object src/compiler/nir/libnir.a.p/meson-generated_.._nir_opt_algebraic.c.o
+[356/407] Compiling C object src/compiler/nir/libnir.a.p/nir_remove_dead_variables.c.o
+[357/407] Compiling C object src/compiler/nir/libnir.a.p/nir_remove_outputs.c.o
+[358/407] Compiling C object src/compiler/nir/libnir.a.p/nir_range_analysis.c.o
+[359/407] Compiling C object src/compiler/nir/libnir.a.p/nir_repair_ssa.c.o
+[360/407] Compiling C object src/compiler/nir/libnir.a.p/nir_remove_tex_shadow.c.o
+[361/407] Compiling C object src/compiler/nir/libnir.a.p/nir_scale_fdiv.c.o
+[362/407] Compiling C object src/compiler/nir/libnir.a.p/nir_separate_merged_clip_cull_io.c.o
+[363/407] Compiling C object src/compiler/nir/libnir.a.p/nir_print.c.o
+[364/407] Compiling C object src/compiler/nir/libnir.a.p/nir_schedule.c.o
+[365/407] Compiling C object src/compiler/nir/libnir.a.p/nir_shader_bisect.c.o
+[366/407] Compiling C object src/compiler/nir/libnir.a.p/nir_search.c.o
+[367/407] Compiling C object src/compiler/nir/libnir.a.p/nir_split_conversions.c.o
+[368/407] Compiling C object src/compiler/nir/libnir.a.p/nir_opt_varyings.c.o
+[369/407] Compiling C object src/compiler/nir/libnir.a.p/nir_split_64bit_vec3_and_vec4.c.o
+[370/407] Compiling C object src/compiler/nir/libnir.a.p/nir_split_per_member_structs.c.o
+[371/407] Compiling C object src/compiler/nir/libnir.a.p/nir_serialize.c.o
+[372/407] Compiling C object src/compiler/nir/libnir.a.p/nir_split_var_copies.c.o
+[373/407] Compiling C object src/compiler/nir/libnir.a.p/nir_to_lcssa.c.o
+[374/407] Compiling C object src/compiler/nir/libnir.a.p/nir_sweep.c.o
+[375/407] Compiling C object src/compiler/nir/libnir.a.p/nir_use_dominance.c.o
+[376/407] Compiling C object src/compiler/nir/libnir.a.p/nir_validate.c.o
+[377/407] Compiling C object src/compiler/nir/libnir.a.p/nir_worklist.c.o
+[378/407] Compiling C object src/compiler/nir/libnir.a.p/nir_trivialize_registers.c.o
+[379/407] Generating src/compiler/spirv/vtn_gather_types.c with a custom command
+[380/407] Compiling C object src/compiler/clc/mesa_clc.p/mesa_clc.c.o
+[381/407] Generating src/compiler/spirv/spirv_info with a custom command
+[382/407] Generating src/compiler/spirv/vtn_generator_ids.h with a custom command
+[383/407] Compiling C object src/compiler/nir/libnir.a.p/nir_lower_atomics.c.o
+[384/407] Compiling C object src/compiler/clc/liblibmesaclc.a.p/clc.c.o
+[385/407] Compiling C object src/compiler/spirv/vtn_bindgen2.p/vtn_bindgen2.c.o
+[386/407] Compiling C object src/compiler/nir/libnir.a.p/nir_split_vars.c.o
+[387/407] Compiling C object src/compiler/nir/libnir.a.p/nir_unlower_io_to_vars.c.o
+[388/407] Compiling C object src/compiler/spirv/libvtn.a.p/meson-generated_.._spirv_info.c.o
+[389/407] Linking static target src/compiler/nir/libnir.a
+[390/407] Compiling C object src/compiler/spirv/libvtn.a.p/meson-generated_.._vtn_gather_types.c.o
+[391/407] Compiling C object src/compiler/spirv/libvtn.a.p/gl_spirv.c.o
+[392/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_debug.c.o
+[393/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_amd.c.o
+[394/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_cfg.c.o
+[395/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_cmat.c.o
+[396/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_alu.c.o
+[397/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_glsl450.c.o
+[398/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_subgroup.c.o
+[399/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_structured_cfg.c.o
+[400/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_opencl.c.o
+[401/407] Compiling C object src/compiler/spirv/libvtn.a.p/vtn_variables.c.o
+[402/407] Compiling C object src/compiler/spirv/libvtn.a.p/spirv_to_nir.c.o
+[403/407] Linking static target src/compiler/spirv/libvtn.a
+[404/407] Linking target src/compiler/spirv/vtn_bindgen2
+[405/407] Compiling C++ object src/compiler/clc/liblibmesaclc.a.p/clc_helpers.cpp.o
+[406/407] Linking static target src/compiler/clc/liblibmesaclc.a
+[407/407] Linking target src/compiler/clc/mesa_clc
+=== native tools installed ===
+-rwxr-xr-x 1 root root      610 Oct 31 20:39 /work/switch/build/native-tools/bin/mesa_clc
+-rwxr-xr-x 1 root root 52450184 Oct 31 20:39 /work/switch/build/native-tools/bin/mesa_clc.real
+-rwxr-xr-x 1 root root 13128584 Oct 31 20:39 /work/switch/build/native-tools/bin/vtn_bindgen2
+mesa_clc runs: OK
