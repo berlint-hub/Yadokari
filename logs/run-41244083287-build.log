@@ -1,0 +1,747 @@
+[  0%] Generating uam /__w/Yadokari/Yadokari/build/switch-core/uam-generated/glsl/ir_expression_operation_strings.h
+[  0%] uam vert: convert_vsh.glsl -> convert_vsh.dksh
+[  0%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/adler32.o
+[  0%] Generating romfs/resources/GameIndex.yaml
+Traceback (most recent call last):
+  File "/__w/Yadokari/Yadokari/uam/mesa-imported/glsl/ir_expression_operation.py", line 23, in <module>
+    import mako.template
+ModuleNotFoundError: No module named 'mako'
+gmake[3]: *** [switch-app/CMakeFiles/uam_objects.dir/build.make:82: uam-generated/glsl/ir_expression_operation_strings.h] Error 1
+gmake[3]: *** Deleting file 'uam-generated/glsl/ir_expression_operation_strings.h'
+gmake[2]: *** [CMakeFiles/Makefile2:2920: switch-app/CMakeFiles/uam_objects.dir/all] Error 2
+gmake[2]: *** Waiting for unfinished jobs....
+[  0%] uam frag: texture_fsh.glsl -> texture_fsh.dksh
+[  0%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/compress.o
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c: In function 'adler32_z':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c:63:15: warning: old-style function definition [-Wold-style-definition]
+   63 | uLong ZEXPORT adler32_z(adler, buf, len)
+      |               ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c: In function 'adler32':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c:134:15: warning: old-style function definition [-Wold-style-definition]
+  134 | uLong ZEXPORT adler32(adler, buf, len)
+      |               ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c: In function 'adler32_combine_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c:143:13: warning: old-style function definition [-Wold-style-definition]
+  143 | local uLong adler32_combine_(adler1, adler2, len2)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c: In function 'adler32_combine':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c:172:15: warning: old-style function definition [-Wold-style-definition]
+  172 | uLong ZEXPORT adler32_combine(adler1, adler2, len2)
+      |               ^~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c: In function 'adler32_combine64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/adler32.c:180:15: warning: old-style function definition [-Wold-style-definition]
+  180 | uLong ZEXPORT adler32_combine64(adler1, adler2, len2)
+      |               ^~~~~~~~~~~~~~~~~
+[  0%] uam frag: convert_fsh.glsl -> convert_fsh.dksh
+[  0%] Generating romfs/resources/RedumpDatabase.yaml
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c: In function 'compress2':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c:22:13: warning: old-style function definition [-Wold-style-definition]
+   22 | int ZEXPORT compress2 (dest, destLen, source, sourceLen, level)
+      |             ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c: In function 'compress':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c:68:13: warning: old-style function definition [-Wold-style-definition]
+   68 | int ZEXPORT compress (dest, destLen, source, sourceLen)
+      |             ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c: In function 'compressBound':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/compress.c:81:15: warning: old-style function definition [-Wold-style-definition]
+   81 | uLong ZEXPORT compressBound (sourceLen)
+      |               ^~~~~~~~~~~~~
+[  0%] Generating romfs/resources/cover-placeholder.png
+[  0%] uam frag: convert_int_fsh.glsl -> convert_int_fsh.dksh
+[  0%] Generating romfs/resources/fonts/Roboto-Regular-copyright
+[  0%] uam frag: downsample_fsh.glsl -> downsample_fsh.dksh
+[  1%] uam frag: clut_fsh.glsl -> clut_fsh.dksh
+[  1%] Generating romfs/resources/fonts/Roboto-Regular.ttf
+[  1%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/crc32.o
+[  1%] uam frag: convert_8i_fsh.glsl -> convert_8i_fsh.dksh
+[  1%] Generating romfs/resources/fonts/RobotoMono-Medium.ttf
+warning: program uses non-constant integer division/modulo, which is unsupported by hardware; floating point emulation with resulting loss of precision has been applied
+[  1%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/deflate.o
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_z':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:202:23: warning: old-style function definition [-Wold-style-definition]
+  202 | unsigned long ZEXPORT crc32_z(crc, buf, len)
+      |                       ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:237:23: warning: old-style function definition [-Wold-style-definition]
+  237 | unsigned long ZEXPORT crc32(crc, buf, len)
+      |                       ^~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_little':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:266:21: warning: old-style function definition [-Wold-style-definition]
+  266 | local unsigned long crc32_little(crc, buf, len)
+      |                     ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_big':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:306:21: warning: old-style function definition [-Wold-style-definition]
+  306 | local unsigned long crc32_big(crc, buf, len)
+      |                     ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'gf2_matrix_times':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:344:21: warning: old-style function definition [-Wold-style-definition]
+  344 | local unsigned long gf2_matrix_times(mat, vec)
+      |                     ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'gf2_matrix_square':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:361:12: warning: old-style function definition [-Wold-style-definition]
+  361 | local void gf2_matrix_square(square, mat)
+      |            ^~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_combine_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:372:13: warning: old-style function definition [-Wold-style-definition]
+  372 | local uLong crc32_combine_(crc1, crc2, len2)
+      |             ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_combine':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:428:15: warning: old-style function definition [-Wold-style-definition]
+  428 | uLong ZEXPORT crc32_combine(crc1, crc2, len2)
+      |               ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c: In function 'crc32_combine64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/crc32.c:436:15: warning: old-style function definition [-Wold-style-definition]
+  436 | uLong ZEXPORT crc32_combine64(crc1, crc2, len2)
+      |               ^~~~~~~~~~~~~~~
+[  1%] uam frag: date_fsh.glsl -> date_fsh.dksh
+[  2%] Generating romfs/resources/fonts/Twemoji.Mozilla-license
+[  2%] uam frag: primid_init_fsh.glsl -> primid_init_fsh.dksh
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'slide_hash':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:201:12: warning: old-style function definition [-Wold-style-definition]
+  201 | local void slide_hash(s)
+      |            ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateInit_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:228:13: warning: old-style function definition [-Wold-style-definition]
+  228 | int ZEXPORT deflateInit_(strm, level, version, stream_size)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateInit2_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:240:13: warning: old-style function definition [-Wold-style-definition]
+  240 | int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
+      |             ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateStateCheck':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:353:11: warning: old-style function definition [-Wold-style-definition]
+  353 | local int deflateStateCheck (strm)
+      |           ^~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateSetDictionary':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:376:13: warning: old-style function definition [-Wold-style-definition]
+  376 | int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
+      |             ^~~~~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateGetDictionary':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:445:13: warning: old-style function definition [-Wold-style-definition]
+  445 | int ZEXPORT deflateGetDictionary (strm, dictionary, dictLength)
+      |             ^~~~~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateResetKeep':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:467:13: warning: old-style function definition [-Wold-style-definition]
+  467 | int ZEXPORT deflateResetKeep (strm)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateReset':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:505:13: warning: old-style function definition [-Wold-style-definition]
+  505 | int ZEXPORT deflateReset (strm)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateSetHeader':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:517:13: warning: old-style function definition [-Wold-style-definition]
+  517 | int ZEXPORT deflateSetHeader (strm, head)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflatePending':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:528:13: warning: old-style function definition [-Wold-style-definition]
+  528 | int ZEXPORT deflatePending (strm, pending, bits)
+      |             ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflatePrime':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:542:13: warning: old-style function definition [-Wold-style-definition]
+  542 | int ZEXPORT deflatePrime (strm, bits, value)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateParams':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:568:13: warning: old-style function definition [-Wold-style-definition]
+  568 | int ZEXPORT deflateParams(strm, level, strategy)
+      |             ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateTune':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:617:13: warning: old-style function definition [-Wold-style-definition]
+  617 | int ZEXPORT deflateTune(strm, good_length, max_lazy, nice_length, max_chain)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateBound':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:652:15: warning: old-style function definition [-Wold-style-definition]
+  652 | uLong ZEXPORT deflateBound(strm, sourceLen)
+      |               ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'putShortMSB':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:716:12: warning: old-style function definition [-Wold-style-definition]
+  716 | local void putShortMSB (s, b)
+      |            ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'flush_pending':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:730:12: warning: old-style function definition [-Wold-style-definition]
+  730 | local void flush_pending(strm)
+      |            ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:763:13: warning: old-style function definition [-Wold-style-definition]
+  763 | int ZEXPORT deflate (strm, flush)
+      |             ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateEnd':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1076:13: warning: old-style function definition [-Wold-style-definition]
+ 1076 | int ZEXPORT deflateEnd (strm)
+      |             ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflateCopy':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1102:13: warning: old-style function definition [-Wold-style-definition]
+ 1102 | int ZEXPORT deflateCopy (dest, source)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'read_buf':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1164:16: warning: old-style function definition [-Wold-style-definition]
+ 1164 | local unsigned read_buf(strm, buf, size)
+      |                ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'lm_init':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1194:12: warning: old-style function definition [-Wold-style-definition]
+ 1194 | local void lm_init (s)
+      |            ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'longest_match':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1236:12: warning: old-style function definition [-Wold-style-definition]
+ 1236 | local uInt longest_match(s, cur_match)
+      |            ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'fill_window':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1482:12: warning: old-style function definition [-Wold-style-definition]
+ 1482 | local void fill_window(s)
+      |            ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate_stored':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1643:19: warning: old-style function definition [-Wold-style-definition]
+ 1643 | local block_state deflate_stored(s, flush)
+      |                   ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate_fast':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1824:19: warning: old-style function definition [-Wold-style-definition]
+ 1824 | local block_state deflate_fast(s, flush)
+      |                   ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate_slow':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:1926:19: warning: old-style function definition [-Wold-style-definition]
+ 1926 | local block_state deflate_slow(s, flush)
+      |                   ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate_rle':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:2057:19: warning: old-style function definition [-Wold-style-definition]
+ 2057 | local block_state deflate_rle(s, flush)
+      |                   ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c: In function 'deflate_huff':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/deflate.c:2130:19: warning: old-style function definition [-Wold-style-definition]
+ 2130 | local block_state deflate_huff(s, flush)
+      |                   ^~~~~~~~~~~~
+[  2%] uam vert: tfx_vsh.glsl -> tfx_vsh.dksh
+[  2%] Generating romfs/resources/fonts/Twemoji.Mozilla.ttf
+[  2%] uam frag: tfx_fsh.glsl -> tfx_fsh.dksh
+[  2%] Generating romfs/resources/fonts/fa-solid-900.ttf
+[  2%] Generating romfs/resources/fonts/promptfont-license
+[  2%] Generating romfs/resources/fonts/promptfont.otf
+[  2%] gen tfx variant tfx_fsh_opaque (TFX_VARIANT_OPAQUE)
+[  2%] Generating romfs/resources/fullscreenui/applications-system.svg
+[  2%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/gzclose.o
+[  2%] Generating romfs/resources/fullscreenui/back-icon.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzclose.c: In function 'gzclose':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzclose.c:11:13: warning: old-style function definition [-Wold-style-definition]
+   11 | int ZEXPORT gzclose(file)
+      |             ^~~~~~~
+[  2%] Generating romfs/resources/fullscreenui/desktop-mode.svg
+[  3%] gen tfx variant tfx_fsh_palette (TFX_VARIANT_PALETTE)
+[  3%] gen tfx variant tfx_fsh_fast (TFX_VARIANT_FAST)
+[  3%] Generating romfs/resources/fullscreenui/drive-cdrom.svg
+[  3%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/gzlib.o
+[  3%] gen tfx variant tfx_fsh_feedback (TFX_VARIANT_FEEDBACK)
+[  3%] Generating romfs/resources/fullscreenui/exit.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gz_reset':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:75:12: warning: old-style function definition [-Wold-style-definition]
+   75 | local void gz_reset(state)
+      |            ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gz_open':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:91:14: warning: old-style function definition [-Wold-style-definition]
+   91 | local gzFile gz_open(path, fd, mode)
+      |              ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzopen':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:270:16: warning: old-style function definition [-Wold-style-definition]
+  270 | gzFile ZEXPORT gzopen(path, mode)
+      |                ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzopen64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:278:16: warning: old-style function definition [-Wold-style-definition]
+  278 | gzFile ZEXPORT gzopen64(path, mode)
+      |                ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzdopen':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:286:16: warning: old-style function definition [-Wold-style-definition]
+  286 | gzFile ZEXPORT gzdopen(fd, mode)
+      |                ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzbuffer':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:316:13: warning: old-style function definition [-Wold-style-definition]
+  316 | int ZEXPORT gzbuffer(file, size)
+      |             ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzrewind':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:343:13: warning: old-style function definition [-Wold-style-definition]
+  343 | int ZEXPORT gzrewind(file)
+      |             ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzseek64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:366:19: warning: old-style function definition [-Wold-style-definition]
+  366 | z_off64_t ZEXPORT gzseek64(file, offset, whence)
+      |                   ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzseek':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:443:17: warning: old-style function definition [-Wold-style-definition]
+  443 | z_off_t ZEXPORT gzseek(file, offset, whence)
+      |                 ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gztell64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:455:19: warning: old-style function definition [-Wold-style-definition]
+  455 | z_off64_t ZEXPORT gztell64(file)
+      |                   ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gztell':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:472:17: warning: old-style function definition [-Wold-style-definition]
+  472 | z_off_t ZEXPORT gztell(file)
+      |                 ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzoffset64':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:482:19: warning: old-style function definition [-Wold-style-definition]
+  482 | z_off64_t ZEXPORT gzoffset64(file)
+      |                   ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzoffset':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:505:17: warning: old-style function definition [-Wold-style-definition]
+  505 | z_off_t ZEXPORT gzoffset(file)
+      |                 ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzeof':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:515:13: warning: old-style function definition [-Wold-style-definition]
+  515 | int ZEXPORT gzeof(file)
+      |             ^~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzerror':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:532:22: warning: old-style function definition [-Wold-style-definition]
+  532 | const char * ZEXPORT gzerror(file, errnum)
+      |                      ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gzclearerr':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:553:14: warning: old-style function definition [-Wold-style-definition]
+  553 | void ZEXPORT gzclearerr(file)
+      |              ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c: In function 'gz_error':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzlib.c:579:20: warning: old-style function definition [-Wold-style-definition]
+  579 | void ZLIB_INTERNAL gz_error(state, err, msg)
+      |                    ^~~~~~~~
+[  3%] gen tfx variant tfx_fsh_feedback_palette (TFX_VARIANT_FEEDBACK_PALETTE)
+[  3%] Generating romfs/resources/fullscreenui/media-cdrom.svg
+[  3%] gen tfx variant tfx_fsh_feedback_fast (TFX_VARIANT_FEEDBACK_FAST)
+[  3%] uam frag: interlace_fsh.glsl -> interlace_fsh.dksh
+[  3%] Generating romfs/resources/fullscreenui/no-save.png
+[  3%] uam frag: shadeboost_fsh.glsl -> shadeboost_fsh.dksh
+[  3%] Generating romfs/resources/fullscreenui/placeholder.png
+[  3%] uam frag: fxaa_fsh.glsl -> fxaa_fsh.dksh
+[  3%] Generating romfs/resources/fullscreenui/start-bios.svg
+[  3%] Generating romfs/resources/fullscreenui/start-file.svg
+[  3%] uam frag: merge_fsh.glsl -> merge_fsh.dksh
+[  4%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/gzread.o
+[  4%] Generating romfs/resources/fullscreenui/start-game.svg
+[  4%] uam frag: yuv_fsh.glsl -> yuv_fsh.dksh
+[  4%] uam vert: imgui_vsh.glsl -> imgui_vsh.dksh
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_load':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:22:11: warning: old-style function definition [-Wold-style-definition]
+   22 | local int gz_load(state, buf, len, have)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_avail':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:57:11: warning: old-style function definition [-Wold-style-definition]
+   57 | local int gz_avail(state)
+      |           ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_look':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:92:11: warning: old-style function definition [-Wold-style-definition]
+   92 | local int gz_look(state)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_decomp':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:176:11: warning: old-style function definition [-Wold-style-definition]
+  176 | local int gz_decomp(state)
+      |           ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_fetch':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:230:11: warning: old-style function definition [-Wold-style-definition]
+  230 | local int gz_fetch(state)
+      |           ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_skip':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:260:11: warning: old-style function definition [-Wold-style-definition]
+  260 | local int gz_skip(state, len)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gz_read':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:295:16: warning: old-style function definition [-Wold-style-definition]
+  295 | local z_size_t gz_read(state, buf, len)
+      |                ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzread':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:376:13: warning: old-style function definition [-Wold-style-definition]
+  376 | int ZEXPORT gzread(file, buf, len)
+      |             ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzfread':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:412:18: warning: old-style function definition [-Wold-style-definition]
+  412 | z_size_t ZEXPORT gzfread(buf, size, nitems, file)
+      |                  ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzgetc':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:448:13: warning: old-style function definition [-Wold-style-definition]
+  448 | int ZEXPORT gzgetc(file)
+      |             ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzgetc_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:477:13: warning: old-style function definition [-Wold-style-definition]
+  477 | int ZEXPORT gzgetc_(file)
+      |             ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzungetc':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:484:13: warning: old-style function definition [-Wold-style-definition]
+  484 | int ZEXPORT gzungetc(c, file)
+      |             ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzgets':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:544:16: warning: old-style function definition [-Wold-style-definition]
+  544 | char * ZEXPORT gzgets(file, buf, len)
+      |                ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzdirect':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:608:13: warning: old-style function definition [-Wold-style-definition]
+  608 | int ZEXPORT gzdirect(file)
+      |             ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c: In function 'gzclose_r':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzread.c:628:13: warning: old-style function definition [-Wold-style-definition]
+  628 | int ZEXPORT gzclose_r(file)
+      |             ^~~~~~~~~
+[  5%] Generating romfs/resources/game_controller_db.txt
+[  5%] uam frag: imgui_fsh.glsl -> imgui_fsh.dksh
+[  5%] Inlining ffx includes
+[  5%] Generating romfs/resources/icons/AppBanner.svg
+[  6%] Staging tfx_fsh.glsl for runtime compilation
+[  6%] Generating romfs/resources/icons/AppIconLarge.ico
+[  6%] uam frag: tfx_fsh_opaque.dksh
+[  6%] Generating romfs/resources/icons/AppIconLarge.png
+[  6%] Generating romfs/resources/icons/flags/LICENSE
+[  6%] uam frag: tfx_fsh_palette.dksh
+[  6%] Generating romfs/resources/icons/flags/LICENSESCN
+[  6%] uam frag: tfx_fsh_fast.dksh
+[  6%] Generating romfs/resources/icons/flags/Other.svg
+[  6%] uam frag: tfx_fsh_feedback.dksh
+[  6%] Generating romfs/resources/icons/flags/at.svg
+[  6%] Generating romfs/resources/icons/flags/au.svg
+[  6%] uam frag: tfx_fsh_feedback_palette.dksh
+[  6%] Generating romfs/resources/icons/flags/az.svg
+[  6%] Generating romfs/resources/icons/flags/be.svg
+[  6%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/gzwrite.o
+[  6%] uam frag: tfx_fsh_feedback_fast.dksh
+[  6%] Generating romfs/resources/icons/flags/br.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gz_init':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:17:11: warning: old-style function definition [-Wold-style-definition]
+   17 | local int gz_init(state)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gz_comp':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:73:11: warning: old-style function definition [-Wold-style-definition]
+   73 | local int gz_comp(state, flush)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gz_zero':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:145:11: warning: old-style function definition [-Wold-style-definition]
+  145 | local int gz_zero(state, len)
+      |           ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gz_write':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:178:16: warning: old-style function definition [-Wold-style-definition]
+  178 | local z_size_t gz_write(state, buf, len)
+      |                ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzwrite':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:246:13: warning: old-style function definition [-Wold-style-definition]
+  246 | int ZEXPORT gzwrite(file, buf, len)
+      |             ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzfwrite':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:274:18: warning: old-style function definition [-Wold-style-definition]
+  274 | z_size_t ZEXPORT gzfwrite(buf, size, nitems, file)
+      |                  ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzputc':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:304:13: warning: old-style function definition [-Wold-style-definition]
+  304 | int ZEXPORT gzputc(file, c)
+      |             ^~~~~~
+[  6%] uam comp cas_csh.dksh
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzputs':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:352:13: warning: old-style function definition [-Wold-style-definition]
+  352 | int ZEXPORT gzputs(file, str)
+      |             ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzflush':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:553:13: warning: old-style function definition [-Wold-style-definition]
+  553 | int ZEXPORT gzflush(file, flush)
+      |             ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzsetparams':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:585:13: warning: old-style function definition [-Wold-style-definition]
+  585 | int ZEXPORT gzsetparams(file, level, strategy)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c: In function 'gzclose_w':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/gzwrite.c:627:13: warning: old-style function definition [-Wold-style-definition]
+  627 | int ZEXPORT gzclose_w(file)
+      |             ^~~~~~~~~
+[  6%] Generating romfs/resources/icons/flags/ch.svg
+[  6%] Generating romfs/resources/icons/flags/cn.svg
+[  6%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/infback.o
+[  6%] Generating romfs/resources/icons/flags/cz.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c: In function 'inflateBackInit_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c:28:13: warning: old-style function definition [-Wold-style-definition]
+   28 | int ZEXPORT inflateBackInit_(strm, windowBits, window, version, stream_size)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c: In function 'fixedtables':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c:82:12: warning: old-style function definition [-Wold-style-definition]
+   82 | local void fixedtables(state)
+      |            ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c: In function 'inflateBack':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c:250:13: warning: old-style function definition [-Wold-style-definition]
+  250 | int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c: In function 'inflateBackEnd':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/infback.c:631:13: warning: old-style function definition [-Wold-style-definition]
+  631 | int ZEXPORT inflateBackEnd(strm)
+      |             ^~~~~~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/de.svg
+[  7%] Built target armsx2_shaders
+[  7%] Generating romfs/resources/icons/flags/dk.svg
+[  7%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/inffast.o
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inffast.c: In function 'inflate_fast':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inffast.c:50:20: warning: old-style function definition [-Wold-style-definition]
+   50 | void ZLIB_INTERNAL inflate_fast(strm, start)
+      |                    ^~~~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/es.svg
+[  7%] Generating romfs/resources/icons/flags/eu.svg
+[  7%] Generating romfs/resources/icons/flags/fi.svg
+[  7%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/inflate.o
+[  7%] Generating romfs/resources/icons/flags/fr.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateStateCheck':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:105:11: warning: old-style function definition [-Wold-style-definition]
+  105 | local int inflateStateCheck(strm)
+      |           ^~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateResetKeep':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:119:13: warning: old-style function definition [-Wold-style-definition]
+  119 | int ZEXPORT inflateResetKeep(strm)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateReset':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:144:13: warning: old-style function definition [-Wold-style-definition]
+  144 | int ZEXPORT inflateReset(strm)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateReset2':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:157:13: warning: old-style function definition [-Wold-style-definition]
+  157 | int ZEXPORT inflateReset2(strm, windowBits)
+      |             ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateInit2_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:195:13: warning: old-style function definition [-Wold-style-definition]
+  195 | int ZEXPORT inflateInit2_(strm, windowBits, version, stream_size)
+      |             ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateInit_':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:239:13: warning: old-style function definition [-Wold-style-definition]
+  239 | int ZEXPORT inflateInit_(strm, version, stream_size)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflatePrime':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:247:13: warning: old-style function definition [-Wold-style-definition]
+  247 | int ZEXPORT inflatePrime(strm, bits, value)
+      |             ^~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'fixedtables':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:278:12: warning: old-style function definition [-Wold-style-definition]
+  278 | local void fixedtables(state)
+      |            ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'updatewindow':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:396:11: warning: old-style function definition [-Wold-style-definition]
+  396 | local int updatewindow(strm, end, copy)
+      |           ^~~~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/gb.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflate':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:622:13: warning: old-style function definition [-Wold-style-definition]
+  622 | int ZEXPORT inflate(strm, flush)
+      |             ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateEnd':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1277:13: warning: old-style function definition [-Wold-style-definition]
+ 1277 | int ZEXPORT inflateEnd(strm)
+      |             ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateGetDictionary':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1291:13: warning: old-style function definition [-Wold-style-definition]
+ 1291 | int ZEXPORT inflateGetDictionary(strm, dictionary, dictLength)
+      |             ^~~~~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateSetDictionary':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1314:13: warning: old-style function definition [-Wold-style-definition]
+ 1314 | int ZEXPORT inflateSetDictionary(strm, dictionary, dictLength)
+      |             ^~~~~~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateGetHeader':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1349:13: warning: old-style function definition [-Wold-style-definition]
+ 1349 | int ZEXPORT inflateGetHeader(strm, head)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'syncsearch':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1377:16: warning: old-style function definition [-Wold-style-definition]
+ 1377 | local unsigned syncsearch(have, buf, len)
+      |                ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateSync':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1400:13: warning: old-style function definition [-Wold-style-definition]
+ 1400 | int ZEXPORT inflateSync(strm)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateSyncPoint':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1451:13: warning: old-style function definition [-Wold-style-definition]
+ 1451 | int ZEXPORT inflateSyncPoint(strm)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateCopy':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1461:13: warning: old-style function definition [-Wold-style-definition]
+ 1461 | int ZEXPORT inflateCopy(dest, source)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateUndermine':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1508:13: warning: old-style function definition [-Wold-style-definition]
+ 1508 | int ZEXPORT inflateUndermine(strm, subvert)
+      |             ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateValidate':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1526:13: warning: old-style function definition [-Wold-style-definition]
+ 1526 | int ZEXPORT inflateValidate(strm, check)
+      |             ^~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateMark':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1541:14: warning: old-style function definition [-Wold-style-definition]
+ 1541 | long ZEXPORT inflateMark(strm)
+      |              ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c: In function 'inflateCodesUsed':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inflate.c:1554:23: warning: old-style function definition [-Wold-style-definition]
+ 1554 | unsigned long ZEXPORT inflateCodesUsed(strm)
+      |                       ^~~~~~~~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/gr.svg
+[  7%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/inftrees.o
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inftrees.c: In function 'inflate_table':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/inftrees.c:32:19: warning: old-style function definition [-Wold-style-definition]
+   32 | int ZLIB_INTERNAL inflate_table(type, lens, codes, table, bits, work)
+      |                   ^~~~~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/hk.svg
+[  7%] Generating romfs/resources/icons/flags/hr.svg
+[  7%] Generating romfs/resources/icons/flags/hu.svg
+[  7%] Generating romfs/resources/icons/flags/id.svg
+[  7%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/trees.o
+[  7%] Generating romfs/resources/icons/flags/il.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_init':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:379:20: warning: old-style function definition [-Wold-style-definition]
+  379 | void ZLIB_INTERNAL _tr_init(s)
+      |                    ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'init_block':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:407:12: warning: old-style function definition [-Wold-style-definition]
+  407 | local void init_block(s)
+      |            ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'pqdownheap':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:451:12: warning: old-style function definition [-Wold-style-definition]
+  451 | local void pqdownheap(s, tree, k)
+      |            ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'gen_bitlen':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:486:12: warning: old-style function definition [-Wold-style-definition]
+  486 | local void gen_bitlen(s, desc)
+      |            ^~~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/in.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'gen_codes':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:572:12: warning: old-style function definition [-Wold-style-definition]
+  572 | local void gen_codes (tree, max_code, bl_count)
+      |            ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'build_tree':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:615:12: warning: old-style function definition [-Wold-style-definition]
+  615 | local void build_tree(s, desc)
+      |            ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'scan_tree':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:703:12: warning: old-style function definition [-Wold-style-definition]
+  703 | local void scan_tree (s, tree, max_code)
+      |            ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'send_tree':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:748:12: warning: old-style function definition [-Wold-style-definition]
+  748 | local void send_tree (s, tree, max_code)
+      |            ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'build_bl_tree':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:799:11: warning: old-style function definition [-Wold-style-definition]
+  799 | local int build_bl_tree(s)
+      |           ^~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'send_all_trees':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:834:12: warning: old-style function definition [-Wold-style-definition]
+  834 | local void send_all_trees(s, lcodes, dcodes, blcodes)
+      |            ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_stored_block':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:863:20: warning: old-style function definition [-Wold-style-definition]
+  863 | void ZLIB_INTERNAL _tr_stored_block(s, buf, stored_len, last)
+      |                    ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_flush_bits':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:886:20: warning: old-style function definition [-Wold-style-definition]
+  886 | void ZLIB_INTERNAL _tr_flush_bits(s)
+      |                    ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_align':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:896:20: warning: old-style function definition [-Wold-style-definition]
+  896 | void ZLIB_INTERNAL _tr_align(s)
+      |                    ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_flush_block':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:911:20: warning: old-style function definition [-Wold-style-definition]
+  911 | void ZLIB_INTERNAL _tr_flush_block(s, buf, stored_len, last)
+      |                    ^~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function '_tr_tally':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1014:19: warning: old-style function definition [-Wold-style-definition]
+ 1014 | int ZLIB_INTERNAL _tr_tally (s, dist, lc)
+      |                   ^~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'compress_block':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1064:12: warning: old-style function definition [-Wold-style-definition]
+ 1064 | local void compress_block(s, ltree, dtree)
+      |            ^~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'detect_data_type':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1124:11: warning: old-style function definition [-Wold-style-definition]
+ 1124 | local int detect_data_type(s)
+      |           ^~~~~~~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'bi_reverse':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1158:16: warning: old-style function definition [-Wold-style-definition]
+ 1158 | local unsigned bi_reverse(code, len)
+      |                ^~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'bi_flush':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1173:12: warning: old-style function definition [-Wold-style-definition]
+ 1173 | local void bi_flush(s)
+      |            ^~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c: In function 'bi_windup':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/trees.c:1190:12: warning: old-style function definition [-Wold-style-definition]
+ 1190 | local void bi_windup(s)
+      |            ^~~~~~~~~
+[  7%] Generating romfs/resources/icons/flags/ir.svg
+[  7%] Generating romfs/resources/icons/flags/it.svg
+[  8%] Generating romfs/resources/icons/flags/jp.svg
+[  8%] Generating romfs/resources/icons/flags/kr.svg
+[  8%] Generating romfs/resources/icons/flags/lt.svg
+[  8%] Generating romfs/resources/icons/flags/lv.svg
+[  8%] Generating romfs/resources/icons/flags/mx.svg
+[  8%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/uncompr.o
+[  8%] Generating romfs/resources/icons/flags/nl.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/uncompr.c: In function 'uncompress2':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/uncompr.c:27:13: warning: old-style function definition [-Wold-style-definition]
+   27 | int ZEXPORT uncompress2 (dest, destLen, source, sourceLen)
+      |             ^~~~~~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/uncompr.c: In function 'uncompress':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/uncompr.c:86:13: warning: old-style function definition [-Wold-style-definition]
+   86 | int ZEXPORT uncompress (dest, destLen, source, sourceLen)
+      |             ^~~~~~~~~~
+[  8%] Generating romfs/resources/icons/flags/no.svg
+[  8%] Generating romfs/resources/icons/flags/pl.svg
+[  8%] Building C object 3rdparty/zlib/CMakeFiles/pcsx2-zlib.dir/zutil.o
+[  8%] Generating romfs/resources/icons/flags/pt.svg
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c: In function 'zError':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c:133:22: warning: old-style function definition [-Wold-style-definition]
+  133 | const char * ZEXPORT zError(err)
+      |                      ^~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c: In function 'zcalloc':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c:305:22: warning: old-style function definition [-Wold-style-definition]
+  305 | voidpf ZLIB_INTERNAL zcalloc (opaque, items, size)
+      |                      ^~~~~~~
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c: In function 'zcfree':
+/__w/Yadokari/Yadokari/app/src/main/cpp/3rdparty/zlib/zutil.c:315:20: warning: old-style function definition [-Wold-style-definition]
+  315 | void ZLIB_INTERNAL zcfree (opaque, ptr)
+      |                    ^~~~~~
+[  8%] Generating romfs/resources/icons/flags/ro.svg
+[  8%] Generating romfs/resources/icons/flags/rs.svg
+[  8%] Generating romfs/resources/icons/flags/ru.svg
+[  8%] Generating romfs/resources/icons/flags/sa.svg
+[  8%] Generating romfs/resources/icons/flags/scn.svg
+[  8%] Generating romfs/resources/icons/flags/se.svg
+[  8%] Generating romfs/resources/icons/flags/tw.svg
+[  9%] Generating romfs/resources/icons/flags/tr.svg
+[  9%] Generating romfs/resources/icons/flags/ua.svg
+[  9%] Generating romfs/resources/icons/flags/vn.svg
+[  9%] Generating romfs/resources/icons/flags/us.svg
+[  9%] Generating romfs/resources/icons/flags/za.svg
+[  9%] Generating romfs/resources/icons/ra-icon.svg
+[  9%] Generating romfs/resources/icons/star-0.svg
+[  9%] Generating romfs/resources/icons/star-1.svg
+[  9%] Generating romfs/resources/icons/star-2.svg
+[  9%] Linking C static library libpcsx2-zlib.a
+[  9%] Generating romfs/resources/icons/star-3.svg
+[  9%] Generating romfs/resources/icons/star-5.svg
+[  9%] Generating romfs/resources/icons/star-4.svg
+[  9%] Generating romfs/resources/patches.zip
+[  9%] Generating romfs/resources/shaders/common/ffx_a.h
+[  9%] Generating romfs/resources/shaders/common/ffx_cas.h
+[ 10%] Generating romfs/resources/shaders/common/fxaa.fx
+[ 10%] Generating romfs/resources/shaders/dx11/cas.hlsl
+[ 10%] Generating romfs/resources/shaders/dx11/convert.fx
+[ 10%] Generating romfs/resources/shaders/dx11/imgui.fx
+[ 10%] Generating romfs/resources/shaders/dx11/interlace.fx
+[ 10%] Generating romfs/resources/shaders/dx11/merge.fx
+[ 10%] Generating romfs/resources/shaders/dx11/present.fx
+[ 10%] Built target pcsx2-zlib
+[ 10%] Generating romfs/resources/shaders/dx11/tfx.fx
+[ 10%] Generating romfs/resources/shaders/dx11/shadeboost.fx
+[ 10%] Generating romfs/resources/shaders/opengl/cas.glsl
+[ 10%] Generating romfs/resources/shaders/opengl/convert.glsl
+[ 10%] Generating romfs/resources/shaders/opengl/imgui.glsl
+[ 10%] Generating romfs/resources/shaders/opengl/interlace.glsl
+[ 10%] Generating romfs/resources/shaders/opengl/merge.glsl
+[ 10%] Generating romfs/resources/shaders/opengl/present.glsl
+[ 11%] Generating romfs/resources/shaders/opengl/shadeboost.glsl
+[ 11%] Generating romfs/resources/shaders/opengl/tfx_fs.glsl
+[ 11%] Generating romfs/resources/shaders/opengl/tfx_vgs.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/cas.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/convert.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/imgui.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/interlace.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/merge.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/present.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/shadeboost.glsl
+[ 11%] Generating romfs/resources/shaders/vulkan/tfx.glsl
+[ 11%] Generating romfs/resources/sounds/achievements/README.txt
+[ 11%] Generating romfs/resources/sounds/achievements/lbsubmit.wav
+[ 11%] Generating romfs/resources/sounds/achievements/message.wav
+[ 11%] Generating romfs/resources/sounds/achievements/unlock.wav
+[ 11%] Built target armsx2_resources
+gmake[1]: *** [CMakeFiles/Makefile2:3091: switch-app/CMakeFiles/armsx2_nro.dir/rule] Error 2
+gmake: *** [Makefile:1035: armsx2_nro] Error 2
+CMAKE_BUILD_EXIT=2
