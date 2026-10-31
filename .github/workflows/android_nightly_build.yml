@@ -81,15 +81,36 @@ jobs:
           name: ${{ steps.package_info.outputs.PACKAGE_NAME }}
           path: ${{ steps.rename_apk.outputs.APK_FILE_NIGHTLY }}
 
+      - name: Publish nightly APK to ci-artifacts branch (direct git/codeload download)
+        if: github.repository == 'berlint-hub/Yadokari'
+        run: |
+          APK_FILE="${{ steps.rename_apk.outputs.APK_FILE_NIGHTLY }}"
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          git checkout --orphan ci-artifacts
+          git rm -rf --quiet .
+          mkdir -p artifacts
+          cp "$APK_FILE" artifacts/armsx2-nightly.apk
+          printf 'run_id=%s\nsha=%s\nhead_ref=%s\nrun_url=%s\n' \
+            "${{ github.run_id }}" "${{ github.sha }}" "${{ github.head_ref }}" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            > artifacts/build-info.txt
+          git add artifacts
+          git commit -m "nightly APK from run ${{ github.run_id }}"
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:ci-artifacts
+
   release:
     permissions:
       contents: write
 
     needs: [ build ]
 
+    continue-on-error: ${{ github.repository == 'berlint-hub/Yadokari' }}
+
     if: >
-      github.repository == 'ARMSX2/ARMSX2' &&
-      github.ref == 'refs/heads/master'
+      github.repository == 'berlint-hub/Yadokari' ||
+      (github.repository == 'ARMSX2/ARMSX2' &&
+      github.ref == 'refs/heads/master')
 
     runs-on: ubuntu-latest
 
