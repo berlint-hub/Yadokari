@@ -156,14 +156,24 @@ jobs:
       - name: Install NXVK portlib from nxvk job artifact
         run: |
           set -e
-          ls nxvk-portlib/lib/pkgconfig/ 2>/dev/null || true
-          cp -a nxvk-portlib/. /opt/devkitpro/portlibs/switch/
-          echo "--- after install ---"
-          ls /opt/devkitpro/portlibs/switch/lib/pkgconfig/ | grep -i nxvk
-          ls /opt/devkitpro/portlibs/switch/lib/ | grep -i nvk
+          echo "--- artifact layout ---"
+          find nxvk-portlib -maxdepth 4 | head -30
+          if [ -d nxvk-portlib/lib ]; then
+            SRC=nxvk-portlib
+          elif [ -d nxvk-portlib/dkp-stage/portlibs/switch ]; then
+            SRC=nxvk-portlib/dkp-stage/portlibs/switch
+          else
+            SRC=nxvk-portlib
+          fi
+          echo "staging from: $SRC"
+          cp -a "$SRC"/. /opt/devkitpro/portlibs/switch/
+          echo "--- installed ---"
+          ls /opt/devkitpro/portlibs/switch/lib/pkgconfig/ | grep -i nxvk || { echo "nxvk.pc NOT installed"; exit 1; }
+          ls /opt/devkitpro/portlibs/switch/lib/ | grep -i nvk || { echo "libnvk NOT installed"; exit 1; }
           export PATH="/opt/devkitpro/tools/bin:$PATH"
-          pkg-config --modversion nxvk
-          pkg-config --libs nxvk
+          export PKG_CONFIG_LIBDIR="/opt/devkitpro/portlibs/switch/lib/pkgconfig"
+          pkg-config --modversion nxvk || { echo "pkg-config check failed"; exit 1; }
+          pkg-config --libs nxvk || true
 
       - name: Clone uam sources (UAM_ROOT)
         run: |
@@ -236,12 +246,21 @@ jobs:
           name: armsx2nx-nro
           path: armsx2nx.nro
 
+      - name: Upload logs artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: switch-build-logs-${{ github.run_id }}
+          path: logs/
+          if-no-files-found: warn
+
       - name: Push logs to ci-artifacts-switch (on failure, for debugging)
         if: failure() && github.repository == 'berlint-hub/Yadokari'
         run: |
-          set -e
+          set -x
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
+          git config --global --add safe.directory '*'
           mkdir -p logs
           for f in logs/*.log; do
             if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
@@ -253,11 +272,11 @@ jobs:
             git checkout ci-artifacts-switch
           else
             git checkout --orphan ci-artifacts-switch
-            git rm -rf --quiet .
+            git rm -rf --quiet . || true
           fi
           git add logs
           git commit -m "build logs run ${{ github.run_id }}" || true
-          git push --force origin HEAD:ci-artifacts-switch
+          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:ci-artifacts-switch
 
   publish:
     permissions:
