@@ -81,10 +81,35 @@ jobs:
           name: ${{ steps.package_info.outputs.PACKAGE_NAME }}
           path: ${{ steps.rename_apk.outputs.APK_FILE_NIGHTLY }}
 
-      - name: Publish nightly APK to ci-artifacts branch (direct git/codeload download)
-        if: github.repository == 'berlint-hub/Yadokari'
+  publish:
+    permissions:
+      contents: write
+      actions: read
+
+    needs: [ build ]
+
+    if: github.repository == 'berlint-hub/Yadokari'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout of code
+        uses: actions/checkout@v5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ needs.build.outputs.package_name }}
+          path: artifact
+
+      - name: Push nightly APK to ci-artifacts branch (direct git/codeload download)
         run: |
-          APK_FILE="${{ steps.rename_apk.outputs.APK_FILE_NIGHTLY }}"
+          set -e
+          APK_FILE=$(find artifact -type f -name '*.apk' -print -quit)
+          if [ -z "$APK_FILE" ]; then
+            echo "CRITICAL ERROR: nightly APK not found in artifact."
+            exit 1
+          fi
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
           git checkout --orphan ci-artifacts
@@ -97,7 +122,8 @@ jobs:
             > artifacts/build-info.txt
           git add artifacts
           git commit -m "nightly APK from run ${{ github.run_id }}"
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:ci-artifacts
+          git push --force origin HEAD:ci-artifacts
+          echo "Pushed APK to ci-artifacts branch"
 
   release:
     permissions:
