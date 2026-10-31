@@ -207,6 +207,7 @@ jobs:
         run: |
           export DEVKITPRO=/opt/devkitpro
           export PATH="/opt/devkitpro/pacman/bin:/opt/devkitpro/tools/bin:$PATH"
+          export PKG_CONFIG_LIBDIR="/opt/devkitpro/portlibs/switch/lib/pkgconfig"
           mkdir -p logs
           cmake -S app/src/main/cpp -B build/switch-core \
             -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
@@ -257,26 +258,31 @@ jobs:
       - name: Push logs to ci-artifacts-switch (on failure, for debugging)
         if: failure() && github.repository == 'berlint-hub/Yadokari'
         run: |
-          set -x
+          set -ex
+          AUTH_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+          rm -rf /tmp/logrepo
+          if git ls-remote --exit-code "$AUTH_URL" refs/heads/ci-artifacts-switch >/dev/null 2>&1; then
+            git clone --depth 1 --branch ci-artifacts-switch "$AUTH_URL" /tmp/logrepo
+          else
+            mkdir -p /tmp/logrepo
+            cd /tmp/logrepo
+            git init -q
+            git checkout -q --orphan ci-artifacts-switch
+          fi
+          cd /tmp/logrepo
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
-          git config --global --add safe.directory '*'
           mkdir -p logs
-          for f in logs/*.log; do
+          for f in "$GITHUB_WORKSPACE"/logs/*.log; do
             if [ -f "$f" ]; then cp "$f" "logs/run-${{ github.run_id }}-$(basename "$f")"; fi
           done
-          if [ -f build/switch-core/build.log ]; then cp build/switch-core/build.log "logs/run-${{ github.run_id }}-build.log"; fi
-          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=build status=failure" > "logs/run-${{ github.run_id }}-info.txt"
-          if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
-            git fetch origin ci-artifacts-switch
-            git checkout ci-artifacts-switch
-          else
-            git checkout --orphan ci-artifacts-switch
-            git rm -rf --quiet . || true
+          if [ -f "$GITHUB_WORKSPACE/build/switch-core/build.log" ]; then
+            cp "$GITHUB_WORKSPACE/build/switch-core/build.log" "logs/run-${{ github.run_id }}-build.log"
           fi
+          echo "run_id=${{ github.run_id }} sha=${{ github.sha }} job=build status=failure" > "logs/run-${{ github.run_id }}-info.txt"
           git add logs
           git commit -m "build logs run ${{ github.run_id }}" || true
-          git push --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" HEAD:ci-artifacts-switch
+          git push --force "$AUTH_URL" HEAD:ci-artifacts-switch
 
   publish:
     permissions:
