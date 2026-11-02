@@ -1,0 +1,503 @@
++ find nxvk-portlib -maxdepth 4 -print
+nxvk-portlib
+nxvk-portlib/include
+nxvk-portlib/include/vk_video
+nxvk-portlib/include/vk_video/vulkan_video_codec_h264std_encode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_av1std_decode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_h265std.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_av1std_encode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_h264std.h
+nxvk-portlib/include/vk_video/vulkan_video_codecs_common.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_vp9std.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_av1std.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_h265std_encode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_vp9std_decode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_h265std_decode.h
+nxvk-portlib/include/vk_video/vulkan_video_codec_h264std_decode.h
+nxvk-portlib/include/vulkan
+nxvk-portlib/include/vulkan/vulkan_ohos.h
+nxvk-portlib/include/vulkan/vulkan_xlib.h
+nxvk-portlib/include/vulkan/vulkan_screen.h
+nxvk-portlib/include/vulkan/vulkan_win32.h
+nxvk-portlib/include/vulkan/vulkan_fuchsia.h
+nxvk-portlib/include/vulkan/vulkan_beta.h
+nxvk-portlib/include/vulkan/vulkan_ios.h
+nxvk-portlib/include/vulkan/vulkan.h
+nxvk-portlib/include/vulkan/vulkan_android.h
+nxvk-portlib/include/vulkan/vulkan_macos.h
+nxvk-portlib/include/vulkan/vulkan_vi.h
+nxvk-portlib/include/vulkan/vulkan_xcb.h
+nxvk-portlib/include/vulkan/vulkan_wayland.h
+nxvk-portlib/include/vulkan/vulkan_metal.h
+nxvk-portlib/include/vulkan/vk_platform.h
+nxvk-portlib/include/vulkan/vk_android_native_buffer.h
+nxvk-portlib/include/vulkan/vulkan_core.h
+nxvk-portlib/include/vulkan/vulkan_ubm.h
+nxvk-portlib/include/vulkan/vulkan_xlib_xrandr.h
+nxvk-portlib/include/vulkan/vulkan_ggp.h
+nxvk-portlib/include/vulkan/vk_icd.h
+nxvk-portlib/include/vulkan/vulkan_directfb.h
+nxvk-portlib/include/vulkan/vk_layer.h
+nxvk-portlib/lib
+nxvk-portlib/lib/libnvk.a
+nxvk-portlib/lib/libnvk_support.a
+nxvk-portlib/lib/pkgconfig
+nxvk-portlib/lib/pkgconfig/nxvk.pc
+nxvk-portlib/licenses
+nxvk-portlib/licenses/nxvk
+nxvk-portlib/licenses/nxvk/GPL-2.0-or-later
++ '[' -d nxvk-portlib/lib ']'
++ SRC=nxvk-portlib
++ echo 'installing from nxvk-portlib'
+installing from nxvk-portlib
++ mkdir -p /opt/devkitpro/portlibs/switch
++ cp -a nxvk-portlib/. /opt/devkitpro/portlibs/switch/
++ ls -la /opt/devkitpro/portlibs/switch/lib /opt/devkitpro/portlibs/switch/lib/pkgconfig
+/opt/devkitpro/portlibs/switch/lib:
+total 287776
+drwxr-xr-x  1 root root     4096 Nov  2 10:49 .
+drwxr-xr-x  1 root root     4096 Nov  2 10:49 ..
+drwxr-xr-x 20 root root     4096 Feb 19  2026 cmake
+-rw-r--r--  1 root root  6927102 Jul 24  2024 libarchive.a
+-rw-r--r--  1 root root   585462 Oct 23  2024 libass.a
+-rwxr-xr-x  1 root root     1203 Oct 23  2024 libass.la
+-rw-r--r--  1 root root 17939424 Nov  6  2024 libavcodec.a
+-rw-r--r--  1 root root  7445564 Nov  6  2024 libavfilter.a
+-rw-r--r--  1 root root  4134774 Nov  6  2024 libavformat.a
+-rw-r--r--  1 root root  1398806 Nov 24  2023 libavif.a
+-rw-r--r--  1 root root  1444800 Nov  6  2024 libavutil.a
+-rw-r--r--  1 root root   545342 Jun  9  2021 libbox2d.a
+-rw-r--r--  1 root root    17100 Jun 11  2021 libBullet3Common.a
+-rw-r--r--  1 root root  2283584 Jun 11  2021 libBulletCollision.a
+-rw-r--r--  1 root root  1632612 Jun 11  2021 libBulletDynamics.a
+-rw-r--r--  1 root root   170462 Jun 11  2021 libBulletInverseDynamics.a
+-rw-r--r--  1 root root   494430 Jun 11  2021 libBulletSoftBody.a
+-rw-r--r--  1 root root    87058 Mar  6  2023 libbz2.a
+-rw-r--r--  1 root root   226620 May 26  2020 libconfig++.a
+-rw-r--r--  1 root root    98824 May 26  2020 libconfig.a
+-rwxr-xr-x  1 root root     1030 May 26  2020 libconfig++.la
+-rwxr-xr-x  1 root root      961 May 26  2020 libconfig.la
+-rw-r--r--  1 root root  1085362 Jun 16  2024 libcurl.a
+-rwxr-xr-x  1 root root      973 Jun 16  2024 libcurl.la
+-rw-r--r--  1 root root  1374870 Oct 23  2024 libdav1d.a
+-rw-r--r--  1 root root   167428 Jun 11  2021 libdrm_nouveau.a
+-rw-r--r--  1 root root   198996 Jun 11  2021 libdrm_nouveaud.a
+-rw-r--r--  1 root root 22478644 Jul  4  2025 libEGL.a
+-rw-r--r--  1 root root    73476 May 12  2021 libenet.a
+-rwxr-xr-x  1 root root      968 May 12  2021 libenet.la
+-rw-r--r--  1 root root   251018 Jun 16  2024 libexpat.a
+-rwxr-xr-x  1 root root      956 Jun 16  2024 libexpat.la
+-rw-r--r--  1 root root   231826 May 11  2020 libFLAC++.a
+-rw-r--r--  1 root root   565192 May 11  2020 libFLAC.a
+-rwxr-xr-x  1 root root     1128 May 11  2020 libFLAC++.la
+-rwxr-xr-x  1 root root     1018 May 11  2020 libFLAC.la
+-rw-r--r--  1 root root  7165074 Jun 17  2025 libfreetype.a
+-rw-r--r--  1 root root   160576 Mar  6  2023 libfribidi.a
+-rwxr-xr-x  1 root root      978 Mar  6  2023 libfribidi.la
+-rw-r--r--  1 root root   590312 Sep 18  2019 libgd.a
+-rwxr-xr-x  1 root root     1165 Sep 18  2019 libgd.la
+-rw-r--r--  1 root root    62544 Jun 10  2021 libgif.a
+-rwxr-xr-x  1 root root      969 Jun 10  2021 libgif.la
+-rw-r--r--  1 root root   400044 Jun 11  2021 libglad.a
+-rw-r--r--  1 root root   987222 Jul  4  2025 libglapi.a
+-rw-r--r--  1 root root    63746 Jul  4  2025 libGLESv1_CM.a
+-rw-r--r--  1 root root   161012 Jul  4  2025 libGLESv2.a
+-rw-r--r--  1 root root   240202 Jun 18  2021 libglfw3.a
+-rw-r--r--  1 root root  2743734 Oct 25  2024 libharfbuzz.a
+-rw-r--r--  1 root root  2976340 Oct 25  2024 libharfbuzz-subset.a
+-rw-r--r--  1 root root   130364 Jun 16  2024 libjansson.a
+-rwxr-xr-x  1 root root      978 Jun 16  2024 libjansson.la
+-rw-r--r--  1 root root   628306 Feb  5  2022 libjpeg.a
+-rw-r--r--  1 root root   456572 Jun 16  2024 libjson-c.a
+-rw-r--r--  1 root root   176680 Jun 11  2021 libLinearMath.a
+-rw-r--r--  1 root root   486516 Aug 25  2023 liblua5.1.a
+-rw-r--r--  1 root root  1569232 Feb 23  2024 liblwext4.a
+-rw-r--r--  1 root root   169788 Jun 23  2021 liblz4.a
+-rw-r--r--  1 root root   397422 Jan  3  2026 liblzma.a
+-rwxr-xr-x  1 root root      973 Jan  3  2026 liblzma.la
+-rw-r--r--  1 root root   235044 Jun 11  2021 liblzo2.a
+-rwxr-xr-x  1 root root      957 Jun 11  2021 liblzo2.la
+-rw-r--r--  1 root root   143036 Jul  3  2021 libmad.a
+-rwxr-xr-x  1 root root      966 Jul  3  2021 libmad.la
+-rw-r--r--  1 root root   904596 May 26  2025 libmbedcrypto.a
+-rw-r--r--  1 root root   370734 May 26  2025 libmbedtls.a
+-rw-r--r--  1 root root   199012 May 26  2025 libmbedx509.a
+-rw-r--r--  1 root root   710946 Nov 12  2018 libmikmod.a
+-rwxr-xr-x  1 root root      963 Nov 12  2018 libmikmod.la
+-rw-r--r--  1 root root   102934 Oct  9  2019 libminiupnpc.a
+-rw-r--r--  1 root root    65770 Jun 16  2024 libminizip.a
+-rwxr-xr-x  1 root root      992 Jun 16  2024 libminizip.la
+-rw-r--r--  1 root root   544580 Jun 10  2021 libmodplug.a
+-rwxr-xr-x  1 root root      962 Jun 10  2021 libmodplug.la
+-rw-r--r--  1 root root   514806 Jun 16  2024 libmpg123.a
+-rwxr-xr-x  1 root root      976 Jun 16  2024 libmpg123.la
+-rw-r--r--  1 root root  4466336 Jan  2  2026 libmpv.a
+-rw-r--r--  1 root root 49192262 Apr  6  2023 libmupdf.a
+-rw-r--r--  1 root root  4534198 Apr  6  2023 libmupdf-third.a
+-rw-r--r--  1 root root   714886 Feb 24  2024 libntfs-3g.a
+-rwxr-xr-x  1 root root      985 Feb 24  2024 libntfs-3g.la
+-rw-r--r--  1 root root  5314104 Nov  2 10:49 libnvk.a
+-rw-r--r--  1 root root 43065254 Nov  2 10:49 libnvk_support.a
+-rw-r--r--  1 root root  2371332 Dec 31  2023 libode.a
+-rwxr-xr-x  1 root root      981 Dec 31  2023 libode.la
+-rw-r--r--  1 root root    46594 Jun 10  2021 libogg.a
+-rwxr-xr-x  1 root root      950 Jun 10  2021 libogg.la
+-rw-r--r--  1 root root   956562 Jun 10  2021 libonig.a
+-rwxr-xr-x  1 root root      970 Jun 10  2021 libonig.la
+-rw-r--r--  1 root root 43444674 Jun  1  2024 libopenal.a
+-rw-r--r--  1 root root   714590 Mar 15  2019 libopus.a
+-rw-r--r--  1 root root    72044 Nov  5  2018 libopusfile.a
+-rwxr-xr-x  1 root root     1060 Nov  5  2018 libopusfile.la
+-rwxr-xr-x  1 root root      957 Mar 15  2019 libopus.la
+-rw-r--r--  1 root root    10554 Nov  5  2018 libopusurl.a
+-rwxr-xr-x  1 root root     1107 Nov  5  2018 libopusurl.la
+-rw-r--r--  1 root root   100872 Jun 16  2024 libout123.a
+-rwxr-xr-x  1 root root      979 Jun 16  2024 libout123.la
+-rw-r--r--  1 root root   397120 Jun 11  2021 libpcre2-16.a
+-rwxr-xr-x  1 root root      974 Jun 11  2021 libpcre2-16.la
+-rw-r--r--  1 root root   381798 Jun 11  2021 libpcre2-32.a
+-rwxr-xr-x  1 root root      974 Jun 11  2021 libpcre2-32.la
+-rw-r--r--  1 root root   420346 Jun 11  2021 libpcre2-8.a
+-rwxr-xr-x  1 root root      971 Jun 11  2021 libpcre2-8.la
+-rw-r--r--  1 root root     7826 Jun 11  2021 libpcre2-posix.a
+-rwxr-xr-x  1 root root     1032 Jun 11  2021 libpcre2-posix.la
+-rw-r--r--  1 root root  1359606 Jun 16  2024 libphysfs.a
+-rw-r--r--  1 root root  1263526 Apr 22  2024 libplacebo.a
+-rw-r--r--  1 root root   440328 May 12  2025 libpng16.a
+-rwxr-xr-x  1 root root      966 May 12  2025 libpng16.la
+-rw-r--r--  1 root root   440328 May 12  2025 libpng.a
+-rwxr-xr-x  1 root root      966 May 12  2025 libpng.la
+-rw-r--r--  1 root root    54768 Nov  6  2024 libpostproc.a
+-rw-r--r--  1 root root  1503670 Jun 10  2021 libsamplerate.a
+-rwxr-xr-x  1 root root      990 Jun 10  2021 libsamplerate.la
+-rw-r--r--  1 root root 10039308 Mar 24  2024 libSDL2.a
+-rw-r--r--  1 root root   106264 Mar 15  2019 libSDL2_gfx.a
+-rwxr-xr-x  1 root root     1038 Mar 15  2019 libSDL2_gfx.la
+-rw-r--r--  1 root root   233730 Jun 26  2019 libSDL2_image.a
+-rwxr-xr-x  1 root root     1195 Jun 26  2019 libSDL2_image.la
+-rwxr-xr-x  1 root root     1006 Mar 24  2024 libSDL2.la
+-rw-r--r--  1 root root     4404 Mar 24  2024 libSDL2main.a
+-rwxr-xr-x  1 root root      896 Mar 24  2024 libSDL2main.la
+-rw-r--r--  1 root root   285460 Jul  1  2019 libSDL2_mixer.a
+-rwxr-xr-x  1 root root     1453 Jul  1  2019 libSDL2_mixer.la
+-rw-r--r--  1 root root    31588 May 24  2019 libSDL2_net.a
+-rwxr-xr-x  1 root root     1042 May 24  2019 libSDL2_net.la
+-rw-r--r--  1 root root   917446 Mar 24  2024 libSDL2_test.a
+-rwxr-xr-x  1 root root      899 Mar 24  2024 libSDL2_test.la
+-rw-r--r--  1 root root    87482 Mar 24  2024 libSDL2_ttf.a
+-rwxr-xr-x  1 root root     1237 Mar 24  2024 libSDL2_ttf.la
+-rw-r--r--  1 root root   377278 Feb  1  2021 libsmpeg2.a
+-rwxr-xr-x  1 root root     1149 Feb  1  2021 libsmpeg2.la
+-rw-r--r--  1 root root   716120 Jun 16  2024 libsodium.a
+-rwxr-xr-x  1 root root      979 Jun 16  2024 libsodium.la
+-rw-r--r--  1 root root   465256 May 30  2023 libssh2.a
+-rwxr-xr-x  1 root root      986 May 30  2023 libssh2.la
+-rw-r--r--  1 root root   161426 Nov  6  2024 libswresample.a
+-rw-r--r--  1 root root   721762 Nov  6  2024 libswscale.a
+-rw-r--r--  1 root root   209468 Jun 16  2024 libsyn123.a
+-rwxr-xr-x  1 root root      974 Jun 16  2024 libsyn123.la
+-rw-r--r--  1 root root   131730 May 21  2022 libtheora.a
+-rw-r--r--  1 root root   127366 May 21  2022 libtheoradec.a
+-rwxr-xr-x  1 root root      972 May 21  2022 libtheoradec.la
+-rw-r--r--  1 root root     4438 May 21  2022 libtheoraenc.a
+-rwxr-xr-x  1 root root     1068 May 21  2022 libtheoraenc.la
+-rwxr-xr-x  1 root root     1008 May 21  2022 libtheora.la
+-rw-r--r--  1 root root    81198 Jun 11  2021 libtimidity.a
+-rwxr-xr-x  1 root root      969 Jun 11  2021 libtimidity.la
+-rw-r--r--  1 root root   191564 Dec  5  2019 libtinyxml2.a
+-rw-r--r--  1 root root   805276 Feb  5  2022 libturbojpeg.a
+-rw-r--r--  1 root root   246486 Feb  1  2021 libvorbis.a
+-rw-r--r--  1 root root  1182254 Feb  1  2021 libvorbisenc.a
+-rwxr-xr-x  1 root root     1082 Feb  1  2021 libvorbisenc.la
+-rw-r--r--  1 root root    43676 Feb  1  2021 libvorbisfile.a
+-rwxr-xr-x  1 root root     1084 Feb  1  2021 libvorbisfile.la
+-rw-r--r--  1 root root   169332 Mar 15  2019 libvorbisidec.a
+-rwxr-xr-x  1 root root     1035 Mar 15  2019 libvorbisidec.la
+-rwxr-xr-x  1 root root     1024 Feb  1  2021 libvorbis.la
+-rw-r--r--  1 root root  2269344 Jun 11  2021 libvpx.a
+-rw-r--r--  1 root root   771592 Jun 10  2021 libwebp.a
+-rw-r--r--  1 root root    20218 Jun 10  2021 libwebpdemux.a
+-rwxr-xr-x  1 root root     1033 Jun 10  2021 libwebpdemux.la
+-rwxr-xr-x  1 root root      972 Jun 10  2021 libwebp.la
+-rw-r--r--  1 root root    34886 Apr  3  2020 libwslay.a
+-rwxr-xr-x  1 root root      971 Apr  3  2020 libwslay.la
+-rw-r--r--  1 root root  3186494 Jun 16  2024 libxml2.a
+-rwxr-xr-x  1 root root      972 Jun 16  2024 libxml2.la
+-rw-r--r--  1 root root    51816 Feb 16  2024 libxxhash.a
+-rw-r--r--  1 root root   440412 Jun 16  2024 libz.a
+-rw-r--r--  1 root root 13301446 May 12  2025 libzstd.a
+-rw-r--r--  1 root root   228788 Aug 23  2024 libzzip-0.a
+lrwxrwxrwx  1 root root       11 Aug 23  2024 libzzip.a -> libzzip-0.a
+-rw-r--r--  1 root root    64828 Aug 23  2024 libzzipfseeko-0.a
+lrwxrwxrwx  1 root root       17 Aug 23  2024 libzzipfseeko.a -> libzzipfseeko-0.a
+drwxr-xr-x  1 root root     4096 Nov  2 10:49 pkgconfig
+-rw-r--r--  1 root root      302 Jun 16  2024 xml2Conf.sh
+
+/opt/devkitpro/portlibs/switch/lib/pkgconfig:
+total 392
+drwxr-xr-x 1 root root 4096 Nov  2 10:49 .
+drwxr-xr-x 1 root root 4096 Nov  2 10:49 ..
+-rw-r--r-- 1 root root  314 Jun 11  2021 bullet.pc
+-rw-r--r-- 1 root root  226 Oct 23  2024 dav1d.pc
+-rw-r--r-- 1 root root  244 Jul  4  2025 egl.pc
+-rw-r--r-- 1 root root  252 Jun 16  2024 expat.pc
+-rw-r--r-- 1 root root  267 May 11  2020 flac++.pc
+-rw-r--r-- 1 root root  278 May 11  2020 flac.pc
+-rw-r--r-- 1 root root  378 Jun 17  2025 freetype2.pc
+-rw-r--r-- 1 root root  414 Mar  6  2023 fribidi.pc
+-rw-r--r-- 1 root root  447 Sep 18  2019 gdlib.pc
+-rw-r--r-- 1 root root  229 Jul  4  2025 glapi.pc
+-rw-r--r-- 1 root root  242 Jul  4  2025 glesv1_cm.pc
+-rw-r--r-- 1 root root  233 Jul  4  2025 glesv2.pc
+-rw-r--r-- 1 root root  377 Jun 18  2021 glfw3.pc
+-rw-r--r-- 1 root root  278 Oct 25  2024 harfbuzz.pc
+-rw-r--r-- 1 root root  266 Oct 25  2024 harfbuzz-subset.pc
+-rw-r--r-- 1 root root  267 Jun 16  2024 jansson.pc
+-rw-r--r-- 1 root root  388 Jul 24  2024 libarchive.pc
+-rw-r--r-- 1 root root  366 Oct 23  2024 libass.pc
+-rw-r--r-- 1 root root  493 Nov  6  2024 libavcodec.pc
+-rw-r--r-- 1 root root  715 Nov  6  2024 libavfilter.pc
+-rw-r--r-- 1 root root  468 Nov  6  2024 libavformat.pc
+-rw-r--r-- 1 root root  277 Nov 24  2023 libavif.pc
+-rw-r--r-- 1 root root  345 Nov  6  2024 libavutil.pc
+-rw-r--r-- 1 root root  339 May 26  2020 libconfig++.pc
+-rw-r--r-- 1 root root  333 May 26  2020 libconfig.pc
+-rw-r--r-- 1 root root 1577 Jun 16  2024 libcurl.pc
+-rw-r--r-- 1 root root  285 Jun 11  2021 libdrm_nouveau.pc
+-rw-r--r-- 1 root root  275 May 12  2021 libenet.pc
+-rw-r--r-- 1 root root  272 Jun 11  2021 libglad.pc
+-rw-r--r-- 1 root root  325 Feb  5  2022 libjpeg.pc
+-rw-r--r-- 1 root root  507 Jun 23  2021 liblz4.pc
+-rw-r--r-- 1 root root  463 Jan  3  2026 liblzma.pc
+-rw-r--r-- 1 root root  321 Nov 12  2018 libmikmod.pc
+-rw-r--r-- 1 root root  292 Jun 10  2021 libmodplug.pc
+-rw-r--r-- 1 root root  279 Jun 16  2024 libmpg123.pc
+-rw-r--r-- 1 root root  252 Feb 24  2024 libntfs-3g.pc
+-rw-r--r-- 1 root root  297 Jun 16  2024 libout123.pc
+-rw-r--r-- 1 root root  378 Jun 11  2021 libpcre2-16.pc
+-rw-r--r-- 1 root root  378 Jun 11  2021 libpcre2-32.pc
+-rw-r--r-- 1 root root  375 Jun 11  2021 libpcre2-8.pc
+-rw-r--r-- 1 root root  344 Jun 11  2021 libpcre2-posix.pc
+-rw-r--r-- 1 root root  509 Apr 22  2024 libplacebo.pc
+-rw-r--r-- 1 root root  293 May 12  2025 libpng16.pc
+-rw-r--r-- 1 root root  293 May 12  2025 libpng.pc
+-rw-r--r-- 1 root root  368 Nov  6  2024 libpostproc.pc
+-rw-r--r-- 1 root root  287 Jun 16  2024 libsodium.pc
+-rw-r--r-- 1 root root  531 May 30  2023 libssh2.pc
+-rw-r--r-- 1 root root  373 Nov  6  2024 libswresample.pc
+-rw-r--r-- 1 root root  366 Nov  6  2024 libswscale.pc
+-rw-r--r-- 1 root root  290 Jun 16  2024 libsyn123.pc
+-rw-r--r-- 1 root root  306 Jun 11  2021 libtimidity.pc
+-rw-r--r-- 1 root root  337 Feb  5  2022 libturbojpeg.pc
+-rw-r--r-- 1 root root  299 Jun 10  2021 libwebpdemux.pc
+-rw-r--r-- 1 root root  264 Jun 10  2021 libwebp.pc
+-rw-r--r-- 1 root root 1406 Apr  3  2020 libwslay.pc
+-rw-r--r-- 1 root root  338 Jun 16  2024 libxml-2.0.pc
+-rw-r--r-- 1 root root  440 Feb 16  2024 libxxhash.pc
+-rw-r--r-- 1 root root  476 May 12  2025 libzstd.pc
+-rw-r--r-- 1 root root  688 Aug 25  2023 lua51.pc
+-rw-r--r-- 1 root root  546 Jun 11  2021 lzo2.pc
+-rw-r--r-- 1 root root  447 May 26  2025 mbedcrypto.pc
+-rw-r--r-- 1 root root  482 May 26  2025 mbedtls.pc
+-rw-r--r-- 1 root root  474 May 26  2025 mbedx509.pc
+-rw-r--r-- 1 root root  258 Oct  9  2019 miniupnpc.pc
+-rw-r--r-- 1 root root  284 Jun 16  2024 minizip.pc
+-rw-r--r-- 1 root root  499 Jan  2  2026 mpv.pc
+-rw-r--r-- 1 root root  460 Nov  2 10:49 nxvk.pc
+-rw-r--r-- 1 root root  269 Dec 31  2023 ode.pc
+-rw-r--r-- 1 root root  295 Jun 10  2021 ogg.pc
+-rw-r--r-- 1 root root  398 Jun 10  2021 oniguruma.pc
+-rw-r--r-- 1 root root  327 Jun  1  2024 openal.pc
+-rw-r--r-- 1 root root  356 Nov  5  2018 opusfile.pc
+-rw-r--r-- 1 root root  375 Mar 15  2019 opus.pc
+-rw-r--r-- 1 root root  317 Nov  5  2018 opusurl.pc
+-rw-r--r-- 1 root root  373 Jun 16  2024 physfs.pc
+-rw-r--r-- 1 root root  268 Jun 10  2021 samplerate.pc
+-rw-r--r-- 1 root root  289 Mar 15  2019 SDL2_gfx.pc
+-rw-r--r-- 1 root root  338 Jun 26  2019 SDL2_image.pc
+-rw-r--r-- 1 root root  348 Jul  1  2019 SDL2_mixer.pc
+-rw-r--r-- 1 root root  282 May 24  2019 SDL2_net.pc
+-rw-r--r-- 1 root root  768 Mar 24  2024 sdl2.pc
+-rw-r--r-- 1 root root  361 Mar 24  2024 SDL2_ttf.pc
+-rw-r--r-- 1 root root  317 May 21  2022 theoradec.pc
+-rw-r--r-- 1 root root  328 May 21  2022 theoraenc.pc
+-rw-r--r-- 1 root root  301 May 21  2022 theora.pc
+-rw-r--r-- 1 root root  279 Dec  5  2019 tinyxml2.pc
+-rw-r--r-- 1 root root  398 Feb  1  2021 vorbisenc.pc
+-rw-r--r-- 1 root root  424 Feb  1  2021 vorbisfile.pc
+-rw-r--r-- 1 root root  334 Mar 15  2019 vorbisidec.pc
+-rw-r--r-- 1 root root  337 Feb  1  2021 vorbis.pc
+-rw-r--r-- 1 root root  325 Jun 11  2021 vpx.pc
+-rw-r--r-- 1 root root  278 Jun 16  2024 zlib.pc
+-rw-r--r-- 1 root root  301 Aug 23  2024 zzipfseeko.pc
+-rw-r--r-- 1 root root  289 Aug 23  2024 zziplib.pc
+-rw-r--r-- 1 root root  304 Aug 23  2024 zzipmmapped.pc
++ ls -la /opt/devkitpro/portlibs/switch/include
+total 2604
+drwxr-xr-x 1 root root   4096 Nov  2 10:49 .
+drwxr-xr-x 1 root root   4096 Nov  2 10:49 ..
+drwxr-xr-x 2 root root   4096 Feb 19  2026 AL
+-rw-r--r-- 1 root root  33796 Jul 24  2024 archive_entry.h
+-rw-r--r-- 1 root root  53759 Jul 24  2024 archive.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 ass
+drwxr-xr-x 2 root root   4096 Feb 19  2026 avif
+drwxr-xr-x 2 root root   4096 Feb 19  2026 box2d
+drwxr-xr-x 8 root root   4096 Feb 19  2026 bullet
+-rw-r--r-- 1 root root   6240 Mar  6  2023 bzlib.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 curl
+drwxr-xr-x 2 root root   4096 Feb 19  2026 dav1d
+drwxr-xr-x 2 root root   4096 Feb 19  2026 EGL
+drwxr-xr-x 2 root root   4096 Feb 19  2026 enet
+-rw-r--r-- 1 root root   4930 Sep 18  2019 entities.h
+drwxr-xr-x 5 root root   4096 Feb 19  2026 everest
+-rw-r--r-- 1 root root   3529 Jun 16  2024 expat_config.h
+-rw-r--r-- 1 root root   5532 Jun 16  2024 expat_external.h
+-rw-r--r-- 1 root root  43512 Jun 16  2024 expat.h
+-rw-r--r-- 1 root root   3804 Feb 23  2024 ext4_balloc.h
+-rw-r--r-- 1 root root   8528 Feb 23  2024 ext4_bcache.h
+-rw-r--r-- 1 root root   3188 Feb 23  2024 ext4_bitmap.h
+-rw-r--r-- 1 root root   9216 Feb 23  2024 ext4_blockdev.h
+-rw-r--r-- 1 root root   9806 Feb 23  2024 ext4_block_group.h
+-rw-r--r-- 1 root root   5555 Feb 23  2024 ext4_config.h
+-rw-r--r-- 1 root root   2316 Feb 23  2024 ext4_crc32.h
+-rw-r--r-- 1 root root   5379 Feb 23  2024 ext4_debug.h
+-rw-r--r-- 1 root root   8962 Feb 23  2024 ext4_dir.h
+-rw-r--r-- 1 root root   3520 Feb 23  2024 ext4_dir_idx.h
+-rw-r--r-- 1 root root   2955 Feb 23  2024 ext4_errno.h
+-rw-r--r-- 1 root root   2475 Feb 23  2024 ext4_extent.h
+-rw-r--r-- 1 root root   8776 Feb 23  2024 ext4_fs.h
+-rw-r--r-- 1 root root  18224 Feb 23  2024 ext4.h
+-rw-r--r-- 1 root root   2376 Feb 23  2024 ext4_hash.h
+-rw-r--r-- 1 root root   2882 Feb 23  2024 ext4_ialloc.h
+-rw-r--r-- 1 root root  11127 Feb 23  2024 ext4_inode.h
+-rw-r--r-- 1 root root   4137 Feb 23  2024 ext4_journal.h
+-rw-r--r-- 1 root root   2294 Feb 23  2024 ext4_mbr.h
+-rw-r--r-- 1 root root   4889 Feb 23  2024 ext4_misc.h
+-rw-r--r-- 1 root root   2433 Feb 23  2024 ext4_mkfs.h
+-rw-r--r-- 1 root root   2531 Feb 23  2024 ext4_oflags.h
+-rw-r--r-- 1 root root   7538 Feb 23  2024 ext4_super.h
+-rw-r--r-- 1 root root   3097 Feb 23  2024 ext4_trans.h
+-rw-r--r-- 1 root root  27791 Feb 23  2024 ext4_types.h
+-rw-r--r-- 1 root root   3204 Feb 23  2024 ext4_xattr.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 FLAC
+drwxr-xr-x 2 root root   4096 Feb 19  2026 FLAC++
+-rw-r--r-- 1 root root   6089 Jun 16  2024 fmt123.h
+drwxr-xr-x 4 root root   4096 Feb 19  2026 freetype2
+drwxr-xr-x 2 root root   4096 Feb 19  2026 fribidi
+-rw-r--r-- 1 root root   2898 Sep 18  2019 gdcache.h
+-rw-r--r-- 1 root root    478 Sep 18  2019 gd_color_map.h
+-rw-r--r-- 1 root root   1454 Sep 18  2019 gd_errors.h
+-rw-r--r-- 1 root root    553 Sep 18  2019 gdfontg.h
+-rw-r--r-- 1 root root    551 Sep 18  2019 gdfontl.h
+-rw-r--r-- 1 root root    519 Sep 18  2019 gdfontmb.h
+-rw-r--r-- 1 root root    515 Sep 18  2019 gdfonts.h
+-rw-r--r-- 1 root root    546 Sep 18  2019 gdfontt.h
+-rw-r--r-- 1 root root    497 Sep 18  2019 gdfx.h
+-rw-r--r-- 1 root root  57777 Sep 18  2019 gd.h
+-rw-r--r-- 1 root root   3125 Sep 18  2019 gd_io.h
+-rw-r--r-- 1 root root  52162 Sep 18  2019 gdpp.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 generated
+-rw-r--r-- 1 root root  13470 Jun 10  2021 gif_lib.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 GL
+drwxr-xr-x 2 root root   4096 Feb 19  2026 glad
+drwxr-xr-x 2 root root   4096 Feb 19  2026 GLES
+drwxr-xr-x 2 root root   4096 Feb 19  2026 GLES2
+drwxr-xr-x 2 root root   4096 Feb 19  2026 GLES3
+drwxr-xr-x 2 root root   4096 Feb 19  2026 GLFW
+drwxr-xr-x 7 root root   4096 Feb 19  2026 glm
+drwxr-xr-x 2 root root   4096 Feb 19  2026 harfbuzz
+-rw-r--r-- 1 root root   1627 Jun 16  2024 jansson_config.h
+-rw-r--r-- 1 root root  11997 Jun 16  2024 jansson.h
+-rw-r--r-- 1 root root   2043 Feb  5  2022 jconfig.h
+-rw-r--r-- 1 root root  15715 Feb  5  2022 jerror.h
+-rw-r--r-- 1 root root  14317 Feb  5  2022 jmorecfg.h
+-rw-r--r-- 1 root root  50281 Feb  5  2022 jpeglib.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 json-c
+drwxr-xr-x 2 root root   4096 Feb 19  2026 KHR
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libavcodec
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libavfilter
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libavformat
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libavutil
+-rw-r--r-- 1 root root  13892 May 26  2020 libconfig.h
+-rw-r--r-- 1 root root  15471 May 26  2020 libconfig.h++
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libmodplug
+drwxr-xr-x 4 root root   4096 Feb 19  2026 libplacebo
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libpng16
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libpostproc
+-rw-r--r-- 1 root root  54090 May 30  2023 libssh2.h
+-rw-r--r-- 1 root root   4804 May 30  2023 libssh2_publickey.h
+-rw-r--r-- 1 root root  15761 May 30  2023 libssh2_sftp.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libswresample
+drwxr-xr-x 2 root root   4096 Feb 19  2026 libswscale
+drwxr-xr-x 3 root root   4096 Feb 19  2026 libxml2
+drwxr-xr-x 2 root root   4096 Feb 19  2026 lua5.1
+-rw-r--r-- 1 root root  28899 Jun 23  2021 lz4frame.h
+-rw-r--r-- 1 root root   2044 Jun 23  2021 lz4frame_static.h
+-rw-r--r-- 1 root root  40861 Jun 23  2021 lz4.h
+-rw-r--r-- 1 root root  20165 Jun 23  2021 lz4hc.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 lzma
+-rw-r--r-- 1 root root   9790 Jan  3  2026 lzma.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 lzo
+-rw-r--r-- 1 root root  27127 Jul  3  2021 mad.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 mbedtls
+-rw-r--r-- 1 root root  31461 Nov 12  2018 mikmod.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 miniupnpc
+drwxr-xr-x 2 root root   4096 Feb 19  2026 minizip
+drwxr-xr-x 2 root root   4096 Feb 19  2026 misc
+-rw-r--r-- 1 root root  93335 Jun 16  2024 mpg123.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 mpv
+drwxr-xr-x 4 root root   4096 Feb 19  2026 mupdf
+-rw-r--r-- 1 root root   3068 Jun 11  2021 nouveau_drm.h
+-rw-r--r-- 1 root root   7741 Jun 11  2021 nouveau.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 ntfs-3g
+drwxr-xr-x 2 root root   4096 Feb 19  2026 nvif
+drwxr-xr-x 2 root root   4096 Feb 19  2026 ode
+drwxr-xr-x 2 root root   4096 Feb 19  2026 ogg
+-rw-r--r-- 1 root root   3394 Jun 10  2021 oniggnu.h
+-rw-r--r-- 1 root root   5913 Jun 10  2021 onigposix.h
+-rw-r--r-- 1 root root  45090 Jun 10  2021 oniguruma.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 opus
+-rw-r--r-- 1 root root  30123 Jun 16  2024 out123.h
+-rw-r--r-- 1 root root  46222 Jun 11  2021 pcre2.h
+-rw-r--r-- 1 root root   6677 Jun 11  2021 pcre2posix.h
+-rw-r--r-- 1 root root 165033 Jun 16  2024 physfs.h
+-rw-r--r-- 1 root root  22673 May 12  2025 pngconf.h
+-rw-r--r-- 1 root root 148124 May 12  2025 png.h
+-rw-r--r-- 1 root root   8081 May 12  2025 pnglibconf.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 psa
+-rw-r--r-- 1 root root   4754 Jun 10  2021 samplerate.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 SDL2
+drwxr-xr-x 2 root root   4096 Feb 19  2026 smpeg2
+drwxr-xr-x 2 root root   4096 Feb 19  2026 sodium
+-rw-r--r-- 1 root root   2774 Jun 16  2024 sodium.h
+-rw-r--r-- 1 root root  49754 Jun 16  2024 syn123.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 theora
+-rw-r--r-- 1 root root   9011 Jun 11  2021 timidity.h
+-rw-r--r-- 1 root root  69716 Dec  5  2019 tinyxml2.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 tremor
+-rw-r--r-- 1 root root  74651 Feb  5  2022 turbojpeg.h
+drwxr-xr-x 2 root root   4096 Nov  2 10:49 vk_video
+drwxr-xr-x 2 root root   4096 Feb 19  2026 vorbis
+drwxr-xr-x 2 root root   4096 Feb 19  2026 vpx
+drwxr-xr-x 2 root root   4096 Nov  2 10:49 vulkan
+drwxr-xr-x 2 root root   4096 Feb 19  2026 webp
+drwxr-xr-x 2 root root   4096 Feb 19  2026 wslay
+-rw-r--r-- 1 root root   2394 Feb 16  2024 xxh3.h
+-rw-r--r-- 1 root root 253096 Feb 16  2024 xxhash.h
+-rw-r--r-- 1 root root  16464 Jun 16  2024 zconf.h
+-rw-r--r-- 1 root root  26516 May 12  2025 zdict.h
+-rw-r--r-- 1 root root  96829 Jun 16  2024 zlib.h
+-rw-r--r-- 1 root root   4278 May 12  2025 zstd_errors.h
+-rw-r--r-- 1 root root 181748 May 12  2025 zstd.h
+drwxr-xr-x 2 root root   4096 Feb 19  2026 zzip
++ test -f /opt/devkitpro/portlibs/switch/lib/libnvk.a
++ test -f /opt/devkitpro/portlibs/switch/lib/libnvk_support.a
++ test -f /opt/devkitpro/portlibs/switch/lib/pkgconfig/nxvk.pc
++ export PKG_CONFIG_LIBDIR=/opt/devkitpro/portlibs/switch/lib/pkgconfig
++ PKG_CONFIG_LIBDIR=/opt/devkitpro/portlibs/switch/lib/pkgconfig
++ pkg-config --modversion nxvk
+26.2.2
++ pkg-config --cflags nxvk
+-I/opt/devkitpro/portlibs/switch/include -D__SWITCH__ -DVK_USE_PLATFORM_VI_NN -ffunction-sections -fdata-sections 
++ pkg-config --libs nxvk
+-L/opt/devkitpro/portlibs/switch/lib -Wl,--whole-archive -lnvk -Wl,--no-whole-archive -Wl,--start-group -lnvk_support -lz -lexpat -Wl,--end-group -Wl,-u,vk_icdGetInstanceProcAddr -Wl,--gc-sections 
