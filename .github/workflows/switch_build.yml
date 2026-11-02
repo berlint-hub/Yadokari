@@ -38,6 +38,8 @@ jobs:
     name: NXVK portlib (Vulkan)
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    permissions:
+      contents: write
     outputs:
       nxvk_sha: ${{ steps.nxvk.outputs.sha }}
 
@@ -90,7 +92,7 @@ jobs:
           cd "${GITHUB_WORKSPACE}/nxvk"
           sudo -E make CONTAINER=docker AR=ar DEVKITPRO="${GITHUB_WORKSPACE}/dkp-stage" install \
             2>&1 | tee "${GITHUB_WORKSPACE}/logs/nxvk-install.log"
-          find "${GITHUB_WORKSPACE}/dkp-stage" -maxdepth 4 | head -20
+          find "${GITHUB_WORKSPACE}/dkp-stage" -maxdepth 4
           cat "${GITHUB_WORKSPACE}/dkp-stage/portlibs/switch/lib/pkgconfig/nxvk.pc"
 
       - name: Upload the NXVK portlib
@@ -108,11 +110,43 @@ jobs:
           path: logs/
           if-no-files-found: warn
 
+      - name: Publish NXVK logs to ci-artifacts-switch
+        if: failure() && github.repository == 'berlint-hub/Yadokari'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf /tmp/logrepo
+          if git ls-remote --exit-code "${AUTH_URL}" refs/heads/ci-artifacts-switch >/dev/null 2>&1; then
+            git clone --depth 1 --branch ci-artifacts-switch "${AUTH_URL}" /tmp/logrepo
+            cd /tmp/logrepo
+          else
+            mkdir -p /tmp/logrepo
+            cd /tmp/logrepo
+            git init -q
+            git checkout -q --orphan ci-artifacts-switch
+          fi
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          mkdir -p logs
+          for f in "${GITHUB_WORKSPACE}"/logs/*.log; do
+            [ -f "$f" ] && cp "$f" "logs/run-${GITHUB_RUN_ID}-nxvk-$(basename "$f")"
+          done
+          echo "run_id=${GITHUB_RUN_ID} sha=${GITHUB_SHA} job=nxvk status=failure" \
+            > "logs/run-${GITHUB_RUN_ID}-nxvk-info.txt"
+          git add logs
+          git commit -m "nxvk logs run ${GITHUB_RUN_ID}" || true
+          git push --force "${AUTH_URL}" HEAD:ci-artifacts-switch
+
   build:
     name: ARMSX2-NX
     needs: [nxvk]
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    permissions:
+      contents: write
 
     container:
       image: devkitpro/devkita64:latest
@@ -154,14 +188,22 @@ jobs:
 
       - name: Install the NXVK portlib
         run: |
-          set -euxo pipefail
-          find nxvk-portlib -maxdepth 4 | head -30
+          set -eu
+          set -x
+          # No pipelines here: `find | head` trips pipefail through SIGPIPE.
+          ls -la nxvk-portlib || true
+          ls -la nxvk-portlib/lib || true
+          ls -la nxvk-portlib/lib/pkgconfig || true
+          ls -la nxvk-portlib/include || true
           cp -a nxvk-portlib/. "${DEVKITPRO}/portlibs/switch/"
-          ls "${DEVKITPRO}/portlibs/switch/lib/pkgconfig/" | grep -i nxvk
-          ls "${DEVKITPRO}/portlibs/switch/lib/" | grep -i nvk
+          test -f "${DEVKITPRO}/portlibs/switch/lib/libnvk.a"
+          test -f "${DEVKITPRO}/portlibs/switch/lib/libnvk_support.a"
+          test -f "${DEVKITPRO}/portlibs/switch/lib/pkgconfig/nxvk.pc"
+          test -f "${DEVKITPRO}/portlibs/switch/include/vulkan/vulkan.h"
           export PKG_CONFIG_LIBDIR="${DEVKITPRO}/portlibs/switch/lib/pkgconfig"
           pkg-config --modversion nxvk
-          pkg-config --libs nxvk || true
+          pkg-config --cflags nxvk
+          pkg-config --libs nxvk
 
       - name: Fetch the uam sources
         run: |
@@ -253,6 +295,40 @@ jobs:
           name: switch-build-logs-${{ github.run_id }}
           path: logs/
           if-no-files-found: warn
+
+      - name: Publish build logs to ci-artifacts-switch
+        if: failure() && github.repository == 'berlint-hub/Yadokari'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -ex
+          git config --global --add safe.directory '*'
+          AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf /tmp/logrepo
+          if git ls-remote --exit-code "${AUTH_URL}" refs/heads/ci-artifacts-switch >/dev/null 2>&1; then
+            git clone --depth 1 --branch ci-artifacts-switch "${AUTH_URL}" /tmp/logrepo
+            cd /tmp/logrepo
+          else
+            mkdir -p /tmp/logrepo
+            cd /tmp/logrepo
+            git init -q
+            git checkout -q --orphan ci-artifacts-switch
+          fi
+          git config user.email "actions-ci@localhost"
+          git config user.name "actions-ci"
+          mkdir -p logs
+          for f in "${GITHUB_WORKSPACE}"/logs/*.log; do
+            [ -f "$f" ] && cp "$f" "logs/run-${GITHUB_RUN_ID}-build-$(basename "$f")"
+          done
+          if [ -f "${GITHUB_WORKSPACE}/build/switch-core/build.log" ]; then
+            cp "${GITHUB_WORKSPACE}/build/switch-core/build.log" "logs/run-${GITHUB_RUN_ID}-build-make.log"
+          fi
+          echo "run_id=${GITHUB_RUN_ID} sha=${GITHUB_SHA} job=build status=failure" \
+            > "logs/run-${GITHUB_RUN_ID}-build-info.txt"
+          git add logs
+          git commit -m "build logs run ${GITHUB_RUN_ID}" || true
+          git push --force "${AUTH_URL}" HEAD:ci-artifacts-switch
 
   publish:
     name: Publish NRO
