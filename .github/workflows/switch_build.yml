@@ -384,9 +384,6 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
       - name: Download artifact
         uses: actions/download-artifact@v5
         with:
@@ -394,29 +391,34 @@ jobs:
           path: artifact
 
       - name: Push the NRO to ci-artifacts-switch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
           NRO_FILE=$(find artifact -type f -name '*.nro' -print -quit)
           test -n "${NRO_FILE}"
+          AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf /tmp/nropub
+          if git ls-remote --exit-code "${AUTH_URL}" refs/heads/ci-artifacts-switch >/dev/null 2>&1; then
+            # Clone the artifact branch on its own: checking it out inside the workflow checkout
+            # trips over the unrelated history and the work tree actions/checkout already set up.
+            git clone --depth 1 --branch ci-artifacts-switch "${AUTH_URL}" /tmp/nropub
+            cd /tmp/nropub
+          else
+            mkdir -p /tmp/nropub
+            cd /tmp/nropub
+            git init -q
+            git checkout -q --orphan ci-artifacts-switch
+          fi
           git config user.email "actions-ci@localhost"
           git config user.name "actions-ci"
           mkdir -p artifacts
           cp "${NRO_FILE}" artifacts/armsx2nx.nro
           printf 'run_id=%s\nsha=%s\nhead_ref=%s\nworkflow=%s\nrun_url=%s\n' \
-            "${{ github.run_id }}" "${{ github.sha }}" "${{ github.head_ref }}" \
+            "${GITHUB_RUN_ID}" "${GITHUB_SHA}" "${{ github.head_ref }}" \
             "Switch Build (.nro)" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
             > artifacts/build-info.txt
-          if git ls-remote --exit-code origin ci-artifacts-switch >/dev/null 2>&1; then
-            git fetch origin ci-artifacts-switch
-            git checkout ci-artifacts-switch
-            git add artifacts
-            git commit -m "armsx2nx.nro from run ${{ github.run_id }}"
-            git push origin ci-artifacts-switch
-          else
-            git checkout --orphan ci-artifacts-switch
-            git rm -rf --quiet .
-            git add artifacts
-            git commit -m "armsx2nx.nro from run ${{ github.run_id }}"
-            git push --force origin HEAD:ci-artifacts-switch
-          fi
+          git add artifacts
+          git commit -m "armsx2nx.nro from run ${GITHUB_RUN_ID}" || true
+          git push "${AUTH_URL}" HEAD:ci-artifacts-switch
