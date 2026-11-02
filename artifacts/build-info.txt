@@ -1,5 +1,5 @@
-run_id=41245700196
-sha=375406f1d6f593af6408ff60366f2f54db3c7145
-head_ref=arena/af308883-yadokari
-workflow=Switch Nightly Build (NRO)
-run_url=https://github.com/berlint-hub/Yadokari/actions/runs/41245700196
+run_id=41436052297
+sha=fe8913daf635bbd2111ff6782929b41a325cf910
+head_ref=
+workflow=Switch Build (.nro)
+run_url=https://github.com/berlint-hub/Yadokari/actions/runs/41436052297
