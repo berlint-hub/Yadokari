@@ -395,7 +395,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euxo pipefail
-          NRO_FILE=$(find artifact -type f -name '*.nro' -print -quit)
+          # Absolute, because the step cd's into the artifact branch clone below.
+          NRO_FILE=$(find "${GITHUB_WORKSPACE}/artifact" -type f -name '*.nro' -print -quit)
           test -n "${NRO_FILE}"
           AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           rm -rf /tmp/nropub
