@@ -52,15 +52,17 @@ jobs:
           test -n "${SHA}"
           echo "sha=${SHA}" >> "${GITHUB_OUTPUT}"
           echo "NXVK HEAD @ ${SHA}"
+          mkdir -p "${GITHUB_WORKSPACE}/logs"
 
+      # Only needed to produce a portlib; a cache hit already has the staged result.
       - name: Clone NXVK
         id: clone
+        if: steps.pkgcache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
           git clone --depth 1 "${NXVK_REPO}" "${GITHUB_WORKSPACE}/nxvk"
           test "$(git -C "${GITHUB_WORKSPACE}/nxvk" rev-parse HEAD)" = "${{ steps.rev.outputs.sha }}"
           cat "${GITHUB_WORKSPACE}/nxvk/VERSION"
-          mkdir -p "${GITHUB_WORKSPACE}/logs"
 
       # The staged portlib is what the build job actually consumes, so cache that first: a run that
       # hits it skips the whole Mesa build and the multi-gigabyte build-tree cache.

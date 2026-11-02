@@ -88,9 +88,20 @@ The output binary will be located at `build/switch-core/switch-app/armsx2nx.nro`
 
 ### Prebuilt CI artifacts
 
-`.github/workflows/switch_build.yml` builds the Vulkan `.nro` (NXVK included) on GitHub Actions and
-uploads `armsx2nx.nro` as an artifact. The NXVK portlib is cached between runs, so only the first run
-after the NXVK commit changes pays for the Mesa cross build.
+`.github/workflows/switch_build.yml` builds the Vulkan `.nro` (NXVK included) on GitHub Actions. It
+runs on every push/PR (except docs-only changes) and can be started manually through
+`workflow_dispatch`. The result is available in two places:
+
+- the `armsx2nx-nro` artifact of the workflow run,
+- the `ci-artifacts-switch` branch, which is handy when you just want the file without the Actions UI:
+
+```shell
+git clone --depth 1 --branch ci-artifacts-switch https://github.com/berlint-hub/Yadokari.git
+# artifacts/armsx2nx.nro is the build, artifacts/build-info.txt says which commit it came from
+```
+
+The staged NXVK portlib is cached against the NXVK commit, so only the first run after NXVK moves
+pays for the Mesa cross build; the rest go straight to compiling the emulator.
 
 ## Graphics backends
 
