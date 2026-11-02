@@ -241,14 +241,22 @@ jobs:
           pkg-config --libs nxvk
 
       - name: Fetch the uam sources
+        shell: bash
         run: |
           set -euxo pipefail
+          mkdir -p logs
+          exec > >(tee logs/uam-clone.log) 2>&1
+          git config --global --add safe.directory '*'
           git clone --depth 1 "${UAM_REPO}" "${GITHUB_WORKSPACE}/uam"
+          test -f "${GITHUB_WORKSPACE}/uam/source/compiler_iface.cpp"
           echo "UAM_ROOT=${GITHUB_WORKSPACE}/uam" >> "${GITHUB_ENV}"
 
       - name: Ensure the uam host tool
+        shell: bash
         run: |
           set -x
+          mkdir -p logs
+          exec > >(tee logs/uam-host-tool.log) 2>&1
           if [ -x "${DEVKITPRO}/tools/bin/uam" ]; then
             echo "uam shipped with switch-tools"
             exit 0
@@ -300,8 +308,10 @@ jobs:
 
       - name: Locate the NRO
         id: locate
+        shell: bash
         run: |
           set -euxo pipefail
+          exec > >(tee -a logs/locate-nro.log) 2>&1
           NRO=$(find build/switch-core -type f -name '*.nro' -print -quit)
           test -n "${NRO}"
           cp "${NRO}" armsx2nx.nro
