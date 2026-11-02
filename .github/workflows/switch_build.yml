@@ -41,32 +41,50 @@ jobs:
     permissions:
       contents: write
     outputs:
-      nxvk_sha: ${{ steps.nxvk.outputs.sha }}
+      nxvk_sha: ${{ steps.rev.outputs.sha }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Resolve the NXVK commit
+        id: rev
+        run: |
+          set -euxo pipefail
+          SHA=$(git ls-remote "${NXVK_REPO}" HEAD | cut -f1)
+          test -n "${SHA}"
+          echo "sha=${SHA}" >> "${GITHUB_OUTPUT}"
+          echo "NXVK HEAD @ ${SHA}"
 
       - name: Clone NXVK
-        id: nxvk
+        id: clone
         run: |
           set -euxo pipefail
           git clone --depth 1 "${NXVK_REPO}" "${GITHUB_WORKSPACE}/nxvk"
-          echo "sha=$(git -C "${GITHUB_WORKSPACE}/nxvk" rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
+          test "$(git -C "${GITHUB_WORKSPACE}/nxvk" rev-parse HEAD)" = "${{ steps.rev.outputs.sha }}"
           cat "${GITHUB_WORKSPACE}/nxvk/VERSION"
+          mkdir -p "${GITHUB_WORKSPACE}/logs"
+
+      # The staged portlib is what the build job actually consumes, so cache that first: a run that
+      # hits it skips the whole Mesa build and the multi-gigabyte build-tree cache.
+      - name: Restore the staged portlib
+        id: pkgcache
+        uses: actions/cache@v4
+        with:
+          path: dkp-stage/portlibs/switch
+          key: nxvk-installed-${{ steps.rev.outputs.sha }}
 
       - name: Restore the NXVK build cache
+        if: steps.pkgcache.outputs.cache-hit != 'true'
         uses: actions/cache@v4
         with:
           path: |
             nxvk/switch/build
             nxvk/switch/rust/sysroot
-          key: nxvk-build-${{ steps.nxvk.outputs.sha }}
+          key: nxvk-build-${{ steps.rev.outputs.sha }}
           restore-keys: |
             nxvk-build-
 
       # The Mesa cross build needs ~10 GB and the runner images are tight on /
       - name: Free disk space
+        if: steps.pkgcache.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
                       /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
@@ -74,10 +92,10 @@ jobs:
           df -h /
 
       - name: Build NXVK
+        if: steps.pkgcache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
           cd "${GITHUB_WORKSPACE}/nxvk"
-          mkdir -p "${GITHUB_WORKSPACE}/logs"
           # Run as root: the container steps write root-owned files into the bind-mounted workspace,
           # and the host-side stamp/package steps have to be able to write there too.
           # CONTAINER=docker: use the runner's docker daemon instead of podman.
@@ -87,6 +105,7 @@ jobs:
           exit "${PIPESTATUS[0]}"
 
       - name: Stage the NXVK portlib
+        if: steps.pkgcache.outputs.cache-hit != 'true'
         run: |
           set -euxo pipefail
           cd "${GITHUB_WORKSPACE}/nxvk"
@@ -187,19 +206,29 @@ jobs:
           echo "/opt/devkitpro/tools/bin" >> "$GITHUB_PATH"
 
       - name: Install the NXVK portlib
+        shell: bash
         run: |
-          set -eu
-          set -x
-          # No pipelines here: `find | head` trips pipefail through SIGPIPE.
-          ls -la nxvk-portlib || true
-          ls -la nxvk-portlib/lib || true
-          ls -la nxvk-portlib/lib/pkgconfig || true
-          ls -la nxvk-portlib/include || true
-          cp -a nxvk-portlib/. "${DEVKITPRO}/portlibs/switch/"
+          set -euxo pipefail
+          mkdir -p logs
+          exec > >(tee logs/install-portlib.log) 2>&1
+          # upload-artifact keeps the subtree relative to the path it was given; be liberal about it.
+          find nxvk-portlib -maxdepth 4 -print
+          if [ -d nxvk-portlib/lib ]; then
+            SRC=nxvk-portlib
+          elif [ -d nxvk-portlib/dkp-stage/portlibs/switch ]; then
+            SRC=nxvk-portlib/dkp-stage/portlibs/switch
+          else
+            echo "unexpected artifact layout under nxvk-portlib" >&2
+            exit 1
+          fi
+          echo "installing from ${SRC}"
+          mkdir -p "${DEVKITPRO}/portlibs/switch"
+          cp -a "${SRC}/." "${DEVKITPRO}/portlibs/switch/"
+          ls -la "${DEVKITPRO}/portlibs/switch/lib" "${DEVKITPRO}/portlibs/switch/lib/pkgconfig"
+          ls -la "${DEVKITPRO}/portlibs/switch/include"
           test -f "${DEVKITPRO}/portlibs/switch/lib/libnvk.a"
           test -f "${DEVKITPRO}/portlibs/switch/lib/libnvk_support.a"
           test -f "${DEVKITPRO}/portlibs/switch/lib/pkgconfig/nxvk.pc"
-          test -f "${DEVKITPRO}/portlibs/switch/include/vulkan/vulkan.h"
           export PKG_CONFIG_LIBDIR="${DEVKITPRO}/portlibs/switch/lib/pkgconfig"
           pkg-config --modversion nxvk
           pkg-config --cflags nxvk
