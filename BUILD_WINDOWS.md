@@ -1,3 +1,10 @@
+# Windows build (legacy Android host)
+
+> **This document describes the old Android/React Native host that this port inherits from ARMSX2.**
+> It is not needed to build the Switch `.nro` and the files it references (`app/build.gradle`,
+> `app_ui/`, `App.js`, `package.json`) are unused by the Horizon build, where the UI is ImGui's
+> FullscreenUI. See [README.md](README.md) for the Switch instructions.
+
 Windows:
 	git clone https://github.com/ARMSX2/ARMSX2.git
 	git submodule init

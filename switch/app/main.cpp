@@ -7,6 +7,7 @@
 #include "common/Path.h"
 
 #include "pcsx2/Config.h"
+#include "pcsx2/GS/GSUtil.h"
 #include "pcsx2/Host.h"
 #include "pcsx2/INISettingsInterface.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
@@ -156,7 +157,10 @@ namespace
 			VMManager::SetDefaultSettings(*s_settings_interface, true, true, true, true, true);
 
 			s_settings_interface->SetStringValue("Filenames", "Game", "");
-			s_settings_interface->SetIntValue("EmuCore/GS", "Renderer", static_cast<int>(GSRendererType::VK));
+			// Ask the core for the renderer instead of hardcoding one here, so the ini default,
+			// GSUtil::GetPreferredRenderer() and the FullscreenUI can't drift apart again.
+			s_settings_interface->SetIntValue("EmuCore/GS", "Renderer",
+				static_cast<int>(GSUtil::GetPreferredRenderer()));
 			s_settings_interface->SetStringValue("EmuCore/GS", "AspectRatio", "4:3");
 			s_settings_interface->SetIntValue("EmuCore/GS", "deinterlace_mode", static_cast<int>(GSInterlaceMode::Off));
 			s_settings_interface->SetStringValue("SPU2/Output", "Backend", "Horizon");

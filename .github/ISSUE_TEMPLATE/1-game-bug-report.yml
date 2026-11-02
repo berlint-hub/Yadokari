@@ -43,9 +43,14 @@ body:
     id: renderer
     attributes:
       label: Renderer (Graphics Backend)
+      description: |
+        Vulkan (NXVK) is the default. Deko3D is the native deko3d backend, and Software is the
+        fallback used when no hardware backend is available. See EmuCore/GS Renderer in armsx2.ini.
       options:
-        - Software
+        - Vulkan (NXVK) - default
         - Deko3D
+        - Software
+        - Not sure
     validations:
       required: true
 

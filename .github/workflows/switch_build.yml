@@ -1,0 +1,195 @@
+name: Switch Build (.nro)
+
+# Builds the Nintendo Switch NRO with the Vulkan renderer (NXVK) enabled, which is the renderer
+# the port ships as default. The NXVK portlib has to be cross-built from Mesa, so it lives in its
+# own job and is cached against the NXVK commit; the second job only pays for the ARMSX2 build.
+
+on:
+  push:
+    branches:
+      - '**'
+    paths-ignore:
+      - '**/*.md'
+      - 'app_ui/**'
+      - 'docs/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'app_ui/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+concurrency:
+  group: switch-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DEVKITPRO: /opt/devkitpro
+  NXVK_REPO: https://github.com/PalindromicBreadLoaf/nxvk
+  NXVK_REF: switch
+  UAM_REPO: https://github.com/devkitPro/uam
+
+jobs:
+  nxvk:
+    name: NXVK portlib (Vulkan)
+    runs-on: ubuntu-latest
+    outputs:
+      nxvk_sha: ${{ steps.rev.outputs.sha }}
+
+    steps:
+      - name: Resolve the NXVK commit
+        id: rev
+        run: |
+          SHA=$(git ls-remote "${NXVK_REPO}" "refs/heads/${NXVK_REF}" | cut -f1)
+          if [ -z "${SHA}" ]; then
+            echo "Could not resolve ${NXVK_REPO} ${NXVK_REF}" >&2
+            exit 1
+          fi
+          echo "sha=${SHA}" >> "${GITHUB_OUTPUT}"
+          echo "NXVK ${NXVK_REF} @ ${SHA}"
+
+      - name: Restore the cached portlib
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: nxvk-pkg
+          key: nxvk-${{ steps.rev.outputs.sha }}
+
+      # Mesa + Rust cross build needs ~10 GB and the runner images are tight on /
+      - name: Free disk space
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost /opt/hostedtoolcache/CodeQL || true
+          sudo docker image prune -af || true
+          df -h /
+
+      - name: Build NXVK and stage the portlib
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 --branch "${NXVK_REF}" "${NXVK_REPO}" nxvk-src
+          cd nxvk-src
+
+          # The toolchain image from NXVK's own switch/docker, then build with CONTAINER= so the
+          # build steps run inside it instead of trying to nest another container.
+          docker build -t nxvk switch/docker
+          docker run --rm -v "${PWD}:/work" -w /work nxvk bash -lc 'make CONTAINER= package'
+
+          # `make package` stages lib/ + pkgconfig; the headers come straight from the tree,
+          # same as NXVK's own `make install` does. The container wrote the staged tree as root,
+          # so copy it with sudo and hand it back to the runner user.
+          sudo mkdir -p ../nxvk-pkg/include ../nxvk-pkg/licenses
+          sudo cp -a switch/build/pkg/. ../nxvk-pkg/
+          sudo cp -a include/vulkan include/vk_video ../nxvk-pkg/include/
+          sudo cp -a licenses/GPL-2.0-or-later ../nxvk-pkg/licenses/
+          sudo cp -a COPYING ../nxvk-pkg/licenses/MESA-COPYING 2>/dev/null || true
+          sudo chown -R "$(id -u):$(id -g)" ../nxvk-pkg
+
+          test -f ../nxvk-pkg/lib/libnvk.a
+          test -f ../nxvk-pkg/lib/libnvk_support.a
+          test -f ../nxvk-pkg/lib/pkgconfig/nxvk.pc
+          ls -R ../nxvk-pkg | head -50
+
+      - name: Upload the NXVK portlib
+        uses: actions/upload-artifact@v5
+        with:
+          name: nxvk-portlib
+          path: nxvk-pkg
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: ARMSX2-NX
+    needs: nxvk
+    runs-on: ubuntu-latest
+
+    container:
+      image: devkitpro/devkita64:latest
+      options: --user root
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install devkitPro packages
+        run: |
+          set -euxo pipefail
+          dkp-pacman -Syu --noconfirm --needed
+          dkp-pacman -S --noconfirm --needed \
+            switch-dev \
+            deko3d \
+            uam \
+            switch-libpng \
+            switch-libjpeg-turbo \
+            switch-curl \
+            switch-ntfs-3g \
+            switch-lwext4
+          # NXVK's pkg-config links libexpat; it is normally pulled in as a dependency, but ask for
+          # it explicitly and don't hard-fail if the package name ever changes.
+          dkp-pacman -S --noconfirm --needed switch-expat || echo "::warning::switch-expat not installed"
+          # uam is compiled into the NRO for DK3D runtime shaders, which needs its yacc/lex sources.
+          apt-get update
+          apt-get install -y --no-install-recommends bison flex python3 cmake make git
+
+      - name: Install the NXVK portlib
+        run: |
+          set -euxo pipefail
+          mkdir -p "${DEVKITPRO}/portlibs/switch"
+          cp -a nxvk-pkg/. "${DEVKITPRO}/portlibs/switch/"
+          export PKG_CONFIG_LIBDIR="${DEVKITPRO}/portlibs/switch/lib/pkgconfig"
+          pkg-config --modversion nxvk
+          pkg-config --libs nxvk
+
+      - name: Fetch the uam sources
+        run: |
+          set -euxo pipefail
+          git clone --depth 1 "${UAM_REPO}" "${GITHUB_WORKSPACE}/../uam"
+          test -f "${GITHUB_WORKSPACE}/../uam/source/compiler_iface.cpp"
+
+      - name: Configure
+        run: |
+          set -euxo pipefail
+          cmake -S app/src/main/cpp -B build/switch-core \
+            -DCMAKE_TOOLCHAIN_FILE="${DEVKITPRO}/cmake/Switch.cmake" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DUSE_VULKAN=ON \
+            -DUSE_OPENGL=OFF \
+            -DUAM_ROOT="${GITHUB_WORKSPACE}/../uam"
+
+      - name: Build armsx2_nro
+        run: |
+          set -euxo pipefail
+          cmake --build build/switch-core --target armsx2_nro -j"$(nproc)"
+
+      - name: Verify the NRO
+        run: |
+          set -euxo pipefail
+          NRO=build/switch-core/switch-app/armsx2nx.nro
+          test -f "${NRO}"
+          ls -lh "${NRO}"
+          file "${NRO}" || true
+          echo "### ARMSX2-NX" >> "${GITHUB_STEP_SUMMARY}"
+          echo "" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- commit: \`${GITHUB_SHA}\`" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- NXVK: \`${{ needs.nxvk.outputs.nxvk_sha }}\`" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- renderer: Vulkan (NXVK)" >> "${GITHUB_STEP_SUMMARY}"
+          echo "- size: $(stat -c %s "${NRO}") bytes" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload the NRO
+        uses: actions/upload-artifact@v5
+        with:
+          name: armsx2nx-nro
+          path: build/switch-core/switch-app/armsx2nx.nro
+          if-no-files-found: error
+          retention-days: 30

@@ -216,8 +216,14 @@ GSRendererType GSUtil::GetPreferredRenderer()
 #else
 		// Linux/Android: Prefer OpenGL over Vulkan for better compatibility and stability.
 #if defined(__SWITCH__)
-		// Switch: prefer software until Vulkan is stable.
+		// Switch: Vulkan through NXVK is what the port ships and tunes against, and it is the
+		// renderer the default settings select. Builds without Vulkan (or runs on a stack where
+		// NXVK is missing) fall back to software instead of failing to open a device.
+#if defined(ENABLE_VULKAN)
+		preferred_renderer = GSRendererType::VK;
+#else
 		preferred_renderer = GSRendererType::SW;
+#endif
 #elif defined(ENABLE_OPENGL)
 		preferred_renderer = GSRendererType::OGL;
 #elif defined(ENABLE_VULKAN)
