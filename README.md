@@ -32,14 +32,43 @@ ARMSX2-NX can be downloaded from [Github Releases](https://github.com/Palindromi
 This assumes you have DevkitPro installed. Install it if you don't.
 
 ```shell
-(dkp-)pacman -S switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4
+(dkp-)pacman -S switch-dev switch-libpng switch-libjpeg-turbo switch-curl switch-ntfs-3g switch-lwext4
 ```
+
+- `switch-curl` is required for RetroAchievements (the Switch build always links curl).
+- `switch-ntfs-3g` and `switch-lwext4` are required for USB game loading.
 
 Initialize the submodules after cloning:
 
 ```shell
 git submodule update --init --recursive
 ```
+
+Only `switch/externals/libusbhsfs` is needed for the Switch build. The other submodules are used by the
+Android app, so `git submodule update --init switch/externals/libusbhsfs` is enough if you only build the `.nro`.
+
+### NXVK (Vulkan and OpenGL)
+
+The Vulkan and OpenGL renderers are both enabled by default and both come from NXVK, which has to be
+installed as a Switch portlib before configuring ARMSX2-NX. With OpenGL enabled (the default) the build
+needs the `nxvk-gl` package, so build and install NXVK including its OpenGL stack:
+
+```shell
+git clone https://github.com/PalindromicBreadLoaf/nxvk
+cd nxvk
+make gl
+sudo make install-gl
+```
+
+A plain `make` / `sudo make install` only installs the Vulkan package (`nxvk`). That is enough only if you
+configure ARMSX2-NX with `-DUSE_OPENGL=OFF`; otherwise CMake stops with a missing `nxvk-gl` package.
+
+The OpenGL renderer also needs CMake to find EGL headers and a `libEGL` (`find_package(EGL REQUIRED)`).
+NXVK does not install EGL headers. On devkitPro they come from the `switch-mesa` package.
+
+The Switch build discovers the installed `nxvk` / `nxvk-gl` package through devkitPro's target `pkg-config`.
+
+### Building the `.nro`
 
 Configure the native core with the Switch toolchain, then build the `.nro` target:
 
@@ -53,22 +82,29 @@ cmake --build build/switch-core --target armsx2_nro -j$(nproc)
 
 The output binary will be located at `build/switch-core/switch-app/armsx2nx.nro`
 
-The Vulkan backend is enabled by default. Install NXVK as a Switch portlib
-before configuring ARMSX2-NX:
+To build without OpenGL (Vulkan and Deko3D only), add `-DUSE_OPENGL=OFF` to the configure command.
 
-```shell
-git clone https://github.com/PalindromicBreadLoaf/nxvk
-cd nxvk
-make
-sudo make install
-```
+## Controls
 
-The Switch build discovers the installed `nxvk` package through devkitPro's target `pkg-config`.
+| Switch | PS2 |
+| --- | --- |
+| A / B / X / Y | Circle / Cross / Triangle / Square |
+| L / R | L1 / R1 |
+| ZL / ZR | L2 / R2 |
+| Left / right stick click | L3 / R3 |
+| + / - | Start / Select |
+
+Hold **+** and **-** together to open the pause menu. Press both at the same time: if one of them is
+pressed noticeably earlier, the game may still see that button first.
+
+Two players are supported. Player 1 is the first controller (or the attached Joy-Cons in handheld mode),
+player 2 is the second controller. Use **Controller Setup** in the pause menu to open the system controller
+applet and assign the controllers to players.
 
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported
-filesystesm are FAT12/16/32, exFAT, NTFS, and EXT2/3/4. USB volumes are mounted read-only to prevent
+filesystems are FAT12/16/32, exFAT, NTFS, and EXT2/3/4. USB volumes are mounted read-only to prevent
 corruption if they are unexpectedly unplugged.
 
 Do not unplug a drive while a game is running from it. Return to the game list first so ARMSX2 has

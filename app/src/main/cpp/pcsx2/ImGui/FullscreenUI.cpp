@@ -5534,7 +5534,11 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 			ImVec2(10.0f, 10.0f), ImGuiWindowFlags_NoBackground))
 	{
 		static constexpr u32 submenu_item_count[] = {
+#ifdef __SWITCH__
+			12, // None, including Controller Setup
+#else
 			11, // None
+#endif
 			4, // Exit
 			3, // Achievements
 		};
@@ -5607,6 +5611,11 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 					s_current_main_window = MainWindowType::None;
 					RequestChangeDisc();
 				}
+
+#ifdef __SWITCH__
+				if (ActiveButton(FSUI_ICONSTR(ICON_FA_GAMEPAD, "Controller Setup"), false))
+					Host::OnControllerSetupRequested();
+#endif
 
 				if (ActiveButton(FSUI_ICONSTR(ICON_FA_SLIDERS_H, "Settings"), false))
 					SwitchToSettings();

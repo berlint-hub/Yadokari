@@ -55,6 +55,11 @@ namespace Host
 	void OnCoverDownloaderOpenRequested();
 	void OnCreateMemoryCardOpenRequested();
 
+#ifdef __SWITCH__
+	/// Opens the system controller applet so players can be assigned to controllers.
+	void OnControllerSetupRequested();
+#endif
+
 	/// Did Playstation in the currently selected locale use circle as confirm
 	bool LocaleCircleConfirm();
 } // namespace Host

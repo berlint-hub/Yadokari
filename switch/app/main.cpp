@@ -22,6 +22,7 @@
 #include <array>
 #include <cmath>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <sys/stat.h>
 #include <thread>
@@ -102,6 +103,27 @@ namespace
 		{HidNpadButton_Plus, GenericInputBinding::Start},
 	};
 
+	// What the game should see from one controller. Default-constructed means nothing pressed.
+	struct GamePadState
+	{
+		u64 buttons = 0;
+		float left_x = 0.0f;
+		float left_y = 0.0f;
+		float right_x = 0.0f;
+		float right_y = 0.0f;
+	};
+	using GamePadSnapshot = std::array<GamePadState, NUM_LOCAL_PLAYERS>;
+
+	// The input thread only polls HID. Pad state is written on the CPU thread, which pumps its queue every
+	// vsync while a game runs (and from the idle loop otherwise). At most one apply task is queued at a time;
+	// it always applies the newest snapshot.
+	std::mutex s_game_pad_mutex;
+	GamePadSnapshot s_pending_game_pads{};
+	bool s_game_pad_apply_queued = false;
+
+	// Set after a system applet closes, so buttons still held from it are ignored until they are released.
+	std::atomic_bool s_input_resync{false};
+
 	float ApplyDeadzone(s32 raw)
 	{
 		const float v = std::clamp(static_cast<float>(raw) / static_cast<float>(JOYSTICK_MAX), -1.0f, 1.0f);
@@ -112,26 +134,89 @@ namespace
 		return (v < 0.0f) ? -scaled : scaled;
 	}
 
-	void ApplyStick(u32 player, const HidAnalogStickState& s, PadDualshock2::Inputs left, PadDualshock2::Inputs right,
+	GamePadState ReadGamePad(PadState& pad, u64 buttons)
+	{
+		const HidAnalogStickState left = padGetStickPos(&pad, 0);
+		const HidAnalogStickState right = padGetStickPos(&pad, 1);
+
+		GamePadState state;
+		state.buttons = buttons;
+		state.left_x = ApplyDeadzone(left.x);
+		state.left_y = ApplyDeadzone(left.y);
+		state.right_x = ApplyDeadzone(right.x);
+		state.right_y = ApplyDeadzone(right.y);
+		return state;
+	}
+
+	void ApplyStick(u32 player, float x, float y, PadDualshock2::Inputs left, PadDualshock2::Inputs right,
 		PadDualshock2::Inputs up, PadDualshock2::Inputs down)
 	{
-		const float x = ApplyDeadzone(s.x);
-		const float y = ApplyDeadzone(s.y);
 		Pad::SetControllerState(player, static_cast<u32>(right), x > 0.0f ? x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(left), x < 0.0f ? -x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(up), y > 0.0f ? y : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(down), y < 0.0f ? -y : 0.0f);
 	}
 
-	void FeedGamePad(u32 player, PadState& pad, u64 held)
+	void ApplyGamePad(u32 player, const GamePadState& state)
 	{
 		for (const ButtonMap& m : BUTTON_MAP)
-			Pad::SetControllerState(player, static_cast<u32>(m.ps2), (held & m.nx) ? 1.0f : 0.0f);
+			Pad::SetControllerState(player, static_cast<u32>(m.ps2), (state.buttons & m.nx) ? 1.0f : 0.0f);
 
-		ApplyStick(player, padGetStickPos(&pad, 0), PadDualshock2::Inputs::PAD_L_LEFT, PadDualshock2::Inputs::PAD_L_RIGHT,
-			PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN);
-		ApplyStick(player, padGetStickPos(&pad, 1), PadDualshock2::Inputs::PAD_R_LEFT, PadDualshock2::Inputs::PAD_R_RIGHT,
-			PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN);
+		ApplyStick(player, state.left_x, state.left_y, PadDualshock2::Inputs::PAD_L_LEFT,
+			PadDualshock2::Inputs::PAD_L_RIGHT, PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN);
+		ApplyStick(player, state.right_x, state.right_y, PadDualshock2::Inputs::PAD_R_LEFT,
+			PadDualshock2::Inputs::PAD_R_RIGHT, PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN);
+	}
+
+	// CPU thread
+	void ApplyPendingGamePads()
+	{
+		GamePadSnapshot snapshot;
+		{
+			const std::lock_guard lock(s_game_pad_mutex);
+			snapshot = s_pending_game_pads;
+			s_game_pad_apply_queued = false;
+		}
+
+		if (!VMManager::HasValidVM())
+			return;
+
+		for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
+			ApplyGamePad(player, snapshot[player]);
+	}
+
+	// Input thread
+	void PublishGamePads(const GamePadSnapshot& snapshot)
+	{
+		bool queue_apply;
+		{
+			const std::lock_guard lock(s_game_pad_mutex);
+			s_pending_game_pads = snapshot;
+			queue_apply = !s_game_pad_apply_queued;
+			s_game_pad_apply_queued = true;
+		}
+
+		if (queue_apply)
+			Host::RunOnCPUThread(&ApplyPendingGamePads, false);
+	}
+
+	// CPU thread. Opens the system controller applet so players can be assigned to controllers.
+	void ShowControllerSetup()
+	{
+		HidLaControllerSupportArg arg;
+		hidLaCreateControllerSupportArg(&arg);
+		arg.hdr.player_count_max = static_cast<s8>(NUM_LOCAL_PLAYERS);
+
+		HidLaControllerSupportResultInfo info = {};
+		const Result result = hidLaShowControllerSupport(&info, &arg);
+
+		// The button that closed the applet is usually still held.
+		s_input_resync.store(true, std::memory_order_release);
+
+		if (R_SUCCEEDED(result))
+			INFO_LOG("Controller setup finished with {} player(s)", static_cast<int>(info.player_count));
+		else
+			INFO_LOG("Controller setup closed without changes (0x{:08X})", static_cast<u32>(result));
 	}
 
 	void FeedNav(u64 held, u64 changed)
@@ -238,6 +323,12 @@ void Host::CommitBaseSettingChanges()
 		s_settings_interface->Save();
 }
 
+void Host::OnControllerSetupRequested()
+{
+	// Called from FullscreenUI on the GS thread. Show the applet on the CPU thread, like the software keyboard.
+	Host::RunOnCPUThread(&ShowControllerSetup, false);
+}
+
 int main(int argc, char** argv)
 {
 	const bool have_socket = R_SUCCEEDED(socketInitializeDefault());
@@ -340,36 +431,63 @@ int main(int argc, char** argv)
 	if (!boot_image.empty() && FileSystem::FileExists(boot_image.c_str()))
 		BootImage(std::move(boot_image));
 	else if (!boot_image.empty())
-		ERROR_LOG("Launch image not found: {}. Returing to game selector.", boot_image);
+		ERROR_LOG("Launch image not found: {}. Returning to game selector.", boot_image);
 	else if (!enable_fsui)
 		INFO_LOG("FullscreenUI disabled and no launch image. Please provide a target to display.");
 
 	std::atomic_bool stop_loop{false};
 	std::thread input_thread([&]() {
-		std::array<u64, NUM_LOCAL_PLAYERS> prev_held{};
+		std::array<u64, NUM_LOCAL_PLAYERS> held{};
+		// Buttons in these masks are ignored until they are released.
+		// game_block: the menu combo, and buttons that were held while a menu was open.
+		// nav_block: buttons already held when a menu opened or when a system applet closed.
+		std::array<u64, NUM_LOCAL_PLAYERS> game_block{};
+		u64 nav_block = 0;
+		u64 prev_nav = 0;
+		bool prev_fsui_active = false;
 		bool prev_menu_combo = false;
+		bool was_feeding_game = false;
 		while (!stop_loop.load(std::memory_order_relaxed))
 		{
-			std::array<u64, NUM_LOCAL_PLAYERS> held{};
-			std::array<u64, NUM_LOCAL_PLAYERS> changed{};
+			const bool resync = s_input_resync.exchange(false, std::memory_order_acq_rel);
 			for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
 			{
 				padUpdate(&pads[player]);
 				held[player] = padGetButtons(&pads[player]);
-				changed[player] = held[player] ^ prev_held[player];
-				prev_held[player] = held[player];
+				game_block[player] = resync ? held[player] : (game_block[player] & held[player]);
 			}
 
 			const bool fsui_active = FullscreenUI::HasActiveWindow();
-			if (fsui_active)
-				FeedNav(held[0], changed[0]);
-			else if (VMManager::HasValidVM())
+			const bool feed_game = !fsui_active && VMManager::HasValidVM();
+			const bool menu_combo = (held[0] & MENU_COMBO) == MENU_COMBO;
+
+			nav_block = (resync || (fsui_active && !prev_fsui_active)) ? held[0] : (nav_block & held[0]);
+			if (menu_combo)
+				game_block[0] |= MENU_COMBO;
+			if (!feed_game)
 			{
 				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
-					FeedGamePad(player, pads[player], held[player]);
+					game_block[player] |= held[player];
 			}
 
-			const bool menu_combo = (held[0] & MENU_COMBO) == MENU_COMBO;
+			// Menu navigation is player 1 only. When the menu closes, nav drops to 0 so every key gets released.
+			const u64 nav = fsui_active ? (held[0] & ~nav_block) : 0;
+			FeedNav(nav, nav ^ prev_nav);
+			prev_nav = nav;
+
+			// Neutral unless the game is being fed. One neutral snapshot goes out when a menu opens,
+			// so nothing stays pressed in the game while it is paused.
+			GamePadSnapshot game_pads{};
+			if (feed_game)
+			{
+				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
+					game_pads[player] = ReadGamePad(pads[player], held[player] & ~game_block[player]);
+			}
+			if (feed_game || was_feeding_game)
+				PublishGamePads(game_pads);
+			was_feeding_game = feed_game;
+			prev_fsui_active = fsui_active;
+
 			if (menu_combo && !prev_menu_combo)
 			{
 				if (FullscreenUI::IsInitialized() && VMManager::HasValidVM())
