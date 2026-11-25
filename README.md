@@ -118,6 +118,12 @@ forwarders built from hbloader's NPDM also allow 0-2 (`"highest_cpu_id": 2`). Wi
 `"highest_cpu_id": 3` in the forwarder's NPDM, core 3 is used for the helper threads. Core 3 is shared
 with the system, which is why the EE/VU1/GS threads stay on cores 0-2.
 
+With [sphaira](https://github.com/berlint-hub/sphaira) there are two ways to get core 3:
+
+- Create a forwarder for `armsx2nx.nro` and set **CPU Cores** to **4 (Advanced)** in the forwarder editor.
+- Or, while sphaira itself runs from its forwarder, open the options for `armsx2nx.nro` in the homebrew
+  menu and set **CPU Cores** to **4 (Advanced)**.
+
 ## Updating
 
 Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on
