@@ -65,6 +65,26 @@ sudo make install
 
 The Switch build discovers the installed `nxvk` package through devkitPro's target `pkg-config`.
 
+## Switch controller shortcuts
+
+Player 1 can use these shortcuts while a game is running. Hold **−** first, then press the
+other button; release both before using them in the game. They are disabled while the menu is open.
+
+| Shortcut | Action |
+| --- | --- |
+| `−` + `+` | Open the pause menu |
+| `−` + `R` | Save state to the selected slot (overwrites that slot) |
+| `−` + `L` | Load state from the selected slot |
+| `−` + D-pad left/right | Select the previous/next save-state slot (1–10) |
+| `−` + D-pad up | Save a screenshot |
+
+The shortcut slot starts at 1 each time the app starts and is separate from the slot selector in
+the pause menu. The buttons used by a recognized shortcut are suppressed until released, but the
+initial press of `−` can already reach the game as Select before the shortcut is recognized.
+Player 2 is unaffected. Loading a state also follows the existing RetroAchievements hardcore-mode
+and memory-card safety checks. Keep normal in-game memory-card saves as well: save states are not a
+substitute for them.
+
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported

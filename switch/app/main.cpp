@@ -8,6 +8,7 @@
 
 #include "pcsx2/Config.h"
 #include "pcsx2/Host.h"
+#include "pcsx2/GS/GS.h"
 #include "pcsx2/INISettingsInterface.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
@@ -30,6 +31,7 @@
 #include "common/Horizon/Horizon.h"
 
 #include "HorizonHost.h"
+#include "HorizonHotkeys.h"
 #include "HorizonUsbStorage.h"
 
 namespace
@@ -141,6 +143,42 @@ namespace
 			if (changed & m.nx)
 				ImGuiManager::ProcessGenericInputEvent(m.generic, InputLayout::Nintendo, (held & m.nx) ? 1.0f : 0.0f);
 		}
+	}
+
+	void DispatchHotkey(HorizonHotkeys::Action action)
+	{
+		if (action == HorizonHotkeys::Action::None)
+			return;
+
+		Host::RunOnCPUThread([action]() {
+			// The VM may have stopped while the command was waiting in the queue.
+			if (VMManager::GetState() != VMState::Running)
+				return;
+
+			static s32 slot = 1;
+			switch (action)
+			{
+				case HorizonHotkeys::Action::Save:
+					VMManager::SaveStateToSlot(slot);
+					break;
+				case HorizonHotkeys::Action::Load:
+					VMManager::LoadStateFromSlot(slot);
+					break;
+				case HorizonHotkeys::Action::PreviousSlot:
+					slot = (slot == 1) ? VMManager::NUM_SAVE_STATE_SLOTS : slot - 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::NextSlot:
+					slot = (slot == VMManager::NUM_SAVE_STATE_SLOTS) ? 1 : slot + 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::Screenshot:
+					MTGS::RunOnGSThread([]() { GSQueueSnapshot(std::string()); });
+					break;
+				case HorizonHotkeys::Action::None:
+					break;
+			}
+		});
 	}
 
 	void SetupSettings()
@@ -348,6 +386,8 @@ int main(int argc, char** argv)
 	std::thread input_thread([&]() {
 		std::array<u64, NUM_LOCAL_PLAYERS> prev_held{};
 		bool prev_menu_combo = false;
+		HorizonHotkeys::Chords hotkeys({HidNpadButton_Minus, HidNpadButton_Plus,
+			HidNpadButton_R, HidNpadButton_L, HidNpadButton_Left, HidNpadButton_Right, HidNpadButton_Up});
 		while (!stop_loop.load(std::memory_order_relaxed))
 		{
 			std::array<u64, NUM_LOCAL_PLAYERS> held{};
@@ -361,11 +401,15 @@ int main(int argc, char** argv)
 			}
 
 			const bool fsui_active = FullscreenUI::HasActiveWindow();
+			const auto hotkey = hotkeys.Update(held[0], !fsui_active && VMManager::GetState() == VMState::Running);
+			DispatchHotkey(hotkey.action);
 			if (fsui_active)
 				FeedNav(held[0], changed[0]);
 			else if (VMManager::HasValidVM())
 			{
-				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
+				const u64 menu_buttons = ((held[0] & MENU_COMBO) == MENU_COMBO) ? MENU_COMBO : 0;
+				FeedGamePad(0, pads[0], held[0] & ~(hotkey.consumed | menu_buttons));
+				for (u32 player = 1; player < NUM_LOCAL_PLAYERS; player++)
 					FeedGamePad(player, pads[player], held[player]);
 			}
 
