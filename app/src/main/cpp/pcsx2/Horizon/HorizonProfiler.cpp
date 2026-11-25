@@ -203,7 +203,8 @@ namespace
 	}
 
 	// romfs:/symbols.txt is `nm -S -n --defined-only` of the ELF, function symbols only (see
-	// switch/app/cmake/gen_symbols.cmake): "<addr> <size> <type> <mangled name>" per line, sorted.
+	// switch/app/cmake/gen_symbols.cmake): "<addr> <size> <type> <mangled name>" per line, sorted, or
+	// "<addr> <type> <name>" for assembly without a size (the svc wrappers, which is where waiting threads are).
 	void LoadSymbols()
 	{
 		s_symbols.clear();
@@ -226,14 +227,31 @@ namespace
 			char* const line_end = static_cast<char*>(std::memchr(p, '\n', end - p));
 			char* const le = line_end ? line_end : end;
 			const char* q = p;
-			u64 addr, size;
-			if (ParseHex(q, le, &addr) && q < le && *q == ' ' && ParseHex(++q, le, &size) && (le - q) > 3 && q[0] == ' ' &&
-				q[2] == ' ')
+			u64 addr = 0, size = 0;
+			if (ParseHex(q, le, &addr) && q < le && *q == ' ')
 			{
-				char* const name = const_cast<char*>(q + 3);
-				*le = '\0';
-				if (addr <= 0xFFFFFFFFull && (s_symbols.empty() || s_symbols.back().addr != static_cast<u32>(addr)))
-					s_symbols.push_back({static_cast<u32>(addr), static_cast<u32>(size), name});
+				// The type letters (t, T, w, W) are not hex digits, so a missing size is easy to tell apart.
+				const char* r = q + 1;
+				if (ParseHex(r, le, &size))
+					q = r;
+				else
+					size = 0;
+
+				if ((le - q) > 3 && q[0] == ' ' && q[2] == ' ' && addr <= 0xFFFFFFFFull)
+				{
+					char* const name = const_cast<char*>(q + 3);
+					*le = '\0';
+					// Aliases share an address; keep one, preferring a symbol with a size.
+					if (!s_symbols.empty() && s_symbols.back().addr == static_cast<u32>(addr))
+					{
+						if (s_symbols.back().size == 0 && size != 0)
+							s_symbols.back() = {static_cast<u32>(addr), static_cast<u32>(size), name};
+					}
+					else
+					{
+						s_symbols.push_back({static_cast<u32>(addr), static_cast<u32>(size), name});
+					}
+				}
 			}
 			p = le + 1;
 		}
@@ -333,6 +351,12 @@ namespace
 			name += "...";
 		}
 		return name;
+	}
+
+	// Samples in libnx's svc wrappers: the thread was waiting (or sleeping) in the kernel.
+	bool IsKernelWait(u32 key)
+	{
+		return key < s_symbols.size() && std::strncmp(s_symbols[key].name, "svc", 3) == 0;
 	}
 
 	const std::string& KeyName(u32 key)
@@ -532,6 +556,17 @@ namespace
 		return entries;
 	}
 
+	double KernelWaitPercent(const TargetProfile& prof)
+	{
+		u32 waiting = 0;
+		for (const auto& [key, count] : prof.self)
+		{
+			if (IsKernelWait(key))
+				waiting += count;
+		}
+		return prof.samples ? (100.0 * waiting / prof.samples) : 0.0;
+	}
+
 	void FormatProfile(std::string& out, const char* title, const TargetProfile* profiles, double seconds)
 	{
 		out += fmt::format("==================== {} ({:.0f} s) ====================\n", title, seconds);
@@ -545,6 +580,8 @@ namespace
 			out += fmt::format("\n--- {} thread: {} samples ({:.0f}/s){} ---\n", TARGET_NAMES[t], prof.samples,
 				seconds > 0.0 ? total / seconds : 0.0,
 				prof.failures ? fmt::format(", {} failed", prof.failures) : std::string());
+			const double waiting = KernelWaitPercent(prof);
+			out += fmt::format("  waiting in the kernel (svc*): {:.1f}%, busy {:.1f}%\n", waiting, 100.0 - waiting);
 
 			out += "  self%  incl%  function (self = running in it, incl = it or something it called)\n";
 			for (const auto& [key, count] : TopEntries(prof.self, SELF_TOP))
@@ -604,7 +641,7 @@ namespace
 			if (prof.samples == 0)
 				continue;
 
-			std::string line = fmt::format("[Prof] {}:", TARGET_NAMES[t]);
+			std::string line = fmt::format("[Prof] {} (waiting {:.0f}%):", TARGET_NAMES[t], KernelWaitPercent(prof));
 			bool first = true;
 			for (const auto& [key, count] : TopEntries(prof.self, LOG_TOP))
 			{
