@@ -31,4 +31,23 @@ int main()
 	assert(chords.Update(minus | r, true).action == Action::None);
 	chords.Update(0, true);
 	assert(chords.Update(minus | r, true).action == Action::Save);
+
+	chords.Update(0, true);
+	chords.Reconfigure({minus, plus, l, r, left, right, up}, 0);
+	assert(chords.Update(minus | l, true).action == Action::Save);
+	chords.Update(0, true);
+	assert(chords.Update(minus | r, true).action == Action::Load);
+	chords.Update(0, true);
+	// A conflicting save/load chord must never accidentally load or overwrite a state.
+	chords.Reconfigure({minus, plus, r, r, left, right, up}, 0);
+	assert(chords.Update(minus | r, true).action == Action::None);
+	chords.Update(0, true);
+	chords.Reconfigure({minus, plus, 0, l, left, right, up}, 0);
+	assert(chords.Update(minus | r, true).action == Action::None);
+	chords.Update(0, true);
+	// Returning from settings with a chord held must not execute it.
+	chords.Reconfigure({minus, plus, r, l, left, right, up}, minus | r);
+	assert(chords.Update(minus | r, true).action == Action::None);
+	chords.Update(0, true);
+	assert(chords.Update(minus | r, true).action == Action::Save);
 }

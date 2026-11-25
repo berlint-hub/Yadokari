@@ -14,6 +14,7 @@
 #include "ImGui/FullscreenUI.h"
 #ifdef __SWITCH__
 #include "ImGui/HorizonCheatDownload.h"
+#include "Input/HorizonInputSettings.h"
 #endif
 #include "ImGui/ImGuiFullscreen.h"
 #include "ImGui/ImGuiManager.h"
@@ -5130,6 +5131,44 @@ void FullscreenUI::DrawHotkeySettingsPage()
 	SettingsInterface* bsi = GetEditingSettingsInterface();
 
 	BeginMenuButtons();
+
+#ifdef __SWITCH__
+	MenuHeading(FSUI_CSTR("Switch Controller Shortcuts (Player 1)"));
+	ActiveButton(FSUI_CSTR("Hold Minus, then press the selected button. Minus + Plus always opens the menu."),
+		false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+	bool used[HorizonInputSettings::Count] = {};
+	bool duplicate = false;
+	for (const auto& binding : HorizonInputSettings::BINDINGS)
+	{
+		const int button = bsi->GetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		if (button > HorizonInputSettings::Disabled && button < HorizonInputSettings::Count)
+		{
+			duplicate |= used[button];
+			used[button] = true;
+		}
+		DrawIntListSetting(bsi, Host::TranslateToCString(TR_CONTEXT, binding.label),
+			FSUI_CSTR("Button used together with Minus. Set to Disabled to turn this shortcut off."),
+			HorizonInputSettings::SECTION, binding.key, binding.default_button,
+			HorizonInputSettings::BUTTON_NAMES, HorizonInputSettings::Count, false);
+	}
+	if (duplicate)
+		ActiveButton(FSUI_CSTR("Conflicting shortcuts are disabled. Assign a different button to each action."),
+			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+
+	MenuHeading(FSUI_CSTR("Switch Stick Settings"));
+	DrawIntRangeSetting(bsi, FSUI_CSTR("Stick Deadzone"),
+		FSUI_CSTR("Applied to both sticks and both players. Changes take effect when you close the menu."),
+		HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE,
+		HorizonInputSettings::MIN_DEADZONE, HorizonInputSettings::MAX_DEADZONE, "%d%%");
+	if (MenuButton(FSUI_ICONSTR(ICON_FA_UNDO, "Reset Switch Controls"),
+		FSUI_CSTR("Restore the default Switch shortcuts and stick deadzone.")))
+	{
+		for (const auto& binding : HorizonInputSettings::BINDINGS)
+			bsi->SetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		bsi->SetIntValue(HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE);
+		SetSettingsChanged(bsi);
+	}
+#endif
 
 	const HotkeyInfo* last_category = nullptr;
 	for (const HotkeyInfo* hotkey : s_hotkey_list_cache)

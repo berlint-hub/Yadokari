@@ -24,6 +24,15 @@ class Chords
 public:
 	explicit Chords(Buttons buttons) : m_buttons(buttons) {}
 
+	void Reconfigure(Buttons buttons, uint64_t held)
+	{
+		m_buttons = buttons;
+		m_previous_chord = 0;
+		m_ambiguous = false;
+		// Do not fire a newly assigned shortcut until the modifier is released.
+		m_blocked = (held & m_buttons.modifier) != 0;
+	}
+
 	Result Update(uint64_t held, bool enabled)
 	{
 		const uint64_t actions = m_buttons.save | m_buttons.load | m_buttons.previous |
@@ -56,11 +65,22 @@ public:
 			m_ambiguous = true;
 		if (!m_ambiguous && pressed != m_previous_chord)
 		{
-			if (pressed == m_buttons.save) action = Action::Save;
-			else if (pressed == m_buttons.load) action = Action::Load;
-			else if (pressed == m_buttons.previous) action = Action::PreviousSlot;
-			else if (pressed == m_buttons.next) action = Action::NextSlot;
-			else if (pressed == m_buttons.screenshot) action = Action::Screenshot;
+			// Fail closed for duplicate assignments, even if the INI was edited by hand.
+			unsigned matches = 0;
+			const auto match = [&](uint64_t button, Action candidate) {
+				if (pressed == button)
+				{
+					++matches;
+					action = candidate;
+				}
+			};
+			match(m_buttons.save, Action::Save);
+			match(m_buttons.load, Action::Load);
+			match(m_buttons.previous, Action::PreviousSlot);
+			match(m_buttons.next, Action::NextSlot);
+			match(m_buttons.screenshot, Action::Screenshot);
+			if (matches != 1)
+				action = Action::None;
 		}
 		m_previous_chord = pressed;
 		return {action, m_suppressed};

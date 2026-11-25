@@ -69,6 +69,10 @@ The Switch build discovers the installed `nxvk` package through devkitPro's targ
 
 Player 1 can use these shortcuts while a game is running. Hold **−** first, then press the
 other button; release both before using them in the game. They are disabled while the menu is open.
+These are the defaults; change or disable each action in **Settings → Hotkey Settings → Switch
+Controller Shortcuts**. The modifier `−` and the `−` + `+` pause-menu shortcut remain fixed.
+If two actions use the same button, both conflicting shortcuts are disabled until corrected.
+Changes take effect when the menu closes.
 
 | Shortcut | Action |
 | --- | --- |
@@ -84,6 +88,10 @@ initial press of `−` can already reach the game as Select before the shortcut 
 Player 2 is unaffected. Loading a state also follows the existing RetroAchievements hardcore-mode
 and memory-card safety checks. Keep normal in-game memory-card saves as well: save states are not a
 substitute for them.
+
+The same settings page also provides a **Stick Deadzone** adjustment (0–50%, default 15%) for
+both sticks on both players' controllers. **Reset Switch Controls** restores the default shortcuts
+and deadzone.
 
 ## Downloading cheats
 
