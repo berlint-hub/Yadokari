@@ -5,6 +5,9 @@
 
 static_assert(iREGCNT_XMM <= 29, "MMI scratch registers overlap the EE SIMD cache");
 
+// QFSRV and the halfword multiplies, shared with the equivalence tests against pcsx2/MMI.cpp.
+#include "arm64/MMIEmitters.h"
+
 static __fi a64::VRegister mmiQ(int reg)
 {
 	return a64::QRegister(reg);
@@ -292,7 +295,18 @@ void recPADSBH()
 	mmiFinish();
 }
 
-REC_MMI_FALLBACK(QFSRV, _Rd_);
+void recQFSRV()
+{
+	if (!_Rd_)
+		return;
+
+	EE::Profiler.EmitOp(eeOpcode::QFSRV);
+	const int info = eeRecompileCodeXMM(XMMINFO_READS | XMMINFO_READT | XMMINFO_WRITED);
+	// shuffle.data[0xE4][0] is the identity PSHUFD table, bytes 0..15.
+	MMIEmit::QFSRV(mmiQ(EEREC_D), mmiQ(EEREC_S), mmiQ(EEREC_T), PTR_CPU(cpuRegs.sa),
+		PTR_CPU(shuffle.data[0xE4][0]), RWVIXLSCRATCH);
+	mmiFinish();
+}
 
 // MMI2
 
@@ -300,11 +314,51 @@ REC_MMI_FALLBACK(PMADDW, _Rd_);
 REC_MMI_FALLBACK(PMSUBW, _Rd_);
 REC_MMI_FALLBACK(PMULTW, _Rd_);
 REC_MMI_FALLBACK(PDIVW, 0);
-REC_MMI_FALLBACK(PMADDH, _Rd_);
-REC_MMI_FALLBACK(PHMADH, _Rd_);
-REC_MMI_FALLBACK(PMSUBH, _Rd_);
-REC_MMI_FALLBACK(PHMSBH, _Rd_);
-REC_MMI_FALLBACK(PMULTH, _Rd_);
+// Halfword multiplies: LO/HI are always written, Rd only when it isn't r0.
+void recPMADDH()
+{
+	EE::Profiler.EmitOp(eeOpcode::PMADDH);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_READLO | XMMINFO_READHI | XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PMADDH_PMSUBH(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI), false);
+	mmiFinish();
+}
+
+void recPMSUBH()
+{
+	EE::Profiler.EmitOp(eeOpcode::PMSUBH);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_READLO | XMMINFO_READHI | XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PMADDH_PMSUBH(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI), true);
+	mmiFinish();
+}
+
+void recPHMADH()
+{
+	EE::Profiler.EmitOp(eeOpcode::PHMADH);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PHMADH(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI));
+	mmiFinish();
+}
+
+void recPHMSBH()
+{
+	EE::Profiler.EmitOp(eeOpcode::PHMSBH);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PHMSBH(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI));
+	mmiFinish();
+}
+
+void recPMULTH()
+{
+	EE::Profiler.EmitOp(eeOpcode::PMULTH);
+	const int info = eeRecompileCodeXMM(XMMINFO_READS | XMMINFO_READT | (_Rd_ ? XMMINFO_WRITED : 0) |
+										XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PMULTH(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI));
+	mmiFinish();
+}
 REC_MMI_FALLBACK(PDIVBW, 0);
 
 #define REC_MMI_VARIABLE_SHIFT(NAME, OP, NEGATE_COUNTS)                                      \
@@ -426,8 +480,23 @@ REC_MMI_PERMUTE_W(PROT3W, 1, 2, 0, 3)
 
 // MMI3
 
-REC_MMI_FALLBACK(PMADDUW, _Rd_);
-REC_MMI_FALLBACK(PMULTUW, _Rd_);
+void recPMADDUW()
+{
+	EE::Profiler.EmitOp(eeOpcode::PMADDUW);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_READLO | XMMINFO_READHI | XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PMULTUW_PMADDUW(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI), true);
+	mmiFinish();
+}
+
+void recPMULTUW()
+{
+	EE::Profiler.EmitOp(eeOpcode::PMULTUW);
+	const int info = eeRecompileCodeXMM((_Rd_ ? XMMINFO_WRITED : 0) | XMMINFO_READS | XMMINFO_READT |
+										XMMINFO_WRITELO | XMMINFO_WRITEHI);
+	MMIEmit::PMULTUW_PMADDUW(mmiQ(EEREC_D), _Rd_ != 0, mmiQ(EEREC_S), mmiQ(EEREC_T), mmiQ(EEREC_LO), mmiQ(EEREC_HI), false);
+	mmiFinish();
+}
 REC_MMI_FALLBACK(PDIVUW, 0);
 
 REC_MMI_VARIABLE_SHIFT(PSRAVW, Sshl, true)
