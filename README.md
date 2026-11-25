@@ -68,6 +68,18 @@ NXVK does not install EGL headers. On devkitPro they come from the `switch-mesa`
 
 The Switch build discovers the installed `nxvk` / `nxvk-gl` package through devkitPro's target `pkg-config`.
 
+### uam (deko3d runtime shaders)
+
+The deko3d renderer compiles specialised shaders at runtime, so the uam shader compiler is built into the
+`.nro` from source. Clone it next to the ARMSX2-NX checkout, which is where CMake looks by default:
+
+```shell
+git clone https://github.com/devkitPro/uam ../uam
+```
+
+or pass `-DUAM_ROOT=/path/to/uam` when configuring. Building it needs `bison`, `flex` and `python3` with
+`mako` on the host. Configure with `-DDK3D_RUNTIME_SHADERS=OFF` to skip it and only use the prebuilt shaders.
+
 ### Building the `.nro`
 
 Configure the native core with the Switch toolchain, then build the `.nro` target:
