@@ -73,6 +73,10 @@ void HorizonAudioStream::FillBuffer(AudioOutBuffer& buf)
 
 void HorizonAudioStream::ThreadEntry()
 {
+	// Above the EE thread (44, lower is higher): this thread mostly sleeps in audoutWaitPlayFinish(), but
+	// when a buffer comes back it has to refill it before the queued ones run out.
+	svcSetThreadPriority(CUR_THREAD_HANDLE, 0x2A);
+
 	// Prime and queue all buffers before first completion.
 	for (AudioOutBuffer& buf : m_buffers)
 	{

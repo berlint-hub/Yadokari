@@ -106,6 +106,18 @@ Two players are supported. Player 1 is the first controller (or the attached Joy
 player 2 is the second controller. Use **Controller Setup** in the pause menu to open the system controller
 applet and assign the controllers to players.
 
+## CPU cores
+
+The EE, VU1 and GS threads are pinned to the first three cores the process may use. Every other thread
+(audio, ISO/USB reading, input, the Vulkan driver's helpers) is moved off the EE core when it starts: to
+the GS core, and to core 3 when the process is allowed to use it. The log (`sdmc:/switch/armsx2/logs/emulog.txt`)
+shows which cores were granted, e.g. `process may use mask 0x7` for cores 0-2 or `0xf` for cores 0-3.
+
+Launched from hbmenu the app gets cores 0-2. A forwarder runs with the cores its `main.npdm` allows:
+forwarders built from hbloader's NPDM also allow 0-2 (`"highest_cpu_id": 2`). With
+`"highest_cpu_id": 3` in the forwarder's NPDM, core 3 is used for the helper threads. Core 3 is shared
+with the system, which is why the EE/VU1/GS threads stay on cores 0-2.
+
 ## Updating
 
 Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on

@@ -2,6 +2,7 @@
 
 add_executable(armsx2
 	main.cpp
+	HorizonCores.cpp
 	HorizonHost.cpp
 	HorizonUpdater.cpp
 	HorizonUsbStorage.cpp
@@ -23,6 +24,9 @@ set_source_files_properties(HorizonException.cpp HorizonExceptionEntry.S
 	PROPERTIES COMPILE_OPTIONS "-fno-lto")
 
 target_include_directories(armsx2 PRIVATE ${CMAKE_SOURCE_DIR})
+
+# HorizonCores moves helper threads off the EE core as they start; wrap every pthread_create in the link.
+target_link_options(armsx2 PRIVATE "-Wl,--wrap=pthread_create")
 
 set(ARMSX2_CORE_LINK_TARGETS PCSX2)
 if(TARGET PCSX2_LTO)

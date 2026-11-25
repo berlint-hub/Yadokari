@@ -30,6 +30,7 @@
 
 #include "common/Horizon/Horizon.h"
 
+#include "HorizonCores.h"
 #include "HorizonHost.h"
 #include "HorizonUpdater.h"
 #include "HorizonUsbStorage.h"
@@ -332,6 +333,9 @@ void Host::OnControllerSetupRequested()
 
 int main(int argc, char** argv)
 {
+	// Before any thread exists: decides which cores helper threads go to.
+	HorizonCores::Initialize();
+
 	const bool have_socket = R_SUCCEEDED(socketInitializeDefault());
 	if (have_socket)
 		nxlinkStdio();
@@ -347,6 +351,8 @@ int main(int argc, char** argv)
 
 	INFO_LOG("================ ARMSX2-NX ================");
 	INFO_LOG("Logging to {}", LOG_PATH);
+	INFO_LOG("CPU cores: process may use mask 0x{:x}, helper threads go to mask 0x{:x}",
+		HorizonCores::GetAllowedCoreMask(), HorizonCores::GetHelperCoreMask());
 
 	// Mount the romfs: it holds the runtime resources (fonts, UI, GameIndex), and the deko3d shaders when
 	// that renderer is built.
