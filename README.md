@@ -106,6 +106,25 @@ Two players are supported. Player 1 is the first controller (or the attached Joy
 player 2 is the second controller. Use **Controller Setup** in the pause menu to open the system controller
 applet and assign the controllers to players.
 
+## Updating
+
+Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on
+this repository tagged `nightly` for the default branch, or `nightly-<branch>` for other branches.
+
+Choose **Update** in the app's main menu to check the channel the running build came from. If there is a
+newer build, the app downloads it and installs it when it closes. **Restart now** restarts straight into
+the new build. The previous build is kept next to it as `armsx2nx.nro.bak`. The app also checks once on
+startup when it is online. Both need an internet connection on the Switch.
+
+The defaults come from the build. They can be overridden in `sdmc:/switch/armsx2/armsx2.ini`:
+
+```ini
+[Horizon]
+CheckForUpdatesOnStartup = true
+UpdateRepository = berlint-hub/Yadokari
+UpdateChannel = nightly
+```
+
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported

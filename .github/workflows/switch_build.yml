@@ -5,6 +5,9 @@ name: Switch Build
 # - nxvk: builds the NXVK Vulkan portlib in NXVK's own toolchain image. The staged portlib is cached
 #   per NXVK commit, so only a new NXVK commit costs a full Mesa build.
 # - nro: builds the emulator (Release, Vulkan only) in devkitpro/devkita64 and uploads the .nro.
+# - publish: (pushes and manual runs only) puts the .nro on the branch's update channel, a pre-release
+#   tagged "nightly" for the default branch and "nightly-<branch>" otherwise. The app's Update menu
+#   downloads https://github.com/<repo>/releases/download/<channel>/armsx2nx.nro from there.
 
 on:
   push:
@@ -107,6 +110,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
     container: devkitpro/devkita64:latest
+    outputs:
+      update_tag: ${{ steps.channel.outputs.tag }}
 
     defaults:
       run:
@@ -138,13 +143,29 @@ jobs:
           cp -r nxvk-portlib/. "$DEVKITPRO/portlibs/switch/"
           "$DEVKITPRO/portlibs/switch/bin/aarch64-none-elf-pkg-config" --modversion nxvk
 
+      - name: Update channel
+        id: channel
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "$DEFAULT_BRANCH" ]; then
+            TAG=nightly
+          else
+            TAG="nightly-$(printf '%s' "$GITHUB_REF_NAME" | tr -c 'A-Za-z0-9._-' '-')"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Update channel: $TAG"
+
       - name: Configure
         run: |
           cmake -S app/src/main/cpp -B build/switch-core -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DUSE_VULKAN=ON -DUSE_OPENGL=OFF -DUSE_DK3D=OFF
+            -DUSE_VULKAN=ON -DUSE_OPENGL=OFF -DUSE_DK3D=OFF \
+            -DARMSX2_BUILD_SHA="$GITHUB_SHA" \
+            -DARMSX2_UPDATE_REPO="$GITHUB_REPOSITORY" \
+            -DARMSX2_UPDATE_TAG="${{ steps.channel.outputs.tag }}"
 
       - name: Build
         run: cmake --build build/switch-core --target armsx2_nro -j"$(nproc)"
@@ -157,6 +178,7 @@ jobs:
             echo ""
             echo "- commit: \`${GITHUB_SHA}\`"
             echo "- NXVK: \`${{ env.NXVK_REPOSITORY }}@${{ needs.nxvk.outputs.sha }}\`"
+            echo "- update channel: \`${{ steps.channel.outputs.tag }}\`"
             echo "- size: $(stat -c %s "$NRO") bytes"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -176,3 +198,45 @@ jobs:
           path: build/switch-core/switch-app/armsx2.elf
           if-no-files-found: warn
           retention-days: 14
+
+  publish:
+    name: Publish to the update channel
+    needs: nro
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download .nro
+        uses: actions/download-artifact@v4
+        with:
+          name: armsx2nx-vulkan
+          path: artifact
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.nro.outputs.update_tag }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          TITLE="${COMMIT_MESSAGE%%$'\n'*}"
+          printf 'sha=%s\ndate=%s\ntitle=%s\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%d)" "$TITLE" > version.txt
+          cat version.txt
+
+          NAME="Switch build ($GITHUB_REF_NAME)"
+          NOTES="Automatic Vulkan build of \`$GITHUB_REF_NAME\` at $GITHUB_SHA. Install it from the app: main menu > Update."
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # Move the channel's tag to this commit and refresh the release text.
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true > /dev/null
+            gh release edit "$TAG" --title "$NAME" --notes "$NOTES" --prerelease
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$NAME" --notes "$NOTES" --prerelease
+          fi
+
+          # The .nro goes up first: version.txt only announces a build once its .nro is in place.
+          gh release upload "$TAG" artifact/armsx2nx.nro --clobber
+          gh release upload "$TAG" version.txt --clobber
+          echo "Published https://github.com/$GH_REPO/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"

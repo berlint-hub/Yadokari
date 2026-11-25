@@ -3,10 +3,19 @@
 add_executable(armsx2
 	main.cpp
 	HorizonHost.cpp
+	HorizonUpdater.cpp
 	HorizonUsbStorage.cpp
 	HorizonException.cpp
 	HorizonExceptionEntry.S
 )
+
+# Self-updater: the CI workflow publishes each build as a GitHub release asset and passes these.
+# Local builds leave ARMSX2_BUILD_SHA empty, so they only check for updates on request.
+set(ARMSX2_BUILD_SHA "" CACHE STRING "Commit this build was made from (used by the updater)")
+set(ARMSX2_UPDATE_REPO "berlint-hub/Yadokari" CACHE STRING "GitHub repository (owner/name) the updater downloads from")
+set(ARMSX2_UPDATE_TAG "nightly" CACHE STRING "Release tag (update channel) the updater follows")
+set_source_files_properties(HorizonUpdater.cpp PROPERTIES COMPILE_DEFINITIONS
+	"ARMSX2_BUILD_SHA=\"${ARMSX2_BUILD_SHA}\";ARMSX2_UPDATE_REPO=\"${ARMSX2_UPDATE_REPO}\";ARMSX2_UPDATE_TAG=\"${ARMSX2_UPDATE_TAG}\"")
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/UsbHsFs.cmake")
 
@@ -27,6 +36,7 @@ target_link_libraries(armsx2 PRIVATE
 	-Wl,--end-group
 	# Must precede the toolchain's -lnx
 	usbhsfs
+	curl # HorizonUpdater (libnx TLS backend)
 )
 if(USE_DK3D)
 	target_link_libraries(armsx2 PRIVATE deko3d)

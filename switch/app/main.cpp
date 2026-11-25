@@ -31,6 +31,7 @@
 #include "common/Horizon/Horizon.h"
 
 #include "HorizonHost.h"
+#include "HorizonUpdater.h"
 #include "HorizonUsbStorage.h"
 
 namespace
@@ -363,6 +364,7 @@ int main(int argc, char** argv)
 		EmuFolders::SetResourcesDirectory();
 	INFO_LOG("Resources directory: {}", EmuFolders::Resources);
 	SetupSettings();
+	HorizonUpdater::Initialize((argc > 0) ? argv[0] : nullptr);
 	if (HorizonUsbStorage::Initialize())
 	{
 		SyncUsbGameRoots();
@@ -418,6 +420,8 @@ int main(int argc, char** argv)
 	{
 		MTGS::RunOnGSThread(&ImGuiManager::InitializeFullscreenUI);
 		Host::RefreshGameListAsync(false);
+		if (have_socket)
+			HorizonUpdater::CheckForUpdates(false);
 	}
 
 	padConfigureInput(NUM_LOCAL_PLAYERS, HidNpadStyleSet_NpadStandard);
@@ -538,6 +542,8 @@ int main(int argc, char** argv)
 	stop_loop.store(true, std::memory_order_relaxed);
 	input_thread.join();
 
+	HorizonUpdater::Shutdown();
+
 	Host::CancelGameListRefresh();
 
 	if (VMManager::GetState() != VMState::Shutdown)
@@ -551,6 +557,10 @@ int main(int argc, char** argv)
 
 	if (have_romfs)
 		romfsExit();
+
+	// After romfsExit(): until then the running .nro is held open for its romfs.
+	HorizonUpdater::FinishPendingInstall();
+
 	if (have_socket)
 		socketExit();
 	return 0;

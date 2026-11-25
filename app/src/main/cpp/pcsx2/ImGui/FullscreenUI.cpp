@@ -1458,7 +1458,12 @@ void FullscreenUI::DrawLandingWindow()
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("landing_window", menu_pos, menu_size, 4))
+#ifdef __SWITCH__
+	static constexpr u32 landing_item_count = 5; // + Update
+#else
+	static constexpr u32 landing_item_count = 4;
+#endif
+	if (BeginHorizontalMenu("landing_window", menu_pos, menu_size, landing_item_count))
 	{
 		ResetFocusHere();
 
@@ -1481,6 +1486,14 @@ void FullscreenUI::DrawLandingWindow()
 		{
 			SwitchToSettings();
 		}
+
+#ifdef __SWITCH__
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Update"),
+				FSUI_CSTR("Download and install the newest build of this app.")))
+		{
+			Host::OnUpdateCheckRequested();
+		}
+#endif
 
 		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/exit.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Exit"),
 				FSUI_CSTR("Return to desktop mode, or exit the application.")) ||

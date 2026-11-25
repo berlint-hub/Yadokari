@@ -58,6 +58,9 @@ namespace Host
 #ifdef __SWITCH__
 	/// Opens the system controller applet so players can be assigned to controllers.
 	void OnControllerSetupRequested();
+
+	/// Checks the update channel for a newer build and offers to install it.
+	void OnUpdateCheckRequested();
 #endif
 
 	/// Did Playstation in the currently selected locale use circle as confirm
