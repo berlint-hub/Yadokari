@@ -53,12 +53,12 @@ namespace HorizonProfiler
 
 	extern std::atomic<u64> g_counters[static_cast<u32>(Counter::Count)];
 
-	__fi void Add(Counter counter, u64 value = 1)
+	__forceinline_odr void Add(Counter counter, u64 value = 1)
 	{
 		g_counters[static_cast<u32>(counter)].fetch_add(value, std::memory_order_relaxed);
 	}
 
-	__fi Counter VUCounter(u32 vu_index, Counter vu0_counter)
+	__forceinline_odr Counter VUCounter(u32 vu_index, Counter vu0_counter)
 	{
 		constexpr u32 stride = static_cast<u32>(Counter::VU1Blocks) - static_cast<u32>(Counter::VU0Blocks);
 		return static_cast<Counter>(static_cast<u32>(vu0_counter) + vu_index * stride);
