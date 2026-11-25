@@ -109,4 +109,8 @@ namespace HorizonProfiler
 
 	/// The value WantsGPUTiming() last returned (cheap, for every frame).
 	bool IsGPUTimingRequested();
+
+	/// Writes logs/crash.txt for an unhandled exception (dump is a libnx ThreadExceptionDump*), and flushes the
+	/// log if that can be done without blocking. Called from the exception handler: allocates nothing.
+	void WriteCrashReport(const void* dump);
 } // namespace HorizonProfiler

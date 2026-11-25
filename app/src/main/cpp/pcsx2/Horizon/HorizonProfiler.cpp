@@ -12,6 +12,8 @@
 #include "PerformanceMetrics.h"
 #include "R5900.h"
 #include "VMManager.h"
+#include "VU.h"
+#include "BuildVersion.h"
 
 #include "common/Console.h"
 #include "common/FileSystem.h"
@@ -22,6 +24,7 @@
 #include "fmt/format.h"
 
 #include <algorithm>
+#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -80,6 +83,7 @@ namespace
 	std::atomic<bool> s_running{false};
 	std::atomic<bool> s_stop{false};
 	std::atomic<u32> s_target_handles[NUM_TARGETS] = {};
+	std::atomic<u32> s_profiler_thread_handle{0};
 
 	u64 Counters(Counter c, const u64* values) { return values[static_cast<u32>(c)]; }
 
@@ -823,6 +827,7 @@ namespace
 	void ThreadMain()
 	{
 		svcSetThreadPriority(CUR_THREAD_HANDLE, PROFILER_THREAD_PRIORITY);
+		s_profiler_thread_handle.store(threadGetCurHandle(), std::memory_order_relaxed);
 
 		const Settings settings = s_settings;
 		const u64 vm_start_ns = GetTimeNs();
@@ -1130,4 +1135,220 @@ void HorizonProfiler::OnFrame(float frame_time_ms)
 	std::memcpy(st.counters, counters, sizeof(counters));
 	std::memcpy(st.perf, perf, sizeof(perf));
 	std::memcpy(st.cpu_us, cpu_us, sizeof(cpu_us));
+}
+
+//////////////////////////////////////////////////////////////////////////
+// Crash report (runs in the exception handler of the crashing thread)
+//////////////////////////////////////////////////////////////////////////
+
+namespace
+{
+	constexpr const char* CRASH_REPORT_PATH = "/switch/armsx2/logs/crash.txt"; // on sdmc
+	char s_crash_text[32768];
+	std::atomic_flag s_crash_reported = ATOMIC_FLAG_INIT;
+
+	struct CrashWriter
+	{
+		size_t len = 0;
+
+		void Add(const char* format, ...) __attribute__((format(printf, 2, 3)))
+		{
+			if (len >= sizeof(s_crash_text) - 1)
+				return;
+			va_list ap;
+			va_start(ap, format);
+			const int written = std::vsnprintf(s_crash_text + len, sizeof(s_crash_text) - len, format, ap);
+			va_end(ap);
+			if (written > 0)
+				len = std::min(sizeof(s_crash_text) - 1, len + static_cast<size_t>(written));
+		}
+	};
+
+	bool QueryRegion(uptr addr, uptr* start, uptr* end, u32* perm)
+	{
+		MemoryInfo mi = {};
+		u32 page_info = 0;
+		if (R_FAILED(svcQueryMemory(&mi, &page_info, addr)))
+			return false;
+		*start = mi.addr;
+		*end = mi.addr + mi.size;
+		*perm = mi.perm;
+		return true;
+	}
+
+	void DescribeAddress(CrashWriter& w, uptr addr)
+	{
+		u8* const code = SysMemory::GetCodePtr(0);
+		if (code)
+		{
+			struct
+			{
+				u8* start;
+				u8* end;
+				const char* name;
+			} const regions[] = {
+				{SysMemory::GetEERec(), SysMemory::GetEERecEnd(), "EE JIT"},
+				{SysMemory::GetIOPRec(), SysMemory::GetIOPRecEnd(), "IOP JIT"},
+				{SysMemory::GetVU0Rec(), SysMemory::GetVU0RecEnd(), "VU0 JIT"},
+				{SysMemory::GetVU1Rec(), SysMemory::GetVU1RecEnd(), "VU1 JIT"},
+				{SysMemory::GetVIFUnpackRec(), SysMemory::GetVIFUnpackRecEnd(), "VIF unpack JIT"},
+				{code, SysMemory::GetCodePtr(HostMemoryMap::CodeSize), "other JIT"},
+			};
+			for (const auto& region : regions)
+			{
+				if (addr >= reinterpret_cast<uptr>(region.start) && addr < reinterpret_cast<uptr>(region.end))
+				{
+					w.Add("0x%lx [%s+0x%lx]", static_cast<unsigned long>(addr), region.name,
+						static_cast<unsigned long>(addr - reinterpret_cast<uptr>(region.start)));
+					return;
+				}
+			}
+		}
+
+		uptr base, end;
+		u32 perm;
+		if (QueryRegion(reinterpret_cast<uptr>(&GetThreadCpuUs), &base, &end, &perm) && addr >= base && addr < end)
+		{
+			const u32 offset = static_cast<u32>(addr - base);
+			w.Add("0x%lx [nro+0x%x", static_cast<unsigned long>(addr), offset);
+			if (!s_symbols.empty())
+			{
+				auto it = std::upper_bound(s_symbols.begin(), s_symbols.end(), offset,
+					[](u32 value, const Symbol& sym) { return value < sym.addr; });
+				if (it != s_symbols.begin())
+				{
+					--it;
+					w.Add(" %s+0x%x", it->name, offset - it->addr);
+				}
+			}
+			w.Add("]");
+			return;
+		}
+
+		w.Add("0x%lx", static_cast<unsigned long>(addr));
+	}
+
+	const char* ExceptionClassName(u32 ec)
+	{
+		switch (ec)
+		{
+			case 0x00: return "undefined instruction";
+			case 0x0E: return "illegal execution state";
+			case 0x15: return "svc";
+			case 0x18: return "system register trap";
+			case 0x20: case 0x21: return "instruction abort (bad jump/call target)";
+			case 0x22: return "misaligned PC";
+			case 0x24: case 0x25: return "data abort (bad memory access)";
+			case 0x26: return "misaligned SP";
+			case 0x2C: return "floating point exception";
+			case 0x3C: return "breakpoint (brk)";
+			default: return "other";
+		}
+	}
+
+	bool WriteSdFile(const char* path, const char* data, size_t size)
+	{
+		FsFileSystem* const fs = fsdevGetDeviceFileSystem("sdmc");
+		if (!fs)
+			return false;
+
+		char fs_path[FS_MAX_PATH] = {};
+		std::strncpy(fs_path, path, sizeof(fs_path) - 1);
+		fsFsDeleteFile(fs, fs_path);
+		if (R_FAILED(fsFsCreateFile(fs, fs_path, 0, 0)))
+			return false;
+
+		FsFile file;
+		if (R_FAILED(fsFsOpenFile(fs, fs_path, FsOpenMode_Write | FsOpenMode_Append, &file)))
+			return false;
+		const bool ok = R_SUCCEEDED(fsFileWrite(&file, 0, data, size, FsWriteOption_Flush));
+		fsFileClose(&file);
+		return ok;
+	}
+} // namespace
+
+void HorizonProfiler::WriteCrashReport(const void* dump_ptr)
+{
+	// One report: the first thread to crash wins, and a crash inside the report does not recurse.
+	if (s_crash_reported.test_and_set())
+		return;
+
+	const ThreadExceptionDump* const ctx = static_cast<const ThreadExceptionDump*>(dump_ptr);
+	CrashWriter w;
+
+	const Handle thread = threadGetCurHandle();
+	const char* role = "other";
+	if (thread == s_target_handles[TARGET_EE].load(std::memory_order_relaxed) && thread != 0)
+		role = "EE (CPU thread)";
+	else if (thread == s_target_handles[TARGET_VU1].load(std::memory_order_relaxed) && thread != 0)
+		role = "VU1";
+	else if (thread == s_target_handles[TARGET_GS].load(std::memory_order_relaxed) && thread != 0)
+		role = "GS";
+	else if (thread == s_profiler_thread_handle.load(std::memory_order_relaxed) && thread != 0)
+		role = "profiler";
+
+	const u32 ec = (ctx->esr >> 26) & 0x3f;
+	w.Add("ARMSX2-NX crash report, build %s\n", BuildVersion::GitRev);
+	w.Add("Thread: %s (handle 0x%x)\n", role, thread);
+	w.Add("Exception: %s, EC 0x%02x, ESR 0x%08x, error_desc 0x%x\n", ExceptionClassName(ec), ec, ctx->esr, ctx->error_desc);
+	if (ec == 0x24 || ec == 0x25 || ec == 0x20 || ec == 0x21)
+		w.Add("Fault address: 0x%lx (%s)\n", static_cast<unsigned long>(ctx->far.x),
+			(ec == 0x24 || ec == 0x25) ? (((ctx->esr >> 6) & 1) ? "write" : "read") : "fetch");
+
+	w.Add("PC: ");
+	DescribeAddress(w, ctx->pc.x);
+	w.Add("\nLR: ");
+	DescribeAddress(w, ctx->lr.x);
+	w.Add("\nSP: 0x%lx  FP: 0x%lx  PSTATE: 0x%08x\n\n", static_cast<unsigned long>(ctx->sp.x),
+		static_cast<unsigned long>(ctx->fp.x), ctx->pstate);
+
+	for (u32 i = 0; i < 29; i++)
+		w.Add("x%-2u 0x%016lx%s", i, static_cast<unsigned long>(ctx->cpu_gprs[i].x), ((i % 4) == 3 || i == 28) ? "\n" : "  ");
+
+	// The instructions around the PC (JIT code can only be disassembled from here).
+	uptr region_start, region_end;
+	u32 perm;
+	const uptr pc = ctx->pc.x;
+	if (QueryRegion(pc, &region_start, &region_end, &perm) && (perm & Perm_R))
+	{
+		const uptr first = std::max<uptr>(region_start, (pc & ~3ull) - 32);
+		const uptr last = std::min<uptr>(region_end, (pc & ~3ull) + 32);
+		w.Add("\nCode around PC:\n");
+		for (uptr a = first; a < last; a += 4)
+			w.Add("%s0x%lx: %08x\n", (a == (pc & ~3ull)) ? "> " : "  ", static_cast<unsigned long>(a), *reinterpret_cast<const u32*>(a));
+	}
+
+	// Frame records, starting from the faulting frame. JIT code keeps state in x29, which ends the walk.
+	w.Add("\nBacktrace:\n  #0 ");
+	DescribeAddress(w, pc);
+	w.Add("\n  lr ");
+	DescribeAddress(w, ctx->lr.x);
+	w.Add("\n");
+	uptr stack_start, stack_end;
+	if (QueryRegion(ctx->sp.x, &stack_start, &stack_end, &perm) && (perm & Perm_R))
+	{
+		uptr fp = ctx->fp.x;
+		for (u32 depth = 1; depth < 48; depth++)
+		{
+			if (fp < ctx->sp.x || fp < stack_start || (fp + 16) > stack_end || (fp & 7) != 0)
+				break;
+			const u64* const record = reinterpret_cast<const u64*>(fp);
+			if (record[1] == 0)
+				break;
+			w.Add("  #%u ", depth);
+			DescribeAddress(w, record[1]);
+			w.Add("\n");
+			if (record[0] <= fp)
+				break;
+			fp = record[0];
+		}
+	}
+
+	const VURegs& vu1 = g_cpuRegistersPack.vuRegs[1];
+	w.Add("\nEE guest PC: 0x%08x  VU1 TPC: 0x%04x  VU1 start_pc: 0x%04x\n", cpuRegs.pc, vu1.VI[REG_TPC].UL, vu1.start_pc);
+
+	WriteSdFile(CRASH_REPORT_PATH, s_crash_text, w.len);
+
+	// The log is buffered; get what is in it onto the card unless another thread is in the middle of logging.
+	Log::TryFlushFileForCrash("\n*** Crashed, see logs/crash.txt ***\n");
 }

@@ -367,6 +367,20 @@ __ri void Log::WriteToFile(LOGLEVEL level, ConsoleColors color, std::string_view
 #endif
 }
 
+#ifdef __SWITCH__
+bool Log::TryFlushFileForCrash(const char* text)
+{
+	std::unique_lock lock(s_file_mutex, std::try_to_lock);
+	if (!lock.owns_lock() || !s_file_handle)
+		return false;
+
+	if (text)
+		std::fputs(text, s_file_handle.get());
+	std::fflush(s_file_handle.get());
+	return true;
+}
+#endif
+
 bool Log::IsFileOutputEnabled()
 {
 	return (s_file_level > LOGLEVEL_NONE);

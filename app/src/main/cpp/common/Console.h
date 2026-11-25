@@ -90,6 +90,11 @@ namespace Log
 	// returns the log file, this is really dangerous to use if it changes...
 	std::FILE* GetFileLogHandle();
 
+#ifdef __SWITCH__
+	// For the crash handler: appends text and flushes the log file, unless another thread holds the log lock.
+	bool TryFlushFileForCrash(const char* text);
+#endif
+
 	// adds host output
 	bool IsHostOutputEnabled();
 	void SetHostOutputLevel(LOGLEVEL level, HostCallbackType callback);
