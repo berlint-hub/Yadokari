@@ -11,27 +11,22 @@
 // DIV/SQRT/RSQRT
 //------------------------------------------------------------------
 
-// Test if Vector is +/- Zero
-static __fi void testZero(const xmm& xmmReg, const xmm& xmmTemp, const x32& gprTemp)
+// Branch to `nonzero` unless the X element is +/- 0 (x86: CMPEQ.SS against 0 + PTEST). One FCMP does it;
+// NaN counts as non-zero and denormals follow FPCR.FZ, as with the compare mask.
+static __fi void branchIfNotZero(const xmm& xmmReg, a64::Label* nonzero)
 {
-//	xXOR.PS(xmmTemp, xmmTemp);
-    armAsm->Eor(xmmTemp.V16B(), xmmTemp.V16B(), xmmTemp.V16B());
-//	xCMPEQ.SS(xmmTemp, xmmReg);
-    armAsm->Fcmeq(xmmTemp.S(), xmmTemp.S(), xmmReg.S());
-//	xPTEST(xmmTemp, xmmTemp);
-    armAsm->Fcmp(xmmTemp.S(), 0.0);
+    armAsm->Fcmp(xmmReg.S(), 0.0);
+    armAsm->B(nonzero, a64::Condition::ne);
 }
 
 // Test if Vector is Negative (Set Flags and Makes Positive)
 static __fi void testNeg(mV, const xmm& xmmReg, const x32& gprTemp)
 {
-//	xMOVMSKPS(gprTemp, xmmReg);
-    armMOVMSKPS(gprTemp, xmmReg);
-//	xTEST(gprTemp, 1);
-    armAsm->Tst(gprTemp, 1);
-//	xForwardJZ8 skip;
+//	xMOVMSKPS(gprTemp, xmmReg); xTEST(gprTemp, 1); xForwardJZ8 skip;
+    // Only the X element's sign bit is tested.
+    armAsm->Fmov(gprTemp, xmmReg.S());
     a64::Label skip;
-    armAsm->B(&skip, a64::Condition::eq);
+    armAsm->Tbz(gprTemp, 31, &skip);
 //		xMOV(ptr32[&mVU.divFlag], divI);
         armStorePtr(divI, PTR_MVU(microVU[mVU.index].divFlag));
 //		xAND.PS(xmmReg, ptr128[mVUglob.absclip]);
@@ -49,17 +44,14 @@ mVUop(mVU_DIV)
 		if (_Ftf_) Ft = mVU.regAlloc->allocReg(_Ft_, 0, (1 << (3 - _Ftf_)));
 		else       Ft = mVU.regAlloc->allocReg(_Ft_);
 		const xmm& Fs = mVU.regAlloc->allocReg(_Fs_, 0, (1 << (3 - _Fsf_)));
-		const xmm& t1 = mVU.regAlloc->allocReg();
 
-		testZero(Ft, t1, gprT1); // Test if Ft is zero
 //		xForwardJZ8 cjmp; // Skip if not zero
         a64::Label cjmp;
-        armAsm->B(&cjmp, a64::Condition::eq);
+		branchIfNotZero(Ft, &cjmp); // Test if Ft is zero
 
-			testZero(Fs, t1, gprT1); // Test if Fs is zero
 //			xForwardJZ8 ajmp;
             a64::Label ajmp;
-            armAsm->B(&ajmp, a64::Condition::eq);
+			branchIfNotZero(Fs, &ajmp); // Test if Fs is zero
 //				xMOV(ptr32[&mVU.divFlag], divI); // Set invalid flag (0/0)
                 armStorePtr(divI, PTR_MVU(microVU[mVU.index].divFlag));
 //				xForwardJump8 bjmp;
@@ -87,7 +79,7 @@ mVUop(mVU_DIV)
 //			xMOV(ptr32[&mVU.divFlag], 0); // Clear I/D flags
             armStorePtr(0, PTR_MVU(microVU[mVU.index].divFlag));
 			SSE_DIVSS(mVU, Fs, Ft);
-			mVUclamp1(mVU, Fs, t1, 8, true);
+			mVUclamp1(mVU, Fs, a64::NoVReg, 8, true);
 //		djmp.SetTarget();
         armBind(&djmp);
 
@@ -103,7 +95,6 @@ mVUop(mVU_DIV)
 
 		mVU.regAlloc->clearNeeded(Fs);
 		mVU.regAlloc->clearNeeded(Ft);
-		mVU.regAlloc->clearNeeded(t1);
 		mVU.profiler.EmitOp(opDIV);
 	}
 	pass3 { mVUlog("DIV Q, vf%02d%s, vf%02d%s", _Fs_, _Fsf_String, _Ft_, _Ftf_String); }
@@ -149,7 +140,6 @@ mVUop(mVU_RSQRT)
 	{
 		const xmm& Fs = mVU.regAlloc->allocReg(_Fs_, 0, (1 << (3 - _Fsf_)));
 		const xmm& Ft = mVU.regAlloc->allocReg(_Ft_, 0, (1 << (3 - _Ftf_)));
-		const xmm& t1 = mVU.regAlloc->allocReg();
 
 //		xMOV(ptr32[&mVU.divFlag], 0); // Clear I/D flags
         armStorePtr(0, PTR_MVU(microVU[mVU.index].divFlag));
@@ -157,15 +147,13 @@ mVUop(mVU_RSQRT)
 
 //		xSQRT.SS(Ft, Ft);
         armAsm->Fsqrt(Ft.S(), Ft.S());
-		testZero(Ft, t1, gprT1); // Test if Ft is zero
 //		xForwardJZ8 ajmp; // Skip if not zero
         a64::Label ajmp;
-        armAsm->B(&ajmp, a64::Condition::eq);
+		branchIfNotZero(Ft, &ajmp); // Test if Ft is zero
 
-			testZero(Fs, t1, gprT1); // Test if Fs is zero
 //			xForwardJZ8 bjmp; // Skip if none are
             a64::Label bjmp;
-            armAsm->B(&bjmp, a64::Condition::eq);
+			branchIfNotZero(Fs, &bjmp); // Test if Fs is zero
 //				xMOV(ptr32[&mVU.divFlag], divI); // Set invalid flag (0/0)
                 armStorePtr(divI, PTR_MVU(microVU[mVU.index].divFlag));
 //				xForwardJump8 cjmp;
@@ -189,7 +177,7 @@ mVUop(mVU_RSQRT)
 //		ajmp.SetTarget();
         armBind(&ajmp);
 			SSE_DIVSS(mVU, Fs, Ft);
-			mVUclamp1(mVU, Fs, t1, 8, true);
+			mVUclamp1(mVU, Fs, a64::NoVReg, 8, true);
 //		djmp.SetTarget();
         armBind(&djmp);
 
@@ -205,7 +193,6 @@ mVUop(mVU_RSQRT)
 
 		mVU.regAlloc->clearNeeded(Fs);
 		mVU.regAlloc->clearNeeded(Ft);
-		mVU.regAlloc->clearNeeded(t1);
 		mVU.profiler.EmitOp(opRSQRT);
 	}
 	pass3 { mVUlog("RSQRT Q, vf%02d%s, vf%02d%s", _Fs_, _Fsf_String, _Ft_, _Ftf_String); }
