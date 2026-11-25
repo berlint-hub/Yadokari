@@ -1554,9 +1554,7 @@ mVUop(mVU_ISWR)
 	}
 	pass2
 	{
-		void* base = mVU.regs().Mem;
-//		xAddressReg is = xEmptyReg;
-        a64::Register is = a64::NoReg;
+		a64::Register is = a64::NoReg;
 		if (_Is_)
 		{
 			mVU.regAlloc->moveVIToGPR(gprT1, _Is_);
@@ -1564,83 +1562,29 @@ mVUop(mVU_ISWR)
 			is = gprT1q;
 		}
 		const a64::Register& regT = mVU.regAlloc->allocGPR(_It_, -1, false, true);
-		if (!is.IsNone() && (sptr)base != (s32)(sptr)base)
+
+		// VU memory base (+ is). VI0 must address VU memory too, not the VURegs struct.
+		armAsm->Ldr(REX, PTR_CPU(vuRegs[mVU.index].Mem));
+		if (!is.IsNone())
+			armAsm->Add(REX, REX, is);
+		const a64::MemOperand base_is(REX);
+
+		if (_X) // xMOV(ptr32[base + is], regT);
+			armAsm->Str(regT, base_is);
+		if (_Y) // xMOV(ptr32[base + is + 4], regT);
 		{
-			int register_offset = -1;
-			auto writeBackAt = [&](int offset) {
-				if (register_offset == -1)
-				{
-//					xLEA(gprT2q, ptr[(void*)((sptr)base + offset)]);
-                    armAsm->Ldr(gprT2q, PTR_CPU(vuRegs[mVU.index].Mem));
-                    armAsm->Add(gprT2q, gprT2q, offset);
-					register_offset = offset;
-				}
-//				xMOV(ptr32[gprT2q + is + (offset - register_offset)], regT);
-                armAsm->Add(gprT2q, gprT2q, is);
-                armAsm->Add(gprT2q, gprT2q, (offset - register_offset));
-                armAsm->Str(regT, a64::MemOperand(gprT2q));
-			};
-			if (_X) writeBackAt(0);
-			if (_Y) writeBackAt(4);
-			if (_Z) writeBackAt(8);
-			if (_W) writeBackAt(12);
+			armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 4);
+			armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
 		}
-		else if (is.IsNone())
+		if (_Z) // xMOV(ptr32[base + is + 8], regT);
 		{
-//            auto base_ = armMemOperandPtr((void*)((uptr)base));
-            auto base_mop = PTR_CPU(vuRegs[mVU.index].Mem);
-
-//			if (_X) xMOV(ptr32[(void*)((uptr)base)], regT);
-            if (_X) {
-                armAsm->Str(regT, base_mop);
-            }
-
-//			if (_Y) xMOV(ptr32[(void*)((uptr)base + 4)], regT);
-            if (_Y) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_mop, 4);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
-
-//			if (_Z) xMOV(ptr32[(void*)((uptr)base + 8)], regT);
-            if (_Z) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_mop, 8);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
-
-//			if (_W) xMOV(ptr32[(void*)((uptr)base + 12)], regT);
-            if (_W) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_mop, 12);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
+			armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 8);
+			armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
 		}
-		else
+		if (_W) // xMOV(ptr32[base + is + 12], regT);
 		{
-            armAsm->Ldr(REX, PTR_CPU(vuRegs[mVU.index].Mem));
-            armAsm->Add(REX, REX, is);
-            auto base_is = a64::MemOperand(REX);
-
-//			if (_X) xMOV(ptr32[base + is], regT);
-            if (_X) {
-                armAsm->Str(regT, base_is);
-            }
-
-//			if (_Y) xMOV(ptr32[base + is + 4], regT);
-            if (_Y) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 4);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
-
-//			if (_Z) xMOV(ptr32[base + is + 8], regT);
-            if (_Z) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 8);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
-
-//			if (_W) xMOV(ptr32[base + is + 12], regT);
-            if (_W) {
-                armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 12);
-                armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
-            }
+			armGetMemOperandInRegister(RXVIXLSCRATCH, base_is, 12);
+			armAsm->Str(regT, a64::MemOperand(RXVIXLSCRATCH));
 		}
 		mVU.regAlloc->clearNeeded(regT);
 
@@ -1728,7 +1672,11 @@ mVUop(mVU_LQD)
 			if (is.IsNone())
 			{
 //				mVUloadReg(Ft, xAddressVoid(ptr), _X_Y_Z_W);
-                mVUloadReg(Ft, PTR_CPU(vuRegs[mVU.index].Mem), _X_Y_Z_W);
+                // VU memory at ptr, not the VURegs::Mem field itself
+                armAsm->Ldr(gprT2q, PTR_CPU(vuRegs[mVU.index].Mem));
+                if (const sptr offset = (sptr)ptr - (sptr)mVU.regs().Mem)
+                    armAsm->Add(gprT2q, gprT2q, offset);
+                mVUloadReg(Ft, a64::MemOperand(gprT2q), _X_Y_Z_W);
 			}
 			else
 			{
@@ -1768,7 +1716,9 @@ mVUop(mVU_LQI)
 			const xmm& Ft = mVU.regAlloc->allocReg(-1, _Ft_, _X_Y_Z_W);
             if (is.IsNone()) {
 //                mVUloadReg(Ft, xAddressVoid(ptr), _X_Y_Z_W);
-                mVUloadReg(Ft, PTR_CPU(vuRegs[mVU.index].Mem), _X_Y_Z_W);
+                // VU memory address 0, not the VURegs::Mem field itself
+                armAsm->Ldr(gprT2q, PTR_CPU(vuRegs[mVU.index].Mem));
+                mVUloadReg(Ft, a64::MemOperand(gprT2q), _X_Y_Z_W);
             }
             else {
 //                mVUloadReg(Ft, xComplexAddress(gprT2q, ptr, is), _X_Y_Z_W);
@@ -1859,7 +1809,11 @@ mVUop(mVU_SQD)
 		const xmm& Fs = mVU.regAlloc->allocReg(_Fs_, _XYZW_PS ? -1 : 0, _X_Y_Z_W);
         if (it.IsNone()) {
 //            mVUsaveReg(Fs, xAddressVoid(ptr), _X_Y_Z_W, 1);
-            mVUsaveReg(Fs, PTR_CPU(vuRegs[mVU.index].Mem), _X_Y_Z_W, 1);
+            // VU memory at ptr, not the VURegs::Mem field itself
+            armAsm->Ldr(gprT2q, PTR_CPU(vuRegs[mVU.index].Mem));
+            if (const sptr offset = (sptr)ptr - (sptr)mVU.regs().Mem)
+                armAsm->Add(gprT2q, gprT2q, offset);
+            mVUsaveReg(Fs, a64::MemOperand(gprT2q), _X_Y_Z_W, 1);
         }
         else {
 //            mVUsaveReg(Fs, xComplexAddress(gprT2q, ptr, it), _X_Y_Z_W, 1);
@@ -1898,7 +1852,9 @@ mVUop(mVU_SQI)
         }
         else {
 //            mVUsaveReg(Fs, xAddressVoid(ptr), _X_Y_Z_W, 1);
-            mVUsaveReg(Fs, PTR_CPU(vuRegs[mVU.index].Mem), _X_Y_Z_W, 1);
+            // VU memory address 0, not the VURegs::Mem field itself
+            armAsm->Ldr(gprT2q, PTR_CPU(vuRegs[mVU.index].Mem));
+            mVUsaveReg(Fs, a64::MemOperand(gprT2q), _X_Y_Z_W, 1);
         }
 		mVU.regAlloc->clearNeeded(Fs);
 		mVU.profiler.EmitOp(opSQI);

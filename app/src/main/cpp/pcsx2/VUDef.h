@@ -237,6 +237,11 @@ struct SSEMasks
 
 struct mVU_SSE4
 {
+    // Per-lane bit weights for building MOVMSKPS-style masks (lane 0 = bit 0, or lane 0 = bit 3 when reversed).
+    // Kept first so they stay 16-byte aligned for single LDR Q loads.
+    u32 movmsk_weights[4] = {1, 2, 4, 8};
+    u32 movmsk_weights_rev[4] = {8, 4, 2, 1};
+    ////
     u32 sse4_minvals[2][4] = {
         {0xff7fffff, 0xffffffff, 0xffffffff, 0xffffffff}, //1000
         {0xff7fffff, 0xff7fffff, 0xff7fffff, 0xff7fffff}, //1111

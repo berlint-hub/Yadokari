@@ -973,7 +973,8 @@ void armEor(const a64::Register& p_reg, const void* p_mop, a64::Operand p_value)
 // kArm64I32x4BitMask
 void armMOVMSKPS(const a64::Register& reg32, const a64::VRegister& regQ)
 {
-    armAsm->Movi(RQSCRATCH2.V2D(), 0x0000'0008'0000'0004, 0x0000'0002'0000'0001);
+    // One load instead of materialising {1,2,4,8} with Movi (6 instructions).
+    armAsm->Ldr(RQSCRATCH2.Q(), PTR_CPU(mVUss4.movmsk_weights));
     ////
     armAsm->Sshr(RQSCRATCH.V4S(), regQ.V4S(), 31);
     armAsm->And(RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH.V16B());
@@ -1017,18 +1018,71 @@ void armPMOVMSKB(const a64::Register& regDst, const a64::VRegister& regSrc)
     armAsm->Mov(regDst, tmp.V8H(), 0);
 }
 
+// dst = [dst[i0], dst[i1], src[i2], src[i3]]
 void armSHUFPS(const a64::VRegister& dstreg, const a64::VRegister& srcreg, int pIndex)
 {
-    armAsm->Mov(RQSCRATCH3, armLoadPtrV(PTR_CPU(shuffle.data[pIndex][1])).Q());
-    ////
+    pIndex &= 0xff;
+    if (dstreg.Is(srcreg))
+    {
+        armPSHUFD(dstreg, dstreg, pIndex);
+        return;
+    }
+
+    switch (pIndex)
+    {
+        case 0x00: // [d0,d0,s0,s0]
+            armAsm->Zip1(RQSCRATCH.V4S(), dstreg.V4S(), srcreg.V4S());
+            armAsm->Zip1(dstreg.V4S(), RQSCRATCH.V4S(), RQSCRATCH.V4S());
+            return;
+        case 0x44: armAsm->Mov(dstreg.V2D(), 1, srcreg.V2D(), 0); return; // [d0,d1,s0,s1]
+        case 0xE4: armAsm->Mov(dstreg.V2D(), 1, srcreg.V2D(), 1); return; // [d0,d1,s2,s3]
+        case 0x4E: armAsm->Ext(dstreg.V16B(), dstreg.V16B(), srcreg.V16B(), 8); return; // [d2,d3,s0,s1]
+        case 0xEE: armAsm->Zip2(dstreg.V2D(), dstreg.V2D(), srcreg.V2D()); return; // [d2,d3,s2,s3]
+        case 0x88: armAsm->Uzp1(dstreg.V4S(), dstreg.V4S(), srcreg.V4S()); return; // [d0,d2,s0,s2]
+        case 0xDD: armAsm->Uzp2(dstreg.V4S(), dstreg.V4S(), srcreg.V4S()); return; // [d1,d3,s1,s3]
+        default: break;
+    }
+
+    armAsm->Ldr(RQSCRATCH3.Q(), PTR_CPU(shuffle.data[pIndex][1]));
     armAsm->Mov(RQSCRATCH2, srcreg);
     armAsm->Mov(RQSCRATCH, dstreg);
-    armAsm->Tbx(dstreg.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH3.V16B());
+    armAsm->Tbl(dstreg.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH3.V16B());
 }
 
+// dst[i] = src[(pIndex >> 2i) & 3]. Common patterns map to one or two permute instructions instead of
+// a table load + TBL.
 void armPSHUFD(const a64::VRegister& dstreg, const a64::VRegister& srcreg, int pIndex)
 {
-    armAsm->Mov(RQSCRATCH3, armLoadPtrV(PTR_CPU(shuffle.data[pIndex][0])).Q());
+    pIndex &= 0xff;
+    switch (pIndex)
+    {
+        case 0xE4: // [0,1,2,3]
+            if (!dstreg.Is(srcreg))
+                armAsm->Mov(dstreg.V16B(), srcreg.V16B());
+            return;
+        case 0x00: case 0x55: case 0xAA: case 0xFF: // broadcast
+            armAsm->Dup(dstreg.V4S(), srcreg.V4S(), pIndex & 3);
+            return;
+        case 0xB1: armAsm->Rev64(dstreg.V4S(), srcreg.V4S()); return; // [1,0,3,2]
+        case 0x4E: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 8); return; // [2,3,0,1]
+        case 0x39: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 4); return; // [1,2,3,0]
+        case 0x93: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 12); return; // [3,0,1,2]
+        case 0x1B: // [3,2,1,0]
+            armAsm->Rev64(dstreg.V4S(), srcreg.V4S());
+            armAsm->Ext(dstreg.V16B(), dstreg.V16B(), dstreg.V16B(), 8);
+            return;
+        case 0x44: armAsm->Dup(dstreg.V2D(), srcreg.V2D(), 0); return; // [0,1,0,1]
+        case 0xEE: armAsm->Dup(dstreg.V2D(), srcreg.V2D(), 1); return; // [2,3,2,3]
+        case 0xA0: armAsm->Trn1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,0,2,2]
+        case 0xF5: armAsm->Trn2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [1,1,3,3]
+        case 0x50: armAsm->Zip1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,0,1,1]
+        case 0xFA: armAsm->Zip2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [2,2,3,3]
+        case 0x88: armAsm->Uzp1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,2,0,2]
+        case 0xDD: armAsm->Uzp2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [1,3,1,3]
+        default: break;
+    }
+
+    armAsm->Ldr(RQSCRATCH3.Q(), PTR_CPU(shuffle.data[pIndex][0]));
     armAsm->Tbl(dstreg.V16B(), srcreg.V16B(), RQSCRATCH3.V16B());
 }
 

@@ -25,8 +25,9 @@
 
 const std::array<u16, 16> flipMask{0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15};
 
-// Note: If modXYZW is true, then it adjusts XYZW for Single Scalar operations
-static void mVUupdateFlags(mV, const xmm& reg, const xmm& regT1in = a64::NoVReg, const xmm& regT2in = a64::NoVReg, bool modXYZW = 1)
+// Original implementation, still used when the VUOverflowHack gamefix needs the flipped copy for its
+// FLT_MAX check. Note: If modXYZW is true, then it adjusts XYZW for Single Scalar operations
+static void mVUupdateFlagsOverflowCheck(mV, const xmm& reg, const xmm& regT1in, const xmm& regT2in, bool modXYZW)
 {
 	const x32& mReg = gprT1;
 	const x32& sReg = getFlagReg(sFLAG.write);
@@ -145,6 +146,65 @@ static void mVUupdateFlags(mV, const xmm& reg, const xmm& regT1in = a64::NoVReg,
 		mVU.regAlloc->clearNeeded(regT1);
 	if (regT2b)
 		mVU.regAlloc->clearNeeded(regT2);
+}
+
+// Note: If modXYZW is true, then it adjusts XYZW for Single Scalar operations
+static void mVUupdateFlags(mV, const xmm& reg, const xmm& regT1in = a64::NoVReg, const xmm& regT2in = a64::NoVReg, bool modXYZW = 1)
+{
+	if (!sFLAG.doFlag && !mFLAG.doFlag)
+		return;
+
+	if (sFLAG.doFlag && CHECK_VUOVERFLOWHACK)
+	{
+		mVUupdateFlagsOverflowCheck(mVU, reg, regT1in, regT2in, modXYZW);
+		return;
+	}
+
+	const x32& mReg = gprT1;
+	const x32& sReg = getFlagReg(sFLAG.write);
+
+	if (sFLAG.doFlag)
+	{
+		mVUallocSFLAGa(sReg, sFLAG.lastWrite); // Get Prev Status Flag
+		if (sFLAG.doNonSticky)
+			armAsm->And(sReg, sReg, 0xfffc00ff); // Clear O,U,S,Z flags
+	}
+
+	// Builds the same mReg = (sign bits << 4) | zero bits as PSHUFD + 2x MOVMSKPS in the original, in 9
+	// instructions and without allocating temporaries (q29-q31 are codegen scratch, reg is never one of them).
+	// Bit order matches the original flip: bit 3 = X when the MAC flag is written by a non-scalar op,
+	// otherwise bit 0 = X. AND_XYZW masks in that same order.
+	const bool flipLanes = mFLAG.doFlag && !(_XYZW_SS && modXYZW);
+	armAsm->Ldr(RQSCRATCH2.Q(), flipLanes ? PTR_CPU(mVUss4.movmsk_weights_rev) : PTR_CPU(mVUss4.movmsk_weights));
+	armAsm->Cmlt(RQSCRATCH3.V4S(), reg.V4S(), 0); // sign bit set
+	armAsm->Fcmeq(RQSCRATCH.V4S(), reg.V4S(), 0.0); // +0 or -0
+	armAsm->And(RQSCRATCH3.V16B(), RQSCRATCH3.V16B(), RQSCRATCH2.V16B());
+	armAsm->And(RQSCRATCH.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B());
+	armAsm->Sli(RQSCRATCH.V4S(), RQSCRATCH3.V4S(), 4);
+	armAsm->Addv(RQSCRATCH.S(), RQSCRATCH.V4S());
+	armAsm->Fmov(mReg, RQSCRATCH.S());
+	armAsm->And(mReg, mReg, ((AND_XYZW) << 4) | (AND_XYZW));
+
+	//-------------------------Write back flags------------------------------
+	if (mFLAG.doFlag)
+	{
+		SHIFT_XYZW(mReg); // If it was Single Scalar, move the flags in to the correct position
+		mVUallocMFLAGb(mVU, mReg, mFLAG.write); // Set Mac Flag
+	}
+	if (sFLAG.doFlag)
+	{
+//		xAND(mReg, 0xFF); // Ignore overflow bits, they're handled separately
+        armAsm->And(mReg, mReg, 0xFF);
+//		xOR(sReg, mReg);
+        armAsm->Orr(sReg, sReg, mReg);
+		if (sFLAG.doNonSticky)
+		{
+//			xSHL(mReg, 8);
+            armAsm->Lsl(mReg, mReg, 8);
+//			xOR(sReg, mReg);
+            armAsm->Orr(sReg, sReg, mReg);
+		}
+	}
 }
 
 //------------------------------------------------------------------
