@@ -85,6 +85,22 @@ Player 2 is unaffected. Loading a state also follows the existing RetroAchieveme
 and memory-card safety checks. Keep normal in-game memory-card saves as well: save states are not a
 substitute for them.
 
+## Downloading cheats
+
+With the Switch connected to the internet, open a game's **Game Properties → Cheats** page and
+select **Download Cheats**. The downloader asks for confirmation and looks for a file matching the
+game's serial and CRC in the community-maintained
+[PCSX2 cheats collection](https://github.com/xs1l3n7x/pcsx2_cheats_collection), falling back to a
+CRC-only filename when necessary. Not every game, region, or revision is covered. Downloaded files
+are saved to the configured cheats directory (normally `sdmc:/switch/armsx2/cheats`), and an
+existing destination file is never overwritten. Delete or move it manually before downloading again.
+
+Enable cheats and select the desired codes in the same page. Unlabelled codes are rejected because
+they could activate without individual selection. Previously enabled codes with matching names may
+become active when the downloaded file is loaded. Cheats can cause crashes or damage saves; back up
+important memory cards first. RetroAchievements hardcore mode disables cheats. Downloads require
+working HTTPS certificate verification on the Switch; network or certificate errors are shown in the UI.
+
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported
