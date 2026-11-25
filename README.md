@@ -124,6 +124,22 @@ With [sphaira](https://github.com/berlint-hub/sphaira) there are two ways to get
 - Or, while sphaira itself runs from its forwarder, open the options for `armsx2nx.nro` in the homebrew
   menu and set **CPU Cores** to **4 (Advanced)**.
 
+## Shader caches and pipeline prewarming
+
+The first time a game draws with a new combination of GS settings, the Vulkan pipeline for it has to be
+compiled, which stalls the GS thread (the log reports stalls over 100 ms as "GS thread blocked ...").
+Compiled shaders are kept on the SD card (`sdmc:/switch/armsx2/cache`), so this happens once:
+
+- the SPIR-V for each shader (written as soon as it is compiled),
+- NVK's compiled GPU code (`cache/mesa`, written as soon as it is compiled),
+- the Vulkan pipeline cache (written when the app exits).
+
+On top of that, every pipeline a game uses is listed in `cache/vk_pipelines/<serial>_<crc>.bin`. The next
+time that game starts, those pipelines are created again from the caches a few at a time (about 2 ms after
+each frame) during the boot logos and menus, so gameplay no longer pauses to create them. The list is
+discarded after an emulator, driver or GPU feature change. Turn it off with
+`[EmuCore/GS] VulkanPipelinePrewarm = false` in `armsx2.ini`.
+
 ## Updating
 
 Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on

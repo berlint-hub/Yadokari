@@ -555,6 +555,11 @@ void GSGameChanged()
 	if (GSIsHardwareRenderer())
 		GSTextureReplacements::GameChanged();
 
+#if defined(__SWITCH__) && defined(ENABLE_VULKAN)
+	if (g_gs_device && g_gs_device->GetRenderAPI() == RenderAPI::Vulkan)
+		static_cast<GSDeviceVK*>(g_gs_device.get())->GameChanged();
+#endif
+
 	if (!VMManager::HasValidVM() && GSCapture::IsCapturing())
 		GSCapture::EndCapture();
 }

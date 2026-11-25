@@ -24,6 +24,9 @@
 
 #ifdef __SWITCH__
 #include "common/Horizon/Horizon.h"
+#include "common/FileSystem.h"
+#include "ShaderCacheVersion.h"
+#include "VMManager.h"
 #endif
 
 #include "imgui.h"
@@ -2175,6 +2178,11 @@ bool GSDeviceVK::Create(GSVSyncMode vsync_mode, bool allow_present_throttle)
 		return false;
 
 	InitializeState();
+
+#ifdef __SWITCH__
+	// The device is also recreated mid-game (renderer settings changes); pick the game's history back up.
+	GameChanged();
+#endif
 	return true;
 }
 
@@ -2196,6 +2204,9 @@ void GSDeviceVK::Destroy()
 	DestroySpinResources();
 	DestroyResources();
 
+#ifdef __SWITCH__
+	ClosePipelineHistory();
+#endif
 	VKShaderCache::Destroy();
 
 	if (m_device != VK_NULL_HANDLE)
@@ -2456,6 +2467,10 @@ void GSDeviceVK::EndPresent()
 	MoveToNextCommandBuffer();
 
 	InvalidateCachedState();
+
+#ifdef __SWITCH__
+	PrewarmPipelines();
+#endif
 }
 
 #ifdef ENABLE_OGL_DEBUG
@@ -5126,6 +5141,10 @@ VkPipeline GSDeviceVK::GetTFXPipeline(const PipelineSelector& p)
 
 	VkPipeline pipeline = CreateTFXPipeline(p);
 	m_tfx_pipelines.emplace(p, pipeline);
+#ifdef __SWITCH__
+	if (pipeline != VK_NULL_HANDLE)
+		RecordPipeline(p);
+#endif
 
 #ifdef __SWITCH__
 	const Common::Timer::Value compile_elapsed = Common::Timer::GetCurrentValue() - compile_start;
@@ -6420,3 +6439,165 @@ void GSDeviceVK::SendHWDraw(const GSHWDrawConfig& config, GSTextureVK* draw_rt,
 
 	DrawIndexedPrimitive();
 }
+
+#ifdef __SWITCH__
+
+namespace
+{
+	struct PipelineHistoryHeader
+	{
+		u32 magic;
+		u32 version;
+		u32 shader_cache_version;
+		u32 selector_size;
+		u64 device_fingerprint; // driver, GPU and the feature set the selectors were valid for
+	};
+	static_assert(sizeof(PipelineHistoryHeader) == 24);
+
+	constexpr u32 PIPELINE_HISTORY_MAGIC = 0x48505650; // 'PVPH'
+	constexpr u32 PIPELINE_HISTORY_VERSION = 1;
+	constexpr u32 PIPELINE_HISTORY_MAX = 8192;
+	constexpr double PIPELINE_PREWARM_BUDGET_MS = 2.0;
+
+	u64 Fnv1a(u64 hash, const void* data, size_t size)
+	{
+		const u8* bytes = static_cast<const u8*>(data);
+		for (size_t i = 0; i < size; i++)
+			hash = (hash ^ bytes[i]) * 0x100000001b3ull;
+		return hash;
+	}
+} // namespace
+
+void GSDeviceVK::GameChanged()
+{
+	std::string game_id;
+	if (VMManager::HasValidVM() && Host::GetBaseBoolSettingValue("EmuCore/GS", "VulkanPipelinePrewarm", true))
+	{
+		const std::string serial = VMManager::GetDiscSerial();
+		const u32 crc = VMManager::GetDiscCRC();
+		if (!serial.empty() && crc != 0)
+			game_id = fmt::format("{}_{:08X}", serial, crc);
+	}
+
+	if (game_id == m_pipeline_history_game)
+		return;
+
+	ClosePipelineHistory();
+	if (!game_id.empty())
+		OpenPipelineHistory(game_id);
+}
+
+void GSDeviceVK::OpenPipelineHistory(const std::string& game_id)
+{
+	const std::string dir = Path::Combine(EmuFolders::Cache, "vk_pipelines");
+	if (!FileSystem::CreateDirectoryPath(dir.c_str(), false))
+		return;
+	const std::string path = Path::Combine(dir, game_id + ".bin");
+
+	PipelineHistoryHeader expected = {};
+	expected.magic = PIPELINE_HISTORY_MAGIC;
+	expected.version = PIPELINE_HISTORY_VERSION;
+	expected.shader_cache_version = SHADER_CACHE_VERSION;
+	expected.selector_size = sizeof(PipelineSelector);
+	u64 fingerprint = 0xcbf29ce484222325ull;
+	fingerprint = Fnv1a(fingerprint, &m_device_properties.driverVersion, sizeof(m_device_properties.driverVersion));
+	fingerprint = Fnv1a(fingerprint, &m_device_properties.vendorID, sizeof(m_device_properties.vendorID));
+	fingerprint = Fnv1a(fingerprint, &m_device_properties.deviceID, sizeof(m_device_properties.deviceID));
+	fingerprint = Fnv1a(fingerprint, &m_features, sizeof(m_features));
+	fingerprint = Fnv1a(fingerprint, &m_optional_extensions, sizeof(m_optional_extensions));
+	expected.device_fingerprint = fingerprint;
+
+	std::vector<PipelineSelector> history;
+	std::FILE* fp = FileSystem::OpenCFile(path.c_str(), "r+b");
+	if (fp)
+	{
+		PipelineHistoryHeader header;
+		if (std::fread(&header, sizeof(header), 1, fp) == 1 && std::memcmp(&header, &expected, sizeof(header)) == 0)
+		{
+			PipelineSelector p;
+			while (history.size() < PIPELINE_HISTORY_MAX && std::fread(&p, sizeof(p), 1, fp) == 1)
+				history.push_back(p);
+		}
+		else
+		{
+			// Different build, driver or device features: start over.
+			std::fclose(fp);
+			fp = nullptr;
+		}
+	}
+	if (!fp)
+	{
+		fp = FileSystem::OpenCFile(path.c_str(), "w+b");
+		if (!fp || std::fwrite(&expected, sizeof(expected), 1, fp) != 1 || std::fflush(fp) != 0)
+		{
+			if (fp)
+				std::fclose(fp);
+			ERROR_LOG("Vulkan: could not create pipeline history {}", path);
+			return;
+		}
+	}
+	// Appends go after the last whole record (a torn record from a crash is overwritten).
+	std::fseek(fp, static_cast<long>(sizeof(expected) + history.size() * sizeof(PipelineSelector)), SEEK_SET);
+
+	m_pipeline_history = fp;
+	m_pipeline_history_game = game_id;
+	m_pipeline_history_count = static_cast<u32>(history.size());
+	m_pipeline_prewarm = std::move(history);
+	m_pipeline_prewarm_pos = 0;
+	m_pipeline_prewarm_created = 0;
+	m_pipeline_prewarm_time = 0;
+	INFO_LOG("Vulkan: {} pipelines from earlier sessions of {} queued for prewarming", m_pipeline_prewarm.size(), game_id);
+}
+
+void GSDeviceVK::ClosePipelineHistory()
+{
+	if (m_pipeline_history)
+		std::fclose(m_pipeline_history);
+	m_pipeline_history = nullptr;
+	m_pipeline_history_game.clear();
+	m_pipeline_history_count = 0;
+	m_pipeline_prewarm.clear();
+	m_pipeline_prewarm.shrink_to_fit();
+	m_pipeline_prewarm_pos = 0;
+}
+
+void GSDeviceVK::RecordPipeline(const PipelineSelector& p)
+{
+	if (!m_pipeline_history || m_pipeline_history_count >= PIPELINE_HISTORY_MAX)
+		return;
+
+	// Flushed per record so the history survives the app being closed or crashing mid-game.
+	if (std::fwrite(&p, sizeof(p), 1, m_pipeline_history) == 1 && std::fflush(m_pipeline_history) == 0)
+		m_pipeline_history_count++;
+}
+
+void GSDeviceVK::PrewarmPipelines()
+{
+	if (m_pipeline_prewarm_pos >= m_pipeline_prewarm.size())
+		return;
+
+	const Common::Timer::Value start = Common::Timer::GetCurrentValue();
+	do
+	{
+		const PipelineSelector& p = m_pipeline_prewarm[m_pipeline_prewarm_pos++];
+		if (m_tfx_pipelines.find(p) != m_tfx_pipelines.end())
+			continue; // already drawn with this session
+
+		// Not recorded again: it is already in the history.
+		m_tfx_pipelines.emplace(p, CreateTFXPipeline(p));
+		m_pipeline_prewarm_created++;
+	} while (m_pipeline_prewarm_pos < m_pipeline_prewarm.size() &&
+			 Common::Timer::ConvertValueToMilliseconds(Common::Timer::GetCurrentValue() - start) < PIPELINE_PREWARM_BUDGET_MS);
+	m_pipeline_prewarm_time += Common::Timer::GetCurrentValue() - start;
+
+	if (m_pipeline_prewarm_pos >= m_pipeline_prewarm.size())
+	{
+		INFO_LOG("Vulkan: prewarmed {} pipelines for {} in {:.0f}ms", m_pipeline_prewarm_created, m_pipeline_history_game,
+			Common::Timer::ConvertValueToMilliseconds(m_pipeline_prewarm_time));
+		m_pipeline_prewarm.clear();
+		m_pipeline_prewarm.shrink_to_fit();
+		m_pipeline_prewarm_pos = 0;
+	}
+}
+
+#endif // __SWITCH__
