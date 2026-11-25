@@ -196,6 +196,50 @@ UpdateRepository = berlint-hub/Yadokari
 UpdateChannel = nightly
 ```
 
+## Switch controller shortcuts
+
+Player 1 can use these shortcuts while a game is running. Hold **−** first, then press the
+other button; release both before using them in the game. They are disabled while the menu is open.
+These are the defaults; change or disable each action in **Settings → Hotkey Settings → Switch
+Controller Shortcuts**. The modifier `−` and the `−` + `+` pause-menu shortcut remain fixed.
+If two actions use the same button, both conflicting shortcuts are disabled until corrected.
+Changes take effect when the menu closes.
+
+| Shortcut | Action |
+| --- | --- |
+| `−` + `+` | Open the pause menu |
+| `−` + `R` | Save state to the selected slot (overwrites that slot) |
+| `−` + `L` | Load state from the selected slot |
+| `−` + D-pad left/right | Select the previous/next save-state slot (1–10) |
+| `−` + D-pad up | Save a screenshot |
+
+The shortcut slot starts at 1 each time the app starts and is separate from the slot selector in
+the pause menu. The buttons used by a recognized shortcut are suppressed until released, but the
+initial press of `−` can already reach the game as Select before the shortcut is recognized.
+Player 2 is unaffected. Loading a state also follows the existing RetroAchievements hardcore-mode
+and memory-card safety checks. Keep normal in-game memory-card saves as well: save states are not a
+substitute for them.
+
+The same settings page also provides a **Stick Deadzone** adjustment (0–50%, default 15%) for
+both sticks on both players' controllers. **Reset Switch Controls** restores the default shortcuts
+and deadzone.
+
+## Downloading cheats
+
+With the Switch connected to the internet, open a game's **Game Properties → Cheats** page and
+select **Download Cheats**. The downloader asks for confirmation and looks for a file matching the
+game's serial and CRC in the community-maintained
+[PCSX2 cheats collection](https://github.com/xs1l3n7x/pcsx2_cheats_collection), falling back to a
+CRC-only filename when necessary. Not every game, region, or revision is covered. Downloaded files
+are saved to the configured cheats directory (normally `sdmc:/switch/armsx2/cheats`), and an
+existing destination file is never overwritten. Delete or move it manually before downloading again.
+
+Enable cheats and select the desired codes in the same page. Unlabelled codes are rejected because
+they could activate without individual selection. Previously enabled codes with matching names may
+become active when the downloaded file is loaded. Cheats can cause crashes or damage saves; back up
+important memory cards first. RetroAchievements hardcore mode disables cheats. Downloads require
+working HTTPS certificate verification on the Switch; network or certificate errors are shown in the UI.
+
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported
