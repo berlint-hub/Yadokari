@@ -883,6 +883,9 @@ set(pcsx2InputHeaders
 )
 
 if(HORIZON)
+	list(APPEND pcsx2Sources ImGui/HorizonCheatDownload.cpp ImGui/HorizonCheatValidation.cpp)
+	list(APPEND pcsx2Headers ImGui/HorizonCheatDownload.h)
+	list(APPEND pcsx2InputHeaders Input/HorizonInputSettings.h)
 	list(REMOVE_ITEM pcsx2HostSources Host/SDLAudioStream.cpp)
 	list(REMOVE_ITEM pcsx2HostSources Host/OboeAudioStream.cpp)
 	list(REMOVE_ITEM pcsx2HostHeaders Host/OboeAudioStream.h)

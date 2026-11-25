@@ -8,9 +8,11 @@
 
 #include "pcsx2/Config.h"
 #include "pcsx2/Host.h"
+#include "pcsx2/GS/GS.h"
 #include "pcsx2/INISettingsInterface.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
+#include "pcsx2/Input/HorizonInputSettings.h"
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/MTGS.h"
 #include "pcsx2/SIO/Pad/Pad.h"
@@ -20,7 +22,7 @@
 #include <algorithm>
 #include <atomic>
 #include <array>
-#include <cmath>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <sys/stat.h>
@@ -30,6 +32,8 @@
 #include "common/Horizon/Horizon.h"
 
 #include "HorizonHost.h"
+#include "HorizonHotkeys.h"
+#include "HorizonInputMath.h"
 #include "HorizonUsbStorage.h"
 
 namespace
@@ -45,7 +49,6 @@ namespace
 	// CPU-thread idle tick while no VM is running
 	constexpr u64 IDLE_POLL_NS = 8'000'000ULL;
 
-	constexpr float STICK_DEADZONE = 0.15f;
 	constexpr u32 NUM_LOCAL_PLAYERS = 2;
 	constexpr const char* MULTIPLAYER_INPUT_VERSION_KEY = "MultiplayerInputVersion";
 	constexpr int MULTIPLAYER_INPUT_VERSION = 1;
@@ -102,36 +105,76 @@ namespace
 		{HidNpadButton_Plus, GenericInputBinding::Start},
 	};
 
-	float ApplyDeadzone(s32 raw)
+	u64 GetHotkeyButton(int button)
 	{
-		const float v = std::clamp(static_cast<float>(raw) / static_cast<float>(JOYSTICK_MAX), -1.0f, 1.0f);
-		const float mag = std::fabs(v);
-		if (mag < STICK_DEADZONE)
-			return 0.0f;
-		const float scaled = (mag - STICK_DEADZONE) / (1.0f - STICK_DEADZONE);
-		return (v < 0.0f) ? -scaled : scaled;
+		switch (button)
+		{
+			case HorizonInputSettings::R: return HidNpadButton_R;
+			case HorizonInputSettings::L: return HidNpadButton_L;
+			case HorizonInputSettings::ZR: return HidNpadButton_ZR;
+			case HorizonInputSettings::ZL: return HidNpadButton_ZL;
+			case HorizonInputSettings::DPadLeft: return HidNpadButton_Left;
+			case HorizonInputSettings::DPadRight: return HidNpadButton_Right;
+			case HorizonInputSettings::DPadUp: return HidNpadButton_Up;
+			case HorizonInputSettings::DPadDown: return HidNpadButton_Down;
+			case HorizonInputSettings::A: return HidNpadButton_A;
+			case HorizonInputSettings::B: return HidNpadButton_B;
+			case HorizonInputSettings::X: return HidNpadButton_X;
+			case HorizonInputSettings::Y: return HidNpadButton_Y;
+			case HorizonInputSettings::LeftStick: return HidNpadButton_StickL;
+			case HorizonInputSettings::RightStick: return HidNpadButton_StickR;
+			default: return 0;
+		}
+	}
+
+	struct SwitchInputConfig
+	{
+		HorizonHotkeys::Buttons hotkeys;
+		float deadzone;
+	};
+
+	SwitchInputConfig ReadSwitchInputConfig()
+	{
+		auto lock = Host::GetSettingsLock();
+		u64 buttons[std::size(HorizonInputSettings::BINDINGS)]{};
+		for (size_t i = 0; i < std::size(buttons); i++)
+		{
+			const auto& binding = HorizonInputSettings::BINDINGS[i];
+			buttons[i] = GetHotkeyButton(s_settings_interface->GetIntValue(
+				HorizonInputSettings::SECTION, binding.key, binding.default_button));
+		}
+		const int deadzone = std::clamp(s_settings_interface->GetIntValue(HorizonInputSettings::SECTION,
+			HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE),
+			HorizonInputSettings::MIN_DEADZONE, HorizonInputSettings::MAX_DEADZONE);
+		return {{HidNpadButton_Minus, HidNpadButton_Plus, buttons[0], buttons[1], buttons[2], buttons[3], buttons[4]},
+			static_cast<float>(deadzone) / 100.0f};
+	}
+
+	float ApplyDeadzone(s32 raw, float deadzone)
+	{
+		return HorizonInputMath::ApplyDeadzone(static_cast<float>(raw) / static_cast<float>(JOYSTICK_MAX), deadzone);
 	}
 
 	void ApplyStick(u32 player, const HidAnalogStickState& s, PadDualshock2::Inputs left, PadDualshock2::Inputs right,
-		PadDualshock2::Inputs up, PadDualshock2::Inputs down)
+		PadDualshock2::Inputs up, PadDualshock2::Inputs down, float deadzone)
 	{
-		const float x = ApplyDeadzone(s.x);
-		const float y = ApplyDeadzone(s.y);
+		const float x = ApplyDeadzone(s.x, deadzone);
+		const float y = ApplyDeadzone(s.y, deadzone);
 		Pad::SetControllerState(player, static_cast<u32>(right), x > 0.0f ? x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(left), x < 0.0f ? -x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(up), y > 0.0f ? y : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(down), y < 0.0f ? -y : 0.0f);
 	}
 
-	void FeedGamePad(u32 player, PadState& pad, u64 held)
+	void FeedGamePad(u32 player, PadState& pad, u64 held, float deadzone)
 	{
 		for (const ButtonMap& m : BUTTON_MAP)
 			Pad::SetControllerState(player, static_cast<u32>(m.ps2), (held & m.nx) ? 1.0f : 0.0f);
 
 		ApplyStick(player, padGetStickPos(&pad, 0), PadDualshock2::Inputs::PAD_L_LEFT, PadDualshock2::Inputs::PAD_L_RIGHT,
-			PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN);
+			PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN, deadzone);
 		ApplyStick(player, padGetStickPos(&pad, 1), PadDualshock2::Inputs::PAD_R_LEFT, PadDualshock2::Inputs::PAD_R_RIGHT,
-			PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN);
+			PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN, deadzone);
 	}
 
 	void FeedNav(u64 held, u64 changed)
@@ -141,6 +184,42 @@ namespace
 			if (changed & m.nx)
 				ImGuiManager::ProcessGenericInputEvent(m.generic, InputLayout::Nintendo, (held & m.nx) ? 1.0f : 0.0f);
 		}
+	}
+
+	void DispatchHotkey(HorizonHotkeys::Action action)
+	{
+		if (action == HorizonHotkeys::Action::None)
+			return;
+
+		Host::RunOnCPUThread([action]() {
+			// The VM may have stopped while the command was waiting in the queue.
+			if (VMManager::GetState() != VMState::Running)
+				return;
+
+			static s32 slot = 1;
+			switch (action)
+			{
+				case HorizonHotkeys::Action::Save:
+					VMManager::SaveStateToSlot(slot);
+					break;
+				case HorizonHotkeys::Action::Load:
+					VMManager::LoadStateFromSlot(slot);
+					break;
+				case HorizonHotkeys::Action::PreviousSlot:
+					slot = (slot == 1) ? VMManager::NUM_SAVE_STATE_SLOTS : slot - 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::NextSlot:
+					slot = (slot == VMManager::NUM_SAVE_STATE_SLOTS) ? 1 : slot + 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::Screenshot:
+					MTGS::RunOnGSThread([]() { GSQueueSnapshot(std::string()); });
+					break;
+				case HorizonHotkeys::Action::None:
+					break;
+			}
+		});
 	}
 
 	void SetupSettings()
@@ -348,6 +427,9 @@ int main(int argc, char** argv)
 	std::thread input_thread([&]() {
 		std::array<u64, NUM_LOCAL_PLAYERS> prev_held{};
 		bool prev_menu_combo = false;
+		bool prev_fsui_active = false;
+		SwitchInputConfig input_config = ReadSwitchInputConfig();
+		HorizonHotkeys::Chords hotkeys(input_config.hotkeys);
 		while (!stop_loop.load(std::memory_order_relaxed))
 		{
 			std::array<u64, NUM_LOCAL_PLAYERS> held{};
@@ -361,12 +443,22 @@ int main(int argc, char** argv)
 			}
 
 			const bool fsui_active = FullscreenUI::HasActiveWindow();
+			if (prev_fsui_active && !fsui_active)
+			{
+				input_config = ReadSwitchInputConfig();
+				hotkeys.Reconfigure(input_config.hotkeys, held[0]);
+			}
+			prev_fsui_active = fsui_active;
+			const auto hotkey = hotkeys.Update(held[0], !fsui_active && VMManager::GetState() == VMState::Running);
+			DispatchHotkey(hotkey.action);
 			if (fsui_active)
 				FeedNav(held[0], changed[0]);
 			else if (VMManager::HasValidVM())
 			{
-				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
-					FeedGamePad(player, pads[player], held[player]);
+				const u64 menu_buttons = ((held[0] & MENU_COMBO) == MENU_COMBO) ? MENU_COMBO : 0;
+				FeedGamePad(0, pads[0], held[0] & ~(hotkey.consumed | menu_buttons), input_config.deadzone);
+				for (u32 player = 1; player < NUM_LOCAL_PLAYERS; player++)
+					FeedGamePad(player, pads[player], held[player], input_config.deadzone);
 			}
 
 			const bool menu_combo = (held[0] & MENU_COMBO) == MENU_COMBO;

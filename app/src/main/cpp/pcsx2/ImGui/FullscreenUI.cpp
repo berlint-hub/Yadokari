@@ -12,6 +12,10 @@
 #include "Host/AudioStream.h"
 #include "INISettingsInterface.h"
 #include "ImGui/FullscreenUI.h"
+#ifdef __SWITCH__
+#include "ImGui/HorizonCheatDownload.h"
+#include "Input/HorizonInputSettings.h"
+#endif
 #include "ImGui/ImGuiFullscreen.h"
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/ImGuiOverlays.h"
@@ -414,6 +418,9 @@ namespace FullscreenUI
 	static SettingsPage s_settings_page = SettingsPage::Interface;
 	static std::unique_ptr<INISettingsInterface> s_game_settings_interface;
 	static std::unique_ptr<GameList::Entry> s_game_settings_entry;
+#ifdef __SWITCH__
+	static HorizonCheatDownload::Downloader s_cheat_downloader;
+#endif
 	static std::vector<std::pair<std::string, bool>> s_game_list_directories_cache;
 	static std::vector<GSAdapterInfo> s_graphics_adapter_list_cache;
 	static Patch::PatchInfoList s_game_patch_list;
@@ -945,6 +952,10 @@ void FullscreenUI::OpenPauseSubMenu(PauseSubMenu submenu)
 
 void FullscreenUI::Shutdown(bool clear_state)
 {
+#ifdef __SWITCH__
+	// Cancel and join before the graphics/UI state is destroyed.
+	s_cheat_downloader.Shutdown();
+#endif
 	if (clear_state)
 	{
 		CloseSaveStateSelector();
@@ -987,6 +998,24 @@ void FullscreenUI::Render()
 	ImGuiFullscreen::UploadAsyncTextures();
 
 	ImGuiFullscreen::BeginLayout();
+
+#ifdef __SWITCH__
+	if (auto result = s_cheat_downloader.Poll())
+	{
+		ShowToast(FSUI_STR("Download Cheats"), result->message, 8.0f);
+		if (result->success)
+		{
+			// The user may have navigated to a different game while downloading.
+			if (s_game_settings_interface && s_game_settings_entry &&
+				s_game_settings_entry->serial == result->serial && s_game_settings_entry->crc == result->crc)
+				PopulatePatchesAndCheatsList(result->serial, result->crc);
+			Host::RunOnCPUThread([serial = result->serial, crc = result->crc]() {
+				if (VMManager::HasValidVM() && VMManager::GetDiscSerial() == serial && VMManager::GetDiscCRC() == crc)
+					VMManager::ReloadPatches(true, true, false, false);
+			});
+		}
+	}
+#endif
 
 	// Primed achievements must come first, because we don't want the pause screen to be behind them.
 	if (s_current_main_window == MainWindowType::None && EmuConfig.Achievements.Overlays)
@@ -5103,6 +5132,44 @@ void FullscreenUI::DrawHotkeySettingsPage()
 
 	BeginMenuButtons();
 
+#ifdef __SWITCH__
+	MenuHeading(FSUI_CSTR("Switch Controller Shortcuts (Player 1)"));
+	ActiveButton(FSUI_CSTR("Hold Minus, then press the selected button. Minus + Plus always opens the menu."),
+		false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+	bool used[HorizonInputSettings::Count] = {};
+	bool duplicate = false;
+	for (const auto& binding : HorizonInputSettings::BINDINGS)
+	{
+		const int button = bsi->GetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		if (button > HorizonInputSettings::Disabled && button < HorizonInputSettings::Count)
+		{
+			duplicate |= used[button];
+			used[button] = true;
+		}
+		DrawIntListSetting(bsi, Host::TranslateToCString(TR_CONTEXT, binding.label),
+			FSUI_CSTR("Button used together with Minus. Set to Disabled to turn this shortcut off."),
+			HorizonInputSettings::SECTION, binding.key, binding.default_button,
+			HorizonInputSettings::BUTTON_NAMES, HorizonInputSettings::Count, false);
+	}
+	if (duplicate)
+		ActiveButton(FSUI_CSTR("Conflicting shortcuts are disabled. Assign a different button to each action."),
+			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+
+	MenuHeading(FSUI_CSTR("Switch Stick Settings"));
+	DrawIntRangeSetting(bsi, FSUI_CSTR("Stick Deadzone"),
+		FSUI_CSTR("Applied to both sticks and both players. Changes take effect when you close the menu."),
+		HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE,
+		HorizonInputSettings::MIN_DEADZONE, HorizonInputSettings::MAX_DEADZONE, "%d%%");
+	if (MenuButton(FSUI_ICONSTR(ICON_FA_UNDO, "Reset Switch Controls"),
+		FSUI_CSTR("Restore the default Switch shortcuts and stick deadzone.")))
+	{
+		for (const auto& binding : HorizonInputSettings::BINDINGS)
+			bsi->SetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		bsi->SetIntValue(HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE);
+		SetSettingsChanged(bsi);
+	}
+#endif
+
 	const HotkeyInfo* last_category = nullptr;
 	for (const HotkeyInfo* hotkey : s_hotkey_list_cache)
 	{
@@ -5287,6 +5354,24 @@ void FullscreenUI::DrawPatchesOrCheatsSettingsPage(bool cheats)
 		MenuHeading(FSUI_CSTR("Settings"));
 		DrawToggleSetting(
 			bsi, FSUI_CSTR("Enable Cheats"), FSUI_CSTR("Enables loading cheats from pnach files."), "EmuCore", "EnableCheats", false);
+
+#ifdef __SWITCH__
+		if (s_game_settings_entry && MenuButton(FSUI_ICONSTR(ICON_FA_FILE_DOWNLOAD, "Download Cheats"),
+			FSUI_CSTR("Download cheats for this exact game version from the community database."), !s_cheat_downloader.Busy()))
+		{
+			const std::string serial = s_game_settings_entry->serial;
+			const u32 crc = s_game_settings_entry->crc;
+			const std::string filename = Patch::GetPnachFilename(serial, crc, true);
+			OpenConfirmMessageDialog(FSUI_STR("Download Cheats"),
+				FSUI_STR("Download community cheat codes from GitHub for this game version? Existing files are not overwritten. "
+					"Cheats can damage saves; previously enabled codes with matching names may become active. "
+					"RetroAchievements hardcore mode disables cheats."),
+				[serial, crc, filename](bool confirmed) {
+					if (confirmed && s_cheat_downloader.Start(serial, crc, filename))
+						ShowToast(FSUI_STR("Download Cheats"), FSUI_STR("Downloading cheat codes..."));
+				});
+		}
+#endif
 
 		if (patch_list.empty())
 		{
