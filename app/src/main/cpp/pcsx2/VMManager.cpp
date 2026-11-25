@@ -4009,7 +4009,7 @@ void VMManager::SetEmuThreadAffinities()
 	// Try to find some threads for the software renderer.
 	// They should be in the same cluster as the main GS thread. If they're not, for example,
 	// we had 4 P cores and 6 E cores, let the OS schedule them instead.
-	// (Skipped on Switch: it uses the deko3d HW renderer, and cpuinfo aborts on Horizon.)
+	// (Skipped on Switch: cpuinfo aborts on Horizon.)
 	s_software_renderer_processor_list.reserve(s_processor_list.size() - (mtvu ? 3 : 2));
 	const u32 gs_cluster_id = cpuinfo_get_processor(gs_index)->cluster->cluster_id;
 	for (size_t i = mtvu ? 3 : 2; i < s_processor_list.size(); i++)

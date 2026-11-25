@@ -215,8 +215,12 @@ GSRendererType GSUtil::GetPreferredRenderer()
 		preferred_renderer = D3D::GetPreferredRenderer();
 #else
 		// Linux/Android: Prefer OpenGL over Vulkan for better compatibility and stability.
-#if defined(__SWITCH__)
-		// Switch: prefer software until Vulkan is stable.
+#if defined(__SWITCH__) && defined(ENABLE_VULKAN)
+		// Switch: Vulkan (NXVK). This is also the device the software renderer presents through,
+		// and what a stale Deko3D/OpenGL renderer setting falls back to.
+		preferred_renderer = GSRendererType::VK;
+#elif defined(__SWITCH__)
+		// Switch without a hardware backend.
 		preferred_renderer = GSRendererType::SW;
 #elif defined(ENABLE_OPENGL)
 		preferred_renderer = GSRendererType::OGL;

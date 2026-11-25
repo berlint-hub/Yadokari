@@ -3924,7 +3924,7 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 #ifdef __APPLE__
 		FSUI_NSTR("Metal"),
 #endif
-#ifdef __SWITCH__
+#ifdef ENABLE_DK3D
 		FSUI_NSTR("Deko3D"),
 #endif
 		FSUI_NSTR("Software"),
@@ -3945,7 +3945,7 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 #ifdef __APPLE__
 		"17", //GSRendererType::Metal,
 #endif
-#ifdef __SWITCH__
+#ifdef ENABLE_DK3D
 		"18", //GSRendererType::DK3D,
 #endif
 		"13", //GSRendererType::SW,

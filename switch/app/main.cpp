@@ -347,10 +347,11 @@ int main(int argc, char** argv)
 	INFO_LOG("================ ARMSX2-NX ================");
 	INFO_LOG("Logging to {}", LOG_PATH);
 
-	// Mount the romfs so Deko3D can load its shaders
+	// Mount the romfs: it holds the runtime resources (fonts, UI, GameIndex), and the deko3d shaders when
+	// that renderer is built.
 	const bool have_romfs = R_SUCCEEDED(romfsInit());
 	if (!have_romfs)
-		ERROR_LOG("romfsInit() failed. Deko3d shaders will be unavailable. Things will be broken");
+		ERROR_LOG("romfsInit() failed. Falling back to resources on the SD card.");
 
 	EmuFolders::AppRoot = ARMSX2_ROOT;
 	EmuFolders::DataRoot = ARMSX2_ROOT;

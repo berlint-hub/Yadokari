@@ -47,38 +47,19 @@ git submodule update --init --recursive
 Only `switch/externals/libusbhsfs` is needed for the Switch build. The other submodules are used by the
 Android app, so `git submodule update --init switch/externals/libusbhsfs` is enough if you only build the `.nro`.
 
-### NXVK (Vulkan and OpenGL)
+### NXVK (Vulkan)
 
-The Vulkan and OpenGL renderers are both enabled by default and both come from NXVK, which has to be
-installed as a Switch portlib before configuring ARMSX2-NX. With OpenGL enabled (the default) the build
-needs the `nxvk-gl` package, so build and install NXVK including its OpenGL stack:
+The Switch build is Vulkan only. The Vulkan driver comes from NXVK, which has to be installed as a
+Switch portlib before configuring ARMSX2-NX:
 
 ```shell
 git clone https://github.com/PalindromicBreadLoaf/nxvk
 cd nxvk
-make gl
-sudo make install-gl
+make
+sudo make install
 ```
 
-A plain `make` / `sudo make install` only installs the Vulkan package (`nxvk`). That is enough only if you
-configure ARMSX2-NX with `-DUSE_OPENGL=OFF`; otherwise CMake stops with a missing `nxvk-gl` package.
-
-The OpenGL renderer also needs CMake to find EGL headers and a `libEGL` (`find_package(EGL REQUIRED)`).
-NXVK does not install EGL headers. On devkitPro they come from the `switch-mesa` package.
-
-The Switch build discovers the installed `nxvk` / `nxvk-gl` package through devkitPro's target `pkg-config`.
-
-### uam (deko3d runtime shaders)
-
-The deko3d renderer compiles specialised shaders at runtime, so the uam shader compiler is built into the
-`.nro` from source. Clone it next to the ARMSX2-NX checkout, which is where CMake looks by default:
-
-```shell
-git clone https://github.com/devkitPro/uam ../uam
-```
-
-or pass `-DUAM_ROOT=/path/to/uam` when configuring. Building it needs `bison`, `flex` and `python3` with
-`mako` on the host. Configure with `-DDK3D_RUNTIME_SHADERS=OFF` to skip it and only use the prebuilt shaders.
+The Switch build discovers the installed `nxvk` package through devkitPro's target `pkg-config`.
 
 ### Building the `.nro`
 
@@ -94,7 +75,19 @@ cmake --build build/switch-core --target armsx2_nro -j$(nproc)
 
 The output binary will be located at `build/switch-core/switch-app/armsx2nx.nro`
 
-To build without OpenGL (Vulkan and Deko3D only), add `-DUSE_OPENGL=OFF` to the configure command.
+The GitHub Actions workflow `.github/workflows/switch_build.yml` does all of the above and uploads the
+`.nro` as a build artifact.
+
+### Optional renderers
+
+OpenGL (Zink) and deko3d are off by default on Switch. They can still be built:
+
+- `-DUSE_OPENGL=ON` needs NXVK's OpenGL package (`make gl` / `sudo make install-gl`) and EGL headers
+  for CMake's `find_package(EGL)` (devkitPro's `switch-mesa`).
+- `-DUSE_DK3D=ON` builds the deko3d renderer. It compiles shaders at runtime with uam, which is built into
+  the `.nro` from source: clone https://github.com/devkitPro/uam next to the ARMSX2-NX checkout (or pass
+  `-DUAM_ROOT=/path/to/uam`) and install `bison`, `flex` and `python3` with `mako`. Add
+  `-DDK3D_RUNTIME_SHADERS=OFF` to use only the prebuilt shaders instead.
 
 ## Controls
 

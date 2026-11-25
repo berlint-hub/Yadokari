@@ -64,6 +64,10 @@ write_svnrev_h()
 # switch/app, which is what actually builds the blob.
 if(HORIZON)
 	option(DK3D_RUNTIME_SHADERS "Compile deko3d tfx shaders at runtime with uam" ON)
+	if(NOT USE_DK3D)
+		# Only the deko3d renderer uses uam.
+		set(DK3D_RUNTIME_SHADERS OFF)
+	endif()
 	set(UAM_ROOT "${CMAKE_SOURCE_DIR}/../../../../../uam" CACHE PATH "Root of the uam checkout")
 	if(DK3D_RUNTIME_SHADERS AND NOT EXISTS "${UAM_ROOT}/source/compiler_iface.cpp")
 		message(FATAL_ERROR

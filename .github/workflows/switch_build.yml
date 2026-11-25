@@ -1,11 +1,10 @@
 name: Switch Build
 
-# Builds armsx2nx.nro for the Nintendo Switch.
+# Builds the Vulkan release armsx2nx.nro for the Nintendo Switch.
 #
-# - nxvk: builds the NXVK portlib (Vulkan + OpenGL/Zink) in NXVK's own toolchain image. The staged
-#   portlib is cached per NXVK commit, so only a new NXVK commit costs a full Mesa build.
-# - nro: builds the emulator in devkitpro/devkita64, once with the default configuration (OpenGL on)
-#   and once with -DUSE_OPENGL=OFF, and uploads each .nro as an artifact.
+# - nxvk: builds the NXVK Vulkan portlib in NXVK's own toolchain image. The staged portlib is cached
+#   per NXVK commit, so only a new NXVK commit costs a full Mesa build.
+# - nro: builds the emulator (Release, Vulkan only) in devkitpro/devkita64 and uploads the .nro.
 
 on:
   push:
@@ -38,7 +37,7 @@ env:
 
 jobs:
   nxvk:
-    name: NXVK portlib (Vulkan + OpenGL)
+    name: NXVK portlib (Vulkan)
     runs-on: ubuntu-latest
     timeout-minutes: 300
     outputs:
@@ -61,7 +60,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: nxvk-portlib
-          key: nxvk-gl-${{ steps.rev.outputs.sha }}-v1
+          key: nxvk-vk-${{ steps.rev.outputs.sha }}-v1
 
       - name: Free disk space
         if: steps.cache.outputs.cache-hit != 'true'
@@ -76,19 +75,19 @@ jobs:
 
       # The NXVK scripts expect the repository at /work. CONTAINER= runs every step directly in this
       # container, where devkitA64 (and its ar for the packaging step) is available.
-      - name: Build NXVK (make gl)
+      - name: Build NXVK
         if: steps.cache.outputs.cache-hit != 'true'
-        run: docker run --rm -v "$PWD/nxvk:/work" -w /work nxvk make gl CONTAINER=
+        run: docker run --rm -v "$PWD/nxvk:/work" -w /work nxvk make CONTAINER=
 
-      # Same files as `make install` + `make install-gl`, laid out like $DEVKITPRO/portlibs/switch.
+      # Same files as `make install`, laid out like $DEVKITPRO/portlibs/switch.
       - name: Stage NXVK portlib
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
           sudo chown -R "$(id -u):$(id -g)" nxvk
           PKG=nxvk/switch/build/pkg/lib
           mkdir -p nxvk-portlib/lib/pkgconfig nxvk-portlib/include nxvk-portlib/licenses/nxvk
-          cp "$PKG/libnvk.a" "$PKG/libnvk_support.a" "$PKG/libnvk_gl.a" nxvk-portlib/lib/
-          cp "$PKG/pkgconfig/nxvk.pc" "$PKG/pkgconfig/nxvk-gl.pc" nxvk-portlib/lib/pkgconfig/
+          cp "$PKG/libnvk.a" "$PKG/libnvk_support.a" nxvk-portlib/lib/
+          cp "$PKG/pkgconfig/nxvk.pc" nxvk-portlib/lib/pkgconfig/
           cp -r nxvk/include/vulkan nxvk/include/vk_video nxvk-portlib/include/
           cp nxvk/licenses/GPL-2.0-or-later nxvk-portlib/licenses/nxvk/
           echo "${{ env.NXVK_REPOSITORY }}@${{ steps.rev.outputs.sha }}" > nxvk-portlib/licenses/nxvk/REVISION
@@ -103,20 +102,11 @@ jobs:
           retention-days: 7
 
   nro:
-    name: ARMSX2-NX (${{ matrix.variant }})
+    name: ARMSX2-NX (Vulkan release)
     needs: nxvk
     runs-on: ubuntu-latest
     timeout-minutes: 240
     container: devkitpro/devkita64:latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: opengl
-            use_opengl: 'ON'
-          - variant: vulkan-only
-            use_opengl: 'OFF'
 
     defaults:
       run:
@@ -131,23 +121,11 @@ jobs:
           git config --global --add safe.directory '*'
           git submodule update --init --depth 1 switch/externals/libusbhsfs
 
-      # bison, flex and python3-mako are needed to build uam into the NRO (DK3D_RUNTIME_SHADERS).
-      - name: Install host tools
-        run: |
-          apt-get update -qq
-          apt-get install -y -qq --no-install-recommends bison flex python3 python3-mako python3-yaml
-
       # Already part of the devkita64 image (switch-dev + switch-portlibs); listed so a missing one fails here.
       - name: Check devkitPro packages
         run: |
           dkp-pacman -S --needed --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-curl \
-            switch-ntfs-3g switch-lwext4 switch-mesa
-          ls -l "$DEVKITPRO/tools/bin/uam"
-
-      - name: Fetch uam sources
-        run: |
-          git clone --depth 1 https://github.com/devkitPro/uam "$GITHUB_WORKSPACE/uam"
-          echo "UAM_SHA=$(git -C "$GITHUB_WORKSPACE/uam" rev-parse HEAD)" >> "$GITHUB_ENV"
+            switch-ntfs-3g switch-lwext4
 
       - name: Download NXVK portlib
         uses: actions/download-artifact@v4
@@ -158,7 +136,7 @@ jobs:
       - name: Install NXVK portlib
         run: |
           cp -r nxvk-portlib/. "$DEVKITPRO/portlibs/switch/"
-          "$DEVKITPRO/portlibs/switch/bin/aarch64-none-elf-pkg-config" --modversion nxvk nxvk-gl
+          "$DEVKITPRO/portlibs/switch/bin/aarch64-none-elf-pkg-config" --modversion nxvk
 
       - name: Configure
         run: |
@@ -166,8 +144,7 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DUSE_OPENGL=${{ matrix.use_opengl }} \
-            -DUAM_ROOT="$GITHUB_WORKSPACE/uam"
+            -DUSE_VULKAN=ON -DUSE_OPENGL=OFF -DUSE_DK3D=OFF
 
       - name: Build
         run: cmake --build build/switch-core --target armsx2_nro -j"$(nproc)"
@@ -176,19 +153,17 @@ jobs:
         run: |
           NRO=build/switch-core/switch-app/armsx2nx.nro
           {
-            echo "### armsx2nx.nro (${{ matrix.variant }})"
+            echo "### armsx2nx.nro (Vulkan release)"
             echo ""
             echo "- commit: \`${GITHUB_SHA}\`"
             echo "- NXVK: \`${{ env.NXVK_REPOSITORY }}@${{ needs.nxvk.outputs.sha }}\`"
-            echo "- uam: \`${UAM_SHA}\`"
-            echo "- USE_OPENGL: ${{ matrix.use_opengl }}"
             echo "- size: $(stat -c %s "$NRO") bytes"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload .nro
         uses: actions/upload-artifact@v4
         with:
-          name: armsx2nx-${{ matrix.variant }}
+          name: armsx2nx-vulkan
           path: build/switch-core/switch-app/armsx2nx.nro
           if-no-files-found: error
           retention-days: 30
@@ -197,7 +172,7 @@ jobs:
       - name: Upload ELF
         uses: actions/upload-artifact@v4
         with:
-          name: armsx2nx-${{ matrix.variant }}-elf
+          name: armsx2nx-vulkan-elf
           path: build/switch-core/switch-app/armsx2.elf
           if-no-files-found: warn
           retention-days: 14
