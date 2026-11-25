@@ -393,6 +393,9 @@ _mVUt void mVUcleanUp()
 	if ((mVU.prog.x86ptr < mVU.prog.x86start) || (mVU.prog.x86ptr >= mVU.prog.x86end))
 	{
 		Console.WriteLn(vuIndex ? Color_Orange : Color_Magenta, "microVU%d: Program cache limit reached.", mVU.index);
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::VUCounter(mVU.index, HorizonProfiler::Counter::VU0CacheResets));
+#endif
 		mVUreset(mVU, false);
 	}
 

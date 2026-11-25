@@ -142,6 +142,9 @@ __ri microProgram* mVUcreateProg(microVU& mVU, int startPC)
 	auto* prog = (microProgram*)_aligned_malloc(sizeof(microProgram), 64);
 	memset(prog, 0, sizeof(microProgram));
 	prog->idx = mVU.prog.total++;
+#ifdef __SWITCH__
+	HorizonProfiler::Add(HorizonProfiler::VUCounter(mVU.index, HorizonProfiler::Counter::VU0Programs));
+#endif
 	prog->ranges = new std::deque<microRange>();
 	prog->startPC = startPC;
 	if(doWholeProgCompare)

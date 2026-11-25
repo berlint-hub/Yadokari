@@ -16,6 +16,10 @@
 #include "MTVU.h"
 #include "VMManager.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
+
 static const float UPDATE_INTERVAL = 0.5f;
 
 static float s_fps = 0.0f;
@@ -168,9 +172,10 @@ void PerformanceMetrics::Reset()
 
 void PerformanceMetrics::Update(bool gs_register_write, bool fb_blit, bool is_skipping_present)
 {
+	float frame_time = 0.0f;
 	if (!is_skipping_present)
 	{
-		const float frame_time = s_last_frame_time.GetTimeMillisecondsAndReset();
+		frame_time = s_last_frame_time.GetTimeMillisecondsAndReset();
 		s_minimum_frame_time_accumulator = (s_minimum_frame_time_accumulator == 0.0f) ? frame_time : std::min(s_minimum_frame_time_accumulator, frame_time);
 		s_average_frame_time_accumulator += frame_time;
 		s_maximum_frame_time_accumulator = std::max(s_maximum_frame_time_accumulator, frame_time);
@@ -183,6 +188,10 @@ void PerformanceMetrics::Update(bool gs_register_write, bool fb_blit, bool is_sk
 	s_gs_privileged_register_writes_since_last_update += static_cast<u32>(gs_register_write);
 	s_gs_framebuffer_blits_since_last_update += static_cast<u32>(fb_blit);
 	s_frame_number++;
+
+#ifdef __SWITCH__
+	HorizonProfiler::OnFrame(frame_time);
+#endif
 
 	const Common::Timer::Value now_ticks = Common::Timer::GetCurrentValue();
 	const Common::Timer::Value ticks_diff = now_ticks - s_last_update_time.GetStartValue();
@@ -312,6 +321,13 @@ void PerformanceMetrics::OnGPUPresent(float gpu_time)
 {
 	s_accumulated_gpu_time += gpu_time;
 	s_presents_since_last_update++;
+#ifdef __SWITCH__
+	if (gpu_time > 0.0f)
+	{
+		HorizonProfiler::Add(HorizonProfiler::Counter::GPUTimeUs, static_cast<u64>(gpu_time * 1000.0f));
+		HorizonProfiler::Add(HorizonProfiler::Counter::GPUTimedFrames);
+	}
+#endif
 }
 
 void PerformanceMetrics::SetCPUThread(Threading::ThreadHandle thread)
@@ -332,34 +348,58 @@ void PerformanceMetrics::MarkEEThread()
 void PerformanceMetrics::AccumulateEEStallVU(u64 ns)
 {
 	if (t_is_ee_thread)
+	{
 		s_ee_stall_vu_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::Counter::EEWaitVUNs, ns);
+#endif
+	}
 }
 
 void PerformanceMetrics::AccumulateEEStallGS(u64 ns)
 {
 	if (t_is_ee_thread)
+	{
 		s_ee_stall_gs_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::Counter::EEWaitGSNs, ns);
+#endif
+	}
 }
 
 void PerformanceMetrics::AccumulateEEStallVsync(u64 ns)
 {
 	if (t_is_ee_thread)
+	{
 		s_ee_stall_vsync_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::Counter::EEWaitVsyncNs, ns);
+#endif
+	}
 }
 
 void PerformanceMetrics::AccumulateGSAcquireWait(u64 ns)
 {
 	s_gs_acquire_wait_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+	HorizonProfiler::Add(HorizonProfiler::Counter::GSWaitSwapNs, ns);
+#endif
 }
 
 void PerformanceMetrics::AccumulateGSGpuWait(u64 ns)
 {
 	s_gs_gpu_wait_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+	HorizonProfiler::Add(HorizonProfiler::Counter::GSWaitGPUNs, ns);
+#endif
 }
 
 void PerformanceMetrics::AccumulateGSWorkWait(u64 ns)
 {
 	s_gs_work_wait_ns_accumulator.fetch_add(ns, std::memory_order_relaxed);
+#ifdef __SWITCH__
+	HorizonProfiler::Add(HorizonProfiler::Counter::GSWaitWorkNs, ns);
+#endif
 }
 
 float PerformanceMetrics::GetEEStallVUTime()

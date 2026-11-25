@@ -13,6 +13,7 @@
 #include "pcsx2/Achievements.h"
 #include "pcsx2/GameList.h"
 #include "pcsx2/GS/GS.h"
+#include "pcsx2/Horizon/HorizonProfiler.h"
 #include "pcsx2/Host.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiFullscreen.h"
@@ -263,10 +264,12 @@ void Host::OnVMStarting()
 void Host::OnVMStarted()
 {
 	INFO_LOG("Host: VM started");
+	HorizonProfiler::OnVMStarted();
 }
 
 void Host::OnVMDestroyed()
 {
+	HorizonProfiler::OnVMDestroyed();
 	INFO_LOG("Host: VM destroyed");
 }
 

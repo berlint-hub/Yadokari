@@ -25,6 +25,8 @@
 #ifdef __SWITCH__
 #include "common/Horizon/Horizon.h"
 #include "common/FileSystem.h"
+#include "Horizon/HorizonProfiler.h"
+#include "PerformanceMetrics.h"
 #include "ShaderCacheVersion.h"
 #include "VMManager.h"
 #endif
@@ -1147,7 +1149,13 @@ void GSDeviceVK::WaitForFenceCounter(u64 fence_counter)
 
 void GSDeviceVK::WaitForGPUIdle()
 {
+#ifdef __SWITCH__
+	const u64 wait_start = HorizonProfiler::GetTimeNs();
 	vkDeviceWaitIdle(m_device);
+	PerformanceMetrics::AccumulateGSGpuWait(HorizonProfiler::GetTimeNs() - wait_start);
+#else
+	vkDeviceWaitIdle(m_device);
+#endif
 }
 
 float GSDeviceVK::GetAndResetAccumulatedGPUTime()
@@ -1189,7 +1197,13 @@ void GSDeviceVK::ScanForCommandBufferCompletion()
 void GSDeviceVK::WaitForCommandBufferCompletion(u32 index)
 {
 	// Wait for this command buffer to be completed.
+#ifdef __SWITCH__
+	const u64 wait_start = HorizonProfiler::GetTimeNs();
+#endif
 	const VkResult res = vkWaitForFences(m_device, 1, &m_frame_resources[index].fence, VK_TRUE, UINT64_MAX);
+#ifdef __SWITCH__
+	PerformanceMetrics::AccumulateGSGpuWait(HorizonProfiler::GetTimeNs() - wait_start);
+#endif
 	if (res != VK_SUCCESS)
 	{
 		LOG_VULKAN_ERROR(res, "vkWaitForFences failed: ");
@@ -1338,7 +1352,13 @@ void GSDeviceVK::SubmitCommandBuffer(VKSwapChain* present_swap_chain)
 
 		present_swap_chain->ResetImageAcquireResult();
 
+#ifdef __SWITCH__
+		const u64 present_start = HorizonProfiler::GetTimeNs();
 		const VkResult res = vkQueuePresentKHR(m_present_queue, &present_info);
+		PerformanceMetrics::AccumulateGSAcquireWait(HorizonProfiler::GetTimeNs() - present_start);
+#else
+		const VkResult res = vkQueuePresentKHR(m_present_queue, &present_info);
+#endif
 		if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
 		{
 			// VK_ERROR_OUT_OF_DATE_KHR is not fatal, just means we need to recreate our swap chain.
@@ -1466,6 +1486,9 @@ void GSDeviceVK::ExecuteCommandBuffer(WaitType wait_for_completion)
 
 	if (wait_for_completion != WaitType::None)
 	{
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::Counter::GPUSyncs);
+#endif
 		// Calibrate while we wait
 		if (m_wants_new_timestamp_calibration)
 			CalibrateSpinTimestamp();
@@ -1854,7 +1877,13 @@ void GSDeviceVK::WaitForSpinCompletion(u32 index)
 	if (!resources.in_progress)
 		return;
 
+#ifdef __SWITCH__
+	const u64 wait_start = HorizonProfiler::GetTimeNs();
+#endif
 	const VkResult res = vkWaitForFences(m_device, 1, &resources.fence, VK_TRUE, UINT64_MAX);
+#ifdef __SWITCH__
+	PerformanceMetrics::AccumulateGSGpuWait(HorizonProfiler::GetTimeNs() - wait_start);
+#endif
 	if (res != VK_SUCCESS)
 	{
 		LOG_VULKAN_ERROR(res, "vkWaitForFences failed: ");
@@ -5150,6 +5179,9 @@ VkPipeline GSDeviceVK::GetTFXPipeline(const PipelineSelector& p)
 	const Common::Timer::Value compile_elapsed = Common::Timer::GetCurrentValue() - compile_start;
 	s_compile_time_accumulated += compile_elapsed;
 	s_compile_count++;
+	HorizonProfiler::Add(HorizonProfiler::Counter::VKPipelines);
+	HorizonProfiler::Add(HorizonProfiler::Counter::VKPipelineNs,
+		static_cast<u64>(Common::Timer::ConvertValueToNanoseconds(compile_elapsed)));
 
 	if (Common::Timer::ConvertValueToMilliseconds(compile_elapsed) >= COMPILE_STALL_REPORT_THRESHOLD_MS)
 	{

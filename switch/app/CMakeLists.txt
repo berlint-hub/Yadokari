@@ -217,6 +217,33 @@ if(USE_DK3D)
 	set_property(TARGET armsx2_romfs APPEND PROPERTY DKP_ASSET_FILES ${DK3D_DKSH_FILES})
 endif()
 
+# Function symbols for the sampling profiler (pcsx2/Horizon/HorizonProfiler.cpp), taken from the linked ELF.
+option(ARMSX2_EMBED_SYMBOLS "Put a function symbol table in the romfs so the profiler can name functions" ON)
+if(ARMSX2_EMBED_SYMBOLS)
+	if(CMAKE_NM)
+		set(ARMSX2_NM "${CMAKE_NM}")
+	else()
+		find_program(ARMSX2_NM_PROGRAM NAMES aarch64-none-elf-nm PATHS "$ENV{DEVKITPRO}/devkitA64/bin" "${DEVKITPRO}/devkitA64/bin")
+		set(ARMSX2_NM "${ARMSX2_NM_PROGRAM}")
+	endif()
+	if(ARMSX2_NM)
+		set(ARMSX2_SYMBOLS_FILE "${DK3D_ROMFS_DIR}/symbols.txt")
+		add_custom_command(
+			OUTPUT "${ARMSX2_SYMBOLS_FILE}"
+			COMMAND "${CMAKE_COMMAND}" "-DNM=${ARMSX2_NM}" "-DELF=$<TARGET_FILE:armsx2>" "-DOUT=${ARMSX2_SYMBOLS_FILE}"
+				-P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_symbols.cmake"
+			DEPENDS armsx2 "${CMAKE_CURRENT_SOURCE_DIR}/cmake/gen_symbols.cmake"
+			COMMENT "Generating the profiler symbol table"
+			VERBATIM
+		)
+		add_custom_target(armsx2_symbols DEPENDS "${ARMSX2_SYMBOLS_FILE}")
+		add_dependencies(armsx2_romfs armsx2_symbols)
+		set_property(TARGET armsx2_romfs APPEND PROPERTY DKP_ASSET_FILES "${ARMSX2_SYMBOLS_FILE}")
+	else()
+		message(WARNING "nm not found, the profiler will report NRO offsets instead of function names")
+	endif()
+endif()
+
 # Package an .nro
 nx_generate_nacp(OUTPUT armsx2.nacp
 	NAME "ARMSX2"

@@ -15,6 +15,10 @@
 #include "pcsx2/Config.h"
 #include "VMManager.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
+
 #include "common/FileSystem.h"
 #include "common/Image.h"
 #include "common/Path.h"
@@ -675,7 +679,11 @@ void GSRenderer::VSync(u32 field, bool registers_written, bool idle_frame)
 
 			EndPresentFrame();
 
+#ifdef __SWITCH__
+			if (GSConfig.OsdShowGPU || HorizonProfiler::IsGPUTimingRequested())
+#else
 			if (GSConfig.OsdShowGPU)
+#endif
 				PerformanceMetrics::OnGPUPresent(g_gs_device->GetAndResetAccumulatedGPUTime());
 		}
 

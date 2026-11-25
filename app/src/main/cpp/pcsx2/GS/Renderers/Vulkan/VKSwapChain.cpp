@@ -4,6 +4,10 @@
 #include "GS/Renderers/Vulkan/GSDeviceVK.h"
 #include "GS/Renderers/Vulkan/VKBuilders.h"
 #include "GS/Renderers/Vulkan/VKSwapChain.h"
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#include "PerformanceMetrics.h"
+#endif
 #include "VMManager.h"
 
 #include "common/Assertions.h"
@@ -587,8 +591,14 @@ VkResult VKSwapChain::AcquireNextImage()
 	// Use a different semaphore for each image.
 	m_current_semaphore = (m_current_semaphore + 1) % static_cast<u32>(m_semaphores.size());
 
+#ifdef __SWITCH__
+	const u64 acquire_start = HorizonProfiler::GetTimeNs();
+#endif
 	const VkResult res = vkAcquireNextImageKHR(GSDeviceVK::GetInstance()->GetDevice(), m_swap_chain, UINT64_MAX,
 		m_semaphores[m_current_semaphore].available_semaphore, VK_NULL_HANDLE, &m_current_image);
+#ifdef __SWITCH__
+	PerformanceMetrics::AccumulateGSAcquireWait(HorizonProfiler::GetTimeNs() - acquire_start);
+#endif
 	m_image_acquire_result = res;
 	return res;
 }

@@ -22,6 +22,10 @@
 #include "GS/Renderers/HW/GSTextureReplacements.h"
 #include "VMManager.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
+
 #ifdef ENABLE_OPENGL
 #include "GS/Renderers/OpenGL/GSDeviceOGL.h"
 #endif
@@ -193,7 +197,16 @@ static bool OpenGSDevice(GSRendererType renderer, bool clear_state_on_fail, bool
 		return false;
 	}
 
+#ifdef __SWITCH__
+	// The performance log reports GPU time too.
+	if (GSConfig.OsdShowGPU || HorizonProfiler::WantsGPUTiming())
+	{
+		const bool gpu_timing = g_gs_device->SetGPUTimingEnabled(true);
+		GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && gpu_timing;
+	}
+#else
 	GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && g_gs_device->SetGPUTimingEnabled(true);
+#endif
 
 	Console.WriteLn(Color_StrongGreen, "%s Graphics Driver Info:", GSDevice::RenderAPIToString(new_api));
 	Console.WriteLn(g_gs_device->GetDriverInfo());
@@ -875,7 +888,11 @@ void GSUpdateConfig(const Pcsx2Config::GSOptions& new_config)
 
 	if (GSConfig.OsdShowGPU != old_config.OsdShowGPU)
 	{
+#ifdef __SWITCH__
+		if (!g_gs_device->SetGPUTimingEnabled(GSConfig.OsdShowGPU || HorizonProfiler::WantsGPUTiming()))
+#else
 		if (!g_gs_device->SetGPUTimingEnabled(GSConfig.OsdShowGPU))
+#endif
 			GSConfig.OsdShowGPU = false;
 	}
 }

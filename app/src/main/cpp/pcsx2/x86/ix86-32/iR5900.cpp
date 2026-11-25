@@ -25,6 +25,7 @@
 
 #ifdef __SWITCH__
 #include "common/Horizon/HorizonFastmem.h"
+#include "Horizon/HorizonProfiler.h"
 #endif
 
 // Only for MOVQ workaround.
@@ -662,39 +663,6 @@ alignas(16) static u8 manual_counter[Ps2MemSize::TotalRam >> 12];
 // Mark code owned by EE so we can just clear that
 alignas(16) static u8 ee_page_has_code[Ps2MemSize::TotalRam >> 12];
 
-// SMC-churn diagnostics
-static u64 s_smc_clear_calls = 0;    // recClear() reached the block search
-static u64 s_smc_clear_hits = 0;     // and invalidated at least one block
-static u64 s_smc_block_discards = 0; // manual integrity check failures
-static u64 s_smc_rec_resets = 0;     // full recompiler resets
-
-static void eeReportSwitchSMC()
-{
-	static u64 last_ticks = 0;
-	static u64 last_calls = 0, last_hits = 0, last_discards = 0, last_resets = 0;
-
-	const u64 now = GetCPUTicks();
-	if (last_ticks == 0)
-	{
-		last_ticks = now;
-		return;
-	}
-	if ((now - last_ticks) < GetTickFrequency())
-		return;
-
-	Console.WriteLn("[EE SMC] clears=%llu (hits=%llu) discards=%llu resets=%llu / sec",
-		(unsigned long long)(s_smc_clear_calls - last_calls),
-		(unsigned long long)(s_smc_clear_hits - last_hits),
-		(unsigned long long)(s_smc_block_discards - last_discards),
-		(unsigned long long)(s_smc_rec_resets - last_resets));
-
-	last_ticks = now;
-	last_calls = s_smc_clear_calls;
-	last_hits = s_smc_clear_hits;
-	last_discards = s_smc_block_discards;
-	last_resets = s_smc_rec_resets;
-}
-
 bool eeRecPageHasCode(u32 addr, u32 size)
 {
 	if (size == 0)
@@ -760,7 +728,7 @@ static void recResetRaw()
 
 #ifdef __SWITCH__
 	memset(ee_page_has_code, 0, sizeof(ee_page_has_code));
-	s_smc_rec_resets++;
+	HorizonProfiler::Add(HorizonProfiler::Counter::EEResets);
 #endif
 }
 
@@ -895,8 +863,7 @@ void recClear(u32 addr, u32 size)
 		return;
 
 #ifdef __SWITCH__
-	s_smc_clear_calls++;
-	eeReportSwitchSMC();
+	HorizonProfiler::Add(HorizonProfiler::Counter::EEClears);
 #endif
 
 	addr = HWADDR(addr);
@@ -908,7 +875,7 @@ void recClear(u32 addr, u32 size)
 		return;
 
 #ifdef __SWITCH__
-	s_smc_clear_hits++;
+	HorizonProfiler::Add(HorizonProfiler::Counter::EEClearHits);
 #endif
 
 	u32 lowerextent = 0xFFFFFFFF, upperextent = 0, ceiling = 0xFFFFFFFF; // 0xFFFFFFFF == -1
@@ -2230,7 +2197,7 @@ void dyna_block_discard(u32 start, u32 sz)
 	eeRecPerfLog.Write(Color_StrongGray, "Clearing Manual Block @ 0x%08X  [size=%d]", start, sz * 4);
 #endif
 #ifdef __SWITCH__
-	s_smc_block_discards++;
+	HorizonProfiler::Add(HorizonProfiler::Counter::EEDiscards);
 #endif
 	recClear(start, sz);
 }
@@ -2482,6 +2449,9 @@ static bool recSkipTimeoutLoop(s32 reg, bool is_timeout_loop)
 
 static void recRecompile(const u32 startpc)
 {
+#ifdef __SWITCH__
+	const HorizonProfiler::ScopedCompile profile_compile(HorizonProfiler::Counter::EEBlocks, HorizonProfiler::Counter::EECompileNs);
+#endif
 	u32 i = 0;
 	u32 willbranch3 = 0;
 

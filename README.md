@@ -140,6 +140,43 @@ each frame) during the boot logos and menus, so gameplay no longer pauses to cre
 discarded after an emulator, driver or GPU feature change. Turn it off with
 `[EmuCore/GS] VulkanPipelinePrewarm = false` in `armsx2.ini`.
 
+## Performance log and profiler
+
+While a game runs, the log (`sdmc:/switch/armsx2/logs/emulog.txt`) gets a summary every 5 seconds:
+
+```
+[Perf] 35-40s: speed 78% | 46.9 fps (game 60) | frame avg 21.3 max 48.1 ms | limiter EE
+[Perf]   EE 97% 16.2ms/f (wait VU 0.3 GS 0.0 vsync 0.0) | VU1 41% 6.8ms/f | GS 55% 9.1ms/f (wait idle 8.1 swap 0.4 gpu 1.0) | GPU 9.2ms/f
+[Perf]   GS per vsync: 523 draws 2100 prims 401 draw calls 31.0 passes 4.0 barriers 12.0 uploads 3.0 copies 0.20 readbacks 0.20 GPU syncs
+[Perf]   JIT: EE 140 blk 9.0ms, 12 clears (3 hit) 0 discards 0 resets | VU0 0 blk 0.0ms 0 progs | VU1 20 blk 3.1ms 2 progs 0 resets | VK 0 pipelines 0.0ms
+```
+
+- CPU load of the EE, VU1 and GS threads (% of one core, and ms per vsync), and how long each waited for
+  the others, for vsync, for the swap chain and for the GPU. `limiter` is the stage nobody was waiting for.
+- What the GS did per vsync, including GPU readbacks, which stall until the GPU is done.
+- Recompiler work: EE blocks compiled, code invalidated by self-modifying code / DMA, microVU programs,
+  and Vulkan pipelines created.
+
+Every frame that takes much longer than the ones around it gets a `[Hitch]` line with what happened during
+that frame (compiles, pipelines, waits, readbacks).
+
+The EE, VU1 and GS threads are also sampled about 250 times a second. Every 30 seconds the hottest
+functions per thread go to the log as `[Prof]` lines, and the full report (self and inclusive time, callers,
+and the hottest EE guest code) to `sdmc:/switch/armsx2/logs/profile.txt`, which is rewritten each time a
+game starts. JIT code shows up as `[EE JIT]`, `[VU1 JIT]`, etc. Function names come from a symbol table
+the build puts in the romfs (`-DARMSX2_EMBED_SYMBOLS=OFF` leaves it out; the report then shows NRO offsets).
+
+Both cost little, but can be turned off in `armsx2.ini`:
+
+```ini
+[Horizon]
+PerformanceLog = false
+Profiler = false
+```
+
+`PerformanceLogInterval` (seconds), `ProfilerReportInterval` (seconds) and `ProfilerPeriodUs` change the
+intervals.
+
 ## Updating
 
 Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on

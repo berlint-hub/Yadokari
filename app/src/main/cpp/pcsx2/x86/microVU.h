@@ -11,6 +11,10 @@
 #include <memory>
 #include "Common.h"
 #include "VU.h"
+
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
 #include "MTVU.h"
 #include "GS.h"
 #include "Gif_Unit.h"
