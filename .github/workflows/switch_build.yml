@@ -1,0 +1,159 @@
+name: Switch Build
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      nxvk_repository:
+        description: 'NXVK repository (owner/name)'
+        required: false
+        default: 'berlint-hub/nxvk'
+      nxvk_ref:
+        description: 'NXVK branch, tag or commit (empty = default branch)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: switch-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NXVK_REPOSITORY: ${{ inputs.nxvk_repository || 'berlint-hub/nxvk' }}
+  NXVK_REF: ${{ inputs.nxvk_ref || '' }}
+
+jobs:
+  nxvk:
+    name: NXVK portlib (Vulkan + OpenGL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout NXVK
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.NXVK_REPOSITORY }}
+          ref: ${{ env.NXVK_REF }}
+          path: nxvk
+
+      - name: Resolve NXVK revision
+        id: rev
+        run: echo "sha=$(git -C nxvk rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # The NXVK build takes a long time, so the staged portlib is cached per NXVK commit.
+      - name: Restore NXVK portlib
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: nxvk-portlib
+          key: nxvk-gl-${{ steps.rev.outputs.sha }}-v1
+
+      - name: Free disk space
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Build NXVK toolchain image
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: docker build -t nxvk nxvk/switch/docker
+
+      # The NXVK scripts expect the repository at /work. CONTAINER= runs every step directly in this container.
+      - name: Build NXVK (make gl)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: docker run --rm -v "$PWD/nxvk:/work" -w /work nxvk make gl CONTAINER=
+
+      # Same files as `make install` + `make install-gl`, laid out like $DEVKITPRO/portlibs/switch.
+      - name: Stage NXVK portlib
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" nxvk
+          mkdir -p nxvk-portlib/lib/pkgconfig nxvk-portlib/include nxvk-portlib/licenses/nxvk
+          cp nxvk/switch/build/pkg/lib/libnvk.a nxvk/switch/build/pkg/lib/libnvk_support.a \
+             nxvk/switch/build/pkg/lib/libnvk_gl.a nxvk-portlib/lib/
+          cp nxvk/switch/build/pkg/lib/pkgconfig/nxvk.pc nxvk/switch/build/pkg/lib/pkgconfig/nxvk-gl.pc \
+             nxvk-portlib/lib/pkgconfig/
+          cp -r nxvk/include/vulkan nxvk/include/vk_video nxvk-portlib/include/
+          cp nxvk/licenses/GPL-2.0-or-later nxvk-portlib/licenses/nxvk/
+          echo "${{ steps.rev.outputs.sha }}" > nxvk-portlib/licenses/nxvk/REVISION
+          ls -la nxvk-portlib/lib nxvk-portlib/lib/pkgconfig
+
+      - name: Upload NXVK portlib
+        uses: actions/upload-artifact@v4
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+          retention-days: 7
+
+  nro:
+    name: ARMSX2-NX (.nro)
+    needs: nxvk
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    container: devkitpro/devkita64:latest
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout libusbhsfs submodule
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git submodule update --init --depth 1 switch/externals/libusbhsfs
+
+      # Already part of the devkita64 image (switch-dev + switch-portlibs); listed so a missing one fails here.
+      - name: Check devkitPro packages
+        run: |
+          dkp-pacman -S --needed --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-curl \
+            switch-ntfs-3g switch-lwext4 switch-mesa
+          command -v uam || ls "$DEVKITPRO/tools/bin"
+
+      - name: Download NXVK portlib
+        uses: actions/download-artifact@v4
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+
+      - name: Install NXVK portlib
+        run: |
+          cp -r nxvk-portlib/. "$DEVKITPRO/portlibs/switch/"
+          export PKG_CONFIG="$DEVKITPRO/portlibs/switch/bin/aarch64-none-elf-pkg-config"
+          "$PKG_CONFIG" --modversion nxvk nxvk-gl
+
+      - name: Configure
+        run: |
+          cmake -S app/src/main/cpp -B build/switch-core -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+
+      - name: Build
+        run: cmake --build build/switch-core --target armsx2_nro -j"$(nproc)"
+
+      - name: Upload .nro
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsx2nx-${{ github.sha }}
+          path: build/switch-core/switch-app/armsx2nx.nro
+          if-no-files-found: error
+          retention-days: 30
+
+      # Unstripped ELF for resolving crash addresses from HorizonException logs.
+      - name: Upload ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsx2nx-elf-${{ github.sha }}
+          path: build/switch-core/switch-app/armsx2.elf
+          if-no-files-found: warn
+          retention-days: 14
