@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <cstring>
 #include <map>
 
@@ -35,55 +36,77 @@ struct BASEBLOCKEX
 #endif
 };
 
+// Blocks sorted by startpc, kept in a gap buffer: [0, mGapStart) and [mGapStart + gap, mReserved) hold the
+// elements, gap = mReserved - mSize free slots in between. Inserting or erasing only moves the elements between
+// the old and new gap position. Games compile and clear code a region at a time, so that is usually a few
+// entries instead of the whole array: memmove'ing a sorted array of tens of thousands of blocks for every new
+// block was most of the EE recompile time on the Switch.
+//
+// Indices are logical (sorted order). Pointers returned by insert()/operator[] stay valid until the next
+// insert() or erase(), as before.
 class BaseBlockArray
 {
 	s32 mReserved;
 	s32 mSize;
+	s32 mGapStart;
 	BASEBLOCKEX* blocks;
 
-	__fi void resize(s32 size)
+	__fi s32 Physical(s32 idx) const
 	{
-		pxAssert(size > 0);
-		auto* newMem = new BASEBLOCKEX[size];
-		if (blocks)
-		{
-			memcpy(newMem, blocks, mReserved * sizeof(BASEBLOCKEX));
-			delete[] blocks;
-            blocks = nullptr;
-		}
-		blocks = newMem;
-		pxAssert(blocks != NULL);
+		return (idx < mGapStart) ? idx : (idx + (mReserved - mSize));
+	}
+
+	// pos is a logical index in [0, mSize].
+	void MoveGap(s32 pos)
+	{
+		const s32 gap = mReserved - mSize;
+		if (pos < mGapStart)
+			memmove(blocks + pos + gap, blocks + pos, (mGapStart - pos) * sizeof(BASEBLOCKEX));
+		else if (pos > mGapStart)
+			memmove(blocks + mGapStart, blocks + mGapStart + gap, (pos - mGapStart) * sizeof(BASEBLOCKEX));
+		mGapStart = pos;
 	}
 
 	void reserve(s32 size)
 	{
-		resize(size);
-        mReserved = size;
+		pxAssert(size > mSize);
+		auto* newMem = new BASEBLOCKEX[size];
+		if (blocks)
+		{
+			const s32 old_gap = mReserved - mSize;
+			const s32 new_gap = size - mSize;
+			const s32 tail = mSize - mGapStart;
+			memcpy(newMem, blocks, mGapStart * sizeof(BASEBLOCKEX));
+			memcpy(newMem + mGapStart + new_gap, blocks + mGapStart + old_gap, tail * sizeof(BASEBLOCKEX));
+			delete[] blocks;
+		}
+		blocks = newMem;
+		mReserved = size;
 	}
 
 public:
 	~BaseBlockArray()
 	{
-		if (blocks) {
-            delete[] blocks;
-            blocks = nullptr;
-        }
+		delete[] blocks;
+		blocks = nullptr;
 	}
 
 	explicit BaseBlockArray(s32 size)
 		: mReserved(0)
 		, mSize(0)
+		, mGapStart(0)
 		, blocks(nullptr)
 	{
 		reserve(size);
 	}
 
+	BaseBlockArray(const BaseBlockArray&) = delete;
+	BaseBlockArray& operator=(const BaseBlockArray&) = delete;
+
 	BASEBLOCKEX* insert(u32 startpc, uptr fnptr)
 	{
 		if (mSize + 1 >= mReserved)
-		{
-			reserve(mReserved + 0x2000); // some games requires even more!
-		}
+			reserve(mReserved + std::max<s32>(0x2000, mReserved / 2)); // some games requires even more!
 
 		// Insert the the new BASEBLOCKEX by startpc order
 		int imin = 0, imax = mSize, imid;
@@ -92,36 +115,34 @@ public:
 		{
 			imid = (imin + imax) >> 1;
 
-			if (blocks[imid].startpc > startpc)
+			if ((*this)[imid].startpc > startpc)
 				imax = imid;
 			else
 				imin = imid + 1;
 		}
 
-		pxAssert(imin == mSize || blocks[imin].startpc > startpc);
+		pxAssert(imin == mSize || (*this)[imin].startpc > startpc);
 
-		if (imin < mSize)
-		{
-			// make a hole for a new block.
-			memmove(blocks + imin + 1, blocks + imin, (mSize - imin) * sizeof(BASEBLOCKEX));
-		}
+		MoveGap(imin);
+		BASEBLOCKEX* const block = blocks + mGapStart;
+		memset(block, 0, sizeof(BASEBLOCKEX));
+		block->startpc = startpc;
+		block->fnptr = fnptr;
 
-		memset((blocks + imin), 0, sizeof(BASEBLOCKEX));
-		blocks[imin].startpc = startpc;
-		blocks[imin].fnptr = fnptr;
-
+		mGapStart++;
 		mSize++;
-		return &blocks[imin];
+		return block;
 	}
 
 	__fi BASEBLOCKEX& operator[](int idx) const
 	{
-		return *(blocks + idx);
+		return blocks[Physical(idx)];
 	}
 
 	void clear()
 	{
 		mSize = 0;
+		mGapStart = 0;
 	}
 
 	[[nodiscard]] __fi u32 size() const
@@ -129,16 +150,20 @@ public:
 		return mSize;
 	}
 
-	__fi void erase(s32 first, s32 last)
+	// Removes the logical range [first, last).
+	void erase(s32 first, s32 last)
 	{
-		int range = last - first;
+		pxAssert(first >= 0 && first <= last && last <= mSize);
 
-		if (last < mSize)
-		{
-			memmove(blocks + first, blocks + last, (mSize - last) * sizeof(BASEBLOCKEX));
-		}
+		// Bring the gap next to the range; whatever part of the range is on either side of it then
+		// simply joins the gap.
+		if (mGapStart < first)
+			MoveGap(first);
+		else if (mGapStart > last)
+			MoveGap(last);
 
-		mSize -= range;
+		mGapStart = first;
+		mSize -= last - first;
 	}
 };
 
@@ -170,12 +195,13 @@ public:
 
 	[[nodiscard]] __fi int Index(u32 startpc) const
 	{
-		int idx = LastIndex(startpc);
-        u32 block_startpc = blocks[idx].startpc;
-        u32 block_size = (blocks[idx].size);
+		const int idx = LastIndex(startpc);
+		if (idx == -1)
+			return -1;
 
-		if ((idx == -1) || (startpc < block_startpc) ||
-			(block_size && (startpc >= block_startpc + block_size << 2))) // blocks[idx].size * 4
+		const u32 block_startpc = blocks[idx].startpc;
+		const u32 block_size = blocks[idx].size;
+		if ((startpc < block_startpc) || (block_size && (startpc >= block_startpc + (block_size << 2)))) // size * 4
 			return -1;
 		else
 			return idx;
