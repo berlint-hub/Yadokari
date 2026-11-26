@@ -747,6 +747,14 @@ static void mvuPreloadRegisters(microVU& mVU, u32 endCount)
 
 void* mVUcompile(microVU& mVU, u32 startPC, uptr pState)
 {
+	// A block can be entered from other blocks, and code emitted after a nested compile continues elsewhere:
+	// values kept in registers across instructions (the clamp constants) are not valid at either point.
+	struct CodegenBarrierScope
+	{
+		CodegenBarrierScope() { armCodegenBarrier++; }
+		~CodegenBarrierScope() { armCodegenBarrier++; }
+	} const codegen_barrier_scope;
+
 #ifdef __SWITCH__
 	const HorizonProfiler::ScopedCompile profile_compile(
 		HorizonProfiler::VUCounter(mVU.index, HorizonProfiler::Counter::VU0Blocks),

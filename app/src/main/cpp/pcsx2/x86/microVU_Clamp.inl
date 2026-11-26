@@ -22,10 +22,45 @@
 // gotten a NaN value, then something went wrong; and the NaN's sign
 // is not to be trusted. Games like positive values better usually,
 // and its faster... so just always make NaNs into positive infinity.
+// In microprograms the clamp constants live in xmmClampMax/xmmClampMin (outside the allocator's range) and are
+// loaded at the first clamp after a barrier: a bound label, a call, or a block start. That takes the two loads
+// out of every clamp (with "extra" clamping, a third of the code of a typical VU1 program was those loads).
+// COP2 (macro mode) code runs inside EE blocks, so it keeps loading them each time.
+static thread_local u32 s_mVUclampConstsBarrier = 0xffffffffu;
+
+static __fi bool mVUloadClampConsts(microVU& mVU)
+{
+	if (isCOP2)
+		return false;
+
+	if (s_mVUclampConstsBarrier != armCodegenBarrier)
+	{
+		armAsm->Ldr(xmmClampMax, PTR_CPU(mVUglob.maxvals));
+		armAsm->Ldr(xmmClampMin, PTR_CPU(mVUglob.minvals));
+		s_mVUclampConstsBarrier = armCodegenBarrier;
+	}
+	return true;
+}
+
 void mVUclamp1(microVU& mVU, const xmm& reg, const xmm& regT1, int xyzw, bool bClampE = 0)
 {
 	if (((!clampE && CHECK_VU_OVERFLOW(mVU.index)) || (clampE && bClampE)) && mVU.regAlloc->checkVFClamp(reg.GetCode()))
 	{
+		if (mVUloadClampConsts(mVU))
+		{
+			if (xyzw == 1 || xyzw == 2 || xyzw == 4 || xyzw == 8)
+			{
+				armAsm->Fminnm(reg.S(), reg.S(), xmmClampMax.S());
+				armAsm->Fmaxnm(reg.S(), reg.S(), xmmClampMin.S());
+			}
+			else
+			{
+				armAsm->Fminnm(reg.V4S(), reg.V4S(), xmmClampMax.V4S());
+				armAsm->Fmaxnm(reg.V4S(), reg.V4S(), xmmClampMin.V4S());
+			}
+			return;
+		}
+
 		switch (xyzw)
 		{
 			case 1: case 2: case 4: case 8:

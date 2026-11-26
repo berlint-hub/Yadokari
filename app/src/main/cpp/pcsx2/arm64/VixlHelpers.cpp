@@ -67,6 +67,7 @@ const a64::VRegister& armQRegister(int n)
 #endif
 
 thread_local a64::MacroAssembler* armAsm;
+thread_local u32 armCodegenBarrier = 0;
 thread_local u8* armAsmPtr;
 thread_local size_t armAsmCapacity;
 thread_local ArmConstantPool* armConstantPool;
@@ -150,6 +151,7 @@ void armDisassembleAndDumpCode(const void* ptr, size_t size)
 
 void armEmitJmp(const void* ptr, bool force_inline)
 {
+    armCodegenBarrier++;
     s64 displacement = GetPCDisplacement(armGetCurrentCodePointer(), ptr);
     bool use_blr = !vixl::IsInt26(displacement);
     if (use_blr && armConstantPool && !force_inline)
@@ -176,6 +178,7 @@ void armEmitJmp(const void* ptr, bool force_inline)
 
 void armEmitCall(const void* ptr, bool force_inline)
 {
+    armCodegenBarrier++;
     s64 displacement = GetPCDisplacement(armGetCurrentCodePointer(), ptr);
     bool use_blr = !vixl::IsInt26(displacement);
     if (use_blr && armConstantPool && !force_inline)
@@ -511,6 +514,7 @@ void armBind(a64::Label* p_label)
 {
     if(p_label->IsLinked()) {
         armAsm->Bind(p_label);
+        armCodegenBarrier++;
     }
 }
 

@@ -226,7 +226,7 @@ struct microMapGPR
 class microRegAlloc
 {
 protected:
-	// The allocator uses host vector regs q0..q14 and q16..q28. q15 holds PQ and q29/q30/q31 are reserved codegen
+	// The allocator uses host vector regs q0..q14 and q16..q26. q15 holds PQ, q27/q28 the clamp constants and q29/q30/q31 are reserved codegen
 	// In COP2 allocation is delegated to the EE recompiler
 	static constexpr int xmmTotalMax = 32; // physical vector register slots
 	static const int gprTotal = iREGCNT_GPR;
