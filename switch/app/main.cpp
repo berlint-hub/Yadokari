@@ -15,6 +15,7 @@
 #include "pcsx2/Input/HorizonInputSettings.h"
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/MTGS.h"
+#include "pcsx2/Patch.h"
 #include "pcsx2/SIO/Pad/Pad.h"
 #include "pcsx2/SIO/Pad/PadDualshock2.h"
 #include "pcsx2/VMManager.h"
@@ -654,6 +655,10 @@ int main(int argc, char** argv)
 	MTGS::WaitForClose();
 	VMManager::Internal::CPUThreadShutdown();
 	INFO_LOG("================ Exiting ================");
+
+	// patches.zip is read from the romfs and would otherwise be closed at exit, after the romfs is gone:
+	// closing its FILE then crashed in lseek ("the software was closed because an error occurred").
+	Patch::ClosePatchesZip();
 
 	if (have_romfs)
 		romfsExit();

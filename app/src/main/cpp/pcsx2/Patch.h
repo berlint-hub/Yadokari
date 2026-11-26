@@ -106,4 +106,7 @@ namespace Patch
 	extern void ApplyLoadedPatches(patch_place_type place);
 
 	extern bool IsGloballyToggleablePatch(const PatchInfo& patch_info);
+	/// Closes the bundled patches.zip if it is open. It is otherwise closed at exit; call this first when the
+	/// filesystem it was opened from goes away earlier (the romfs on the Switch).
+	void ClosePatchesZip();
 } // namespace Patch
