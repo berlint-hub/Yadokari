@@ -158,12 +158,15 @@ While a game runs, the log (`sdmc:/switch/armsx2/logs/emulog.txt`) gets a summar
   and Vulkan pipelines created.
 
 Every frame that takes much longer than the ones around it gets a `[Hitch]` line with what happened during
-that frame (compiles, pipelines, waits, readbacks).
+that frame (compiles, pipelines, waits, readbacks) and which functions each thread was running in it.
 
 The EE, VU1 and GS threads are also sampled about 250 times a second. Every 30 seconds the hottest
-functions per thread go to the log as `[Prof]` lines, and the full report (self and inclusive time, callers,
-and the hottest EE guest code) to `sdmc:/switch/armsx2/logs/profile.txt`, which is rewritten each time a
-game starts. JIT code shows up as `[EE JIT]`, `[VU1 JIT]`, etc. Function names come from a symbol table
+functions per thread go to the log as `[Prof]` lines, and the full report (time spent waiting, self and
+inclusive time, callers, the hottest call stacks, the hottest JIT code as instruction words, and the hottest
+EE guest code) to `sdmc:/switch/armsx2/logs/profile.txt`, which is rewritten each time a game starts.
+
+If the app crashes, `sdmc:/switch/armsx2/logs/crash.txt` says which thread crashed where, with registers and
+a backtrace. JIT code shows up as `[EE JIT]`, `[VU1 JIT]`, etc. Function names come from a symbol table
 the build puts in the romfs (`-DARMSX2_EMBED_SYMBOLS=OFF` leaves it out; the report then shows NRO offsets).
 
 Both cost little, but can be turned off in `armsx2.ini`:

@@ -65,6 +65,10 @@ namespace
 	constexpr u32 INCL_TOP = 20;
 	constexpr u32 CALLER_TOP = 10;
 	constexpr u32 GUEST_TOP = 12;
+	constexpr u32 STACK_TOP = 15;
+	constexpr u32 JIT_HOT_TOP = 4;
+	constexpr u32 JIT_HOT_BEFORE = 96;
+	constexpr u32 JIT_HOT_AFTER = 128;
 	constexpr u32 LOG_TOP = 6;
 
 	struct Settings
@@ -109,6 +113,7 @@ namespace
 	struct HitchRecord
 	{
 		u64 frame;
+		u64 end_ns; // when the long frame ended (GetTimeNs())
 		float frame_ms;
 		float avg_ms;
 		u64 counters[COUNTER_COUNT];
@@ -388,6 +393,7 @@ namespace
 
 	struct RawSample
 	{
+		u64 time_ns;
 		u32 count;
 		u32 guest_pc;
 		u64 lr;
@@ -400,6 +406,27 @@ namespace
 		uptr hi = 0;
 	};
 
+	// The innermost STACK_KEY_DEPTH distinct functions of a sample, innermost first (KEY_UNKNOWN padded).
+	constexpr u32 STACK_KEY_DEPTH = 4;
+	struct StackKey
+	{
+		u32 keys[STACK_KEY_DEPTH];
+		bool operator==(const StackKey& other) const { return std::memcmp(keys, other.keys, sizeof(keys)) == 0; }
+	};
+	struct StackKeyHash
+	{
+		size_t operator()(const StackKey& k) const
+		{
+			u64 h = 1469598103934665603ull;
+			for (u32 key : k.keys)
+				h = (h ^ key) * 1099511628211ull;
+			return static_cast<size_t>(h);
+		}
+	};
+
+	// Samples in JIT code, by 32-byte block of host code.
+	constexpr u32 JIT_BUCKET_SHIFT = 5;
+
 	struct TargetProfile
 	{
 		u32 samples = 0;
@@ -408,6 +435,8 @@ namespace
 		std::unordered_map<u32, u32> incl;
 		std::unordered_map<u64, u32> callers; // (self << 32) | caller
 		std::unordered_map<u32, u32> guest_pcs;
+		std::unordered_map<StackKey, u32, StackKeyHash> stacks;
+		std::unordered_map<u64, u32> jit_buckets; // host PC >> JIT_BUCKET_SHIFT
 
 		void Clear()
 		{
@@ -417,6 +446,8 @@ namespace
 			incl.clear();
 			callers.clear();
 			guest_pcs.clear();
+			stacks.clear();
+			jit_buckets.clear();
 		}
 
 		void Merge(const TargetProfile& other)
@@ -431,12 +462,30 @@ namespace
 				callers[k] += v;
 			for (const auto& [k, v] : other.guest_pcs)
 				guest_pcs[k] += v;
+			for (const auto& [k, v] : other.stacks)
+				stacks[k] += v;
+			for (const auto& [k, v] : other.jit_buckets)
+				jit_buckets[k] += v;
 		}
 	};
 
 	StackRange s_stacks[NUM_TARGETS];
 	TargetProfile s_window_profile[NUM_TARGETS];
 	TargetProfile s_session_profile[NUM_TARGETS];
+
+	// The last few seconds of samples with their time, so a long frame can be broken down (profiler thread only).
+	struct TimedSample
+	{
+		u64 time_ns;
+		u32 self;
+		u32 caller;
+		u32 guest_pc;
+		u32 target;
+	};
+	constexpr u32 TIMED_SAMPLE_COUNT = 16384;
+	TimedSample s_timed_samples[TIMED_SAMPLE_COUNT];
+	u32 s_timed_sample_pos = 0;
+	u32 s_timed_sample_count = 0;
 
 	// While the target is paused, nothing here may take a lock or allocate: the target could hold the lock.
 	bool CaptureSample(u32 target, RawSample* out)
@@ -452,6 +501,7 @@ namespace
 		const bool ok = R_SUCCEEDED(svcGetThreadContext3(&ctx, handle));
 		if (ok)
 		{
+			out->time_ns = GetTimeNs();
 			out->count = 0;
 			out->frames[out->count++] = ctx.pc.x;
 			out->lr = ctx.lr;
@@ -545,19 +595,92 @@ namespace
 		if (caller != KEY_UNKNOWN)
 			prof.callers[(static_cast<u64>(keys[0]) << 32) | caller]++;
 
-		if (target == TARGET_EE && sample.guest_pc != 0 && (keys[0] == s_ee_jit_key || caller == s_ee_jit_key))
+		const bool in_ee_code = (target == TARGET_EE && sample.guest_pc != 0 && (keys[0] == s_ee_jit_key || caller == s_ee_jit_key));
+		if (in_ee_code)
 			prof.guest_pcs[sample.guest_pc]++;
+
+		s_timed_samples[s_timed_sample_pos] = {sample.time_ns, keys[0], caller, in_ee_code ? sample.guest_pc : 0u, target};
+		s_timed_sample_pos = (s_timed_sample_pos + 1) % TIMED_SAMPLE_COUNT;
+		s_timed_sample_count = std::min(s_timed_sample_count + 1, TIMED_SAMPLE_COUNT);
+
+		StackKey stack;
+		u32 depth = 0;
+		for (u32 i = 0; i < key_count && depth < STACK_KEY_DEPTH; i++)
+		{
+			if (depth == 0 || stack.keys[depth - 1] != keys[i])
+				stack.keys[depth++] = keys[i];
+		}
+		for (; depth < STACK_KEY_DEPTH; depth++)
+			stack.keys[depth] = KEY_UNKNOWN;
+		prof.stacks[stack]++;
+
+		if (keys[0] >= KEY_REGION_BASE && keys[0] != KEY_UNKNOWN)
+			prof.jit_buckets[sample.frames[0] >> JIT_BUCKET_SHIFT]++;
 	}
 
-	template <typename K>
-	std::vector<std::pair<K, u32>> TopEntries(const std::unordered_map<K, u32>& map, size_t count)
+	template <typename Map>
+	std::vector<std::pair<typename Map::key_type, u32>> TopEntries(const Map& map, size_t count)
 	{
-		std::vector<std::pair<K, u32>> entries(map.begin(), map.end());
+		std::vector<std::pair<typename Map::key_type, u32>> entries(map.begin(), map.end());
 		const size_t n = std::min(count, entries.size());
 		std::partial_sort(entries.begin(), entries.begin() + n, entries.end(),
 			[](const auto& a, const auto& b) { return a.second > b.second; });
 		entries.resize(n);
 		return entries;
+	}
+
+	// The hottest JIT code, as raw instruction words, for disassembly elsewhere. Read when the report is
+	// written: if the code cache was reset since, the bytes may be different code.
+	void FormatHotJitCode(std::string& out, const TargetProfile& prof, double total)
+	{
+		std::vector<std::pair<uptr, uptr>> shown;
+		bool header = false;
+		for (const auto& [bucket, count] : TopEntries(prof.jit_buckets, JIT_HOT_TOP * 2))
+		{
+			const double pct = 100.0 * count / total;
+			if (pct < 1.0 || shown.size() >= JIT_HOT_TOP)
+				break;
+
+			const uptr start = static_cast<uptr>(bucket << JIT_BUCKET_SHIFT);
+			const u32 key = Resolve(start);
+			if (key < KEY_REGION_BASE || key == KEY_UNKNOWN)
+				continue;
+			const CodeRegion& region = s_regions[key - KEY_REGION_BASE];
+
+			// Neighbouring hot blocks are usually the same loop: show each area once.
+			bool already_shown = false;
+			for (const auto& [lo, hi] : shown)
+				already_shown |= (start >= lo && start < hi);
+			if (already_shown)
+				continue;
+
+			const uptr first = (start - region.start > JIT_HOT_BEFORE) ? (start - JIT_HOT_BEFORE) : region.start;
+			const uptr last = std::min<uptr>(region.end, start + (1u << JIT_BUCKET_SHIFT) + JIT_HOT_AFTER);
+
+			MemoryInfo mi = {};
+			u32 page_info = 0;
+			if (R_FAILED(svcQueryMemory(&mi, &page_info, first)) || !(mi.perm & Perm_R) || last > mi.addr + mi.size)
+				continue;
+
+			if (!header)
+			{
+				out += "\n  hottest JIT code (32-byte lines, '*' = the hot line, % = samples in that line, A64 instruction words):\n";
+				header = true;
+			}
+			out += fmt::format("  {:5.1f}  {}+0x{:x}\n", pct, region.name, start - region.start);
+			for (uptr line = first; line < last; line += 32)
+			{
+				const auto hit = prof.jit_buckets.find(line >> JIT_BUCKET_SHIFT);
+				const u32 line_count = (hit != prof.jit_buckets.end()) ? hit->second : 0;
+				std::string text = fmt::format("    {} +0x{:06x} {:4.1f}%:", (line == start) ? '*' : ' ', line - region.start,
+					100.0 * line_count / total);
+				for (uptr a = line; a < std::min<uptr>(line + 32, last); a += 4)
+					text += fmt::format(" {:08x}", *reinterpret_cast<const u32*>(a));
+				out += text;
+				out += '\n';
+			}
+			shown.emplace_back(first, last);
+		}
 	}
 
 	double KernelWaitPercent(const TargetProfile& prof)
@@ -571,7 +694,7 @@ namespace
 		return prof.samples ? (100.0 * waiting / prof.samples) : 0.0;
 	}
 
-	void FormatProfile(std::string& out, const char* title, const TargetProfile* profiles, double seconds)
+	void FormatProfile(std::string& out, const char* title, const TargetProfile* profiles, double seconds, bool include_code)
 	{
 		out += fmt::format("==================== {} ({:.0f} s) ====================\n", title, seconds);
 		for (u32 t = 0; t < NUM_TARGETS; t++)
@@ -623,6 +746,22 @@ namespace
 				out += "\n  callers of the top functions:\n";
 				out += caller_lines;
 			}
+
+			out += "\n  hottest call stacks (innermost first):\n";
+			for (const auto& [stack, count] : TopEntries(prof.stacks, STACK_TOP))
+			{
+				const double pct = 100.0 * count / total;
+				if (pct < 0.5)
+					break;
+				std::string line = fmt::format("  {:5.1f}  {}", pct, KeyName(stack.keys[0]));
+				for (u32 i = 1; i < STACK_KEY_DEPTH && stack.keys[i] != KEY_UNKNOWN; i++)
+					line += fmt::format(" <- {}", KeyName(stack.keys[i]));
+				out += line;
+				out += '\n';
+			}
+
+			if (include_code)
+				FormatHotJitCode(out, prof, total);
 
 			if (!prof.guest_pcs.empty())
 			{
@@ -688,6 +827,57 @@ namespace
 	}
 
 	double NsToMs(u64 ns) { return static_cast<double>(ns) / 1.0e6; }
+
+	// What the sampled threads were running during one long frame (empty when sampling is off, or the
+	// samples have already been overwritten).
+	std::string FormatHitchSamples(const HitchRecord& h)
+	{
+		const u64 start_ns = h.end_ns - static_cast<u64>(static_cast<double>(h.frame_ms) * 1.0e6);
+		std::unordered_map<u32, u32> self[NUM_TARGETS];
+		std::unordered_map<u32, u32> guest;
+		u32 counts[NUM_TARGETS] = {};
+		u32 guest_count = 0;
+		for (u32 i = 0; i < s_timed_sample_count; i++)
+		{
+			const TimedSample& ts = s_timed_samples[i];
+			if (ts.time_ns < start_ns || ts.time_ns > h.end_ns || ts.target >= NUM_TARGETS)
+				continue;
+			self[ts.target][ts.self]++;
+			counts[ts.target]++;
+			if (ts.guest_pc != 0)
+			{
+				guest[ts.guest_pc]++;
+				guest_count++;
+			}
+		}
+
+		std::string line;
+		for (u32 t = 0; t < NUM_TARGETS; t++)
+		{
+			if (counts[t] == 0)
+				continue;
+			line += fmt::format("{}{}:", line.empty() ? "" : " | ", TARGET_NAMES[t]);
+			bool first = true;
+			for (const auto& [key, count] : TopEntries(self[t], 3))
+			{
+				std::string name = KeyName(key);
+				if (name.size() > 40)
+				{
+					name.resize(37);
+					name += "...";
+				}
+				line += fmt::format("{} {:.0f}% {}", first ? "" : ",", 100.0 * count / counts[t], name);
+				first = false;
+			}
+		}
+		if (guest_count != 0)
+		{
+			line += " | EE code at";
+			for (const auto& [pc, count] : TopEntries(guest, 3))
+				line += fmt::format(" 0x{:08x} {:.0f}%", pc, 100.0 * count / guest_count);
+		}
+		return line;
+	}
 
 	std::string FormatHitch(const HitchRecord& h)
 	{
@@ -756,12 +946,29 @@ namespace
 		                          static_cast<double>(Counters(Counter::GPUTimeUs, d)) / 1000.0 / Counters(Counter::GPUTimedFrames, d) :
 		                          -1.0;
 
-		// Same idea as PerformanceMetrics: the bottleneck is the stage nobody waits for.
+		// A thread that used its whole core is the bottleneck, whatever the others wait for (the GS thread
+		// waits for VU1 inside the GS ring without a counted wait). Next, frames that each sync with the
+		// GPU for a readback. Otherwise, as in PerformanceMetrics: the stage nobody waits for.
 		const char* limiter;
 		const double ee_waits = ee_wait_vu + ee_wait_gs + ee_wait_vsync;
 		const double gs_busy = std::max(0.0, frame_ms - gs_wait_work - gs_wait_swap - gs_wait_gpu);
+		const double readbacks_per_vsync = fw.perf[GSPerfMon::Readbacks] / vsyncs;
+		const bool vu1_threaded = s_target_handles[TARGET_VU1].load(std::memory_order_relaxed) != 0;
+		const bool ee_saturated = cpu_pct[TARGET_EE] >= 95.0;
+		const bool vu1_saturated = vu1_threaded && cpu_pct[TARGET_VU1] >= 95.0;
+		const bool gs_saturated = cpu_pct[TARGET_GS] >= 95.0;
 		if (speed >= 97.0)
 			limiter = "full speed";
+		else if (ee_saturated && vu1_saturated)
+			limiter = "EE + VU1 (both cores full)";
+		else if (vu1_saturated)
+			limiter = "VU1 (core full)";
+		else if (ee_saturated)
+			limiter = "EE (core full)";
+		else if (gs_saturated)
+			limiter = "GS thread (core full)";
+		else if (readbacks_per_vsync >= 0.5 && ee_wait_gs >= 0.25 * frame_ms)
+			limiter = "GS readbacks (EE and GS wait for the GPU)";
 		else if (ee_waits < 0.2 * frame_ms)
 			limiter = "EE";
 		else if ((ee_wait_gs + ee_wait_vsync) >= ee_wait_vu)
@@ -805,7 +1012,12 @@ namespace
 			NsToMs(Counters(Counter::VKPipelineNs, d)));
 
 		for (const HitchRecord& h : fw.hitches)
+		{
 			INFO_LOG("{}", FormatHitch(h));
+			const std::string samples = FormatHitchSamples(h);
+			if (!samples.empty())
+				INFO_LOG("[Hitch]   running: {}", samples);
+		}
 		if (fw.hitches_dropped > 0)
 			INFO_LOG("[Hitch] ... and {} more long frames", fw.hitches_dropped);
 	}
@@ -814,12 +1026,12 @@ namespace
 	// Thread
 	//////////////////////////////////////////////////////////////////////////
 
-	void WriteReport(std::FILE* fp, const char* title, const TargetProfile* profiles, double seconds)
+	void WriteReport(std::FILE* fp, const char* title, const TargetProfile* profiles, double seconds, bool include_code)
 	{
 		if (!fp)
 			return;
 		std::string text;
-		FormatProfile(text, title, profiles, seconds);
+		FormatProfile(text, title, profiles, seconds, include_code);
 		std::fwrite(text.data(), 1, text.size(), fp);
 		std::fflush(fp);
 	}
@@ -909,7 +1121,8 @@ namespace
 				samples += s_window_profile[t].samples;
 			if (samples > 0)
 			{
-				WriteReport(report_fp, title.c_str(), s_window_profile, seconds);
+				// The VM (and its JIT code) is still running for window reports.
+				WriteReport(report_fp, title.c_str(), s_window_profile, seconds, !final);
 				LogProfileSummary(s_window_profile);
 				for (u32 t = 0; t < NUM_TARGETS; t++)
 				{
@@ -918,7 +1131,7 @@ namespace
 				}
 			}
 			if (final)
-				WriteReport(report_fp, "Whole session", s_session_profile, static_cast<double>(now - vm_start_ns) / 1.0e9);
+				WriteReport(report_fp, "Whole session", s_session_profile, static_cast<double>(now - vm_start_ns) / 1.0e9, false);
 			report_start = now;
 		};
 
@@ -1117,6 +1330,7 @@ void HorizonProfiler::OnFrame(float frame_time_ms)
 			{
 				HitchRecord& h = w.hitches.emplace_back();
 				h.frame = PerformanceMetrics::GetFrameNumber();
+				h.end_ns = GetTimeNs();
 				h.frame_ms = frame_time_ms;
 				h.avg_ms = avg_ms;
 				for (u32 i = 0; i < COUNTER_COUNT; i++)
