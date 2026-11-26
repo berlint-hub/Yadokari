@@ -67,6 +67,7 @@ namespace
 	constexpr u32 GUEST_TOP = 12;
 	constexpr u32 STACK_TOP = 15;
 	constexpr u32 ALLOC_TOP = 12;
+	constexpr u32 ALLOC_SITE_TOP = 8;
 	constexpr u32 JIT_HOT_TOP = 6;
 	constexpr u32 JIT_HOT_BEFORE = 64;
 	constexpr u32 JIT_HOT_AFTER = 64;
@@ -439,6 +440,7 @@ namespace
 		std::unordered_map<StackKey, u32, StackKeyHash> stacks;
 		std::unordered_map<u64, u32> jit_buckets; // host PC >> JIT_BUCKET_SHIFT
 		std::unordered_map<u32, u32> alloc_callers; // first function outside malloc/free and their locks
+		std::unordered_map<u64, u32> alloc_sites; // ... and its return address, as an NRO offset
 		u32 alloc_samples = 0;
 
 		void Clear()
@@ -452,6 +454,7 @@ namespace
 			stacks.clear();
 			jit_buckets.clear();
 			alloc_callers.clear();
+			alloc_sites.clear();
 			alloc_samples = 0;
 		}
 
@@ -473,6 +476,8 @@ namespace
 				jit_buckets[k] += v;
 			for (const auto& [k, v] : other.alloc_callers)
 				alloc_callers[k] += v;
+			for (const auto& [k, v] : other.alloc_sites)
+				alloc_sites[k] += v;
 			alloc_samples += other.alloc_samples;
 		}
 	};
@@ -594,7 +599,9 @@ namespace
 		prof.samples++;
 
 		u32 keys[MAX_STACK_FRAMES + 1];
+		u64 addrs[MAX_STACK_FRAMES + 1]; // the code address each key came from (return addresses for callers)
 		u32 key_count = 0;
+		addrs[key_count] = sample.frames[0];
 		keys[key_count++] = Resolve(sample.frames[0]);
 
 		// The link register is the caller in leaf functions and prologues, where the frame chain skips it.
@@ -603,10 +610,16 @@ namespace
 		{
 			const u32 lr_key = Resolve(sample.lr - 1);
 			if (lr_key != KEY_UNKNOWN && lr_key != keys[0] && lr_key != first_return)
+			{
+				addrs[key_count] = sample.lr;
 				keys[key_count++] = lr_key;
+			}
 		}
 		for (u32 i = 1; i < sample.count; i++)
+		{
+			addrs[key_count] = sample.frames[i];
 			keys[key_count++] = (i == 1) ? first_return : Resolve(sample.frames[i] - 1);
+		}
 
 		prof.self[keys[0]]++;
 
@@ -668,6 +681,10 @@ namespace
 		{
 			prof.alloc_samples++;
 			prof.alloc_callers[(depth_in_alloc < key_count) ? keys[depth_in_alloc] : KEY_UNKNOWN]++;
+			// The exact call site: with LTO a whole call tree is inlined into one "caller", so the function
+			// name alone may not say which allocation it is. addr2line -i on the ELF does.
+			if (depth_in_alloc < key_count && addrs[depth_in_alloc] >= s_module_base && addrs[depth_in_alloc] < s_module_end)
+				prof.alloc_sites[addrs[depth_in_alloc] - s_module_base]++;
 		}
 	}
 
@@ -817,6 +834,9 @@ namespace
 					100.0 * prof.alloc_samples / total);
 				for (const auto& [key, count] : TopEntries(prof.alloc_callers, ALLOC_TOP))
 					out += fmt::format("  {:5.1f}  {}\n", 100.0 * count / total, KeyName(key));
+				out += "  call sites (return address, for addr2line -i on the ELF):\n";
+				for (const auto& [offset, count] : TopEntries(prof.alloc_sites, ALLOC_SITE_TOP))
+					out += fmt::format("  {:5.1f}  nro+0x{:x} {}\n", 100.0 * count / total, offset, KeyName(Resolve(s_module_base + offset - 1)));
 			}
 
 			if (include_code)
