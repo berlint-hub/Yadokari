@@ -66,9 +66,10 @@ namespace
 	constexpr u32 CALLER_TOP = 10;
 	constexpr u32 GUEST_TOP = 12;
 	constexpr u32 STACK_TOP = 15;
-	constexpr u32 JIT_HOT_TOP = 4;
-	constexpr u32 JIT_HOT_BEFORE = 96;
-	constexpr u32 JIT_HOT_AFTER = 128;
+	constexpr u32 ALLOC_TOP = 12;
+	constexpr u32 JIT_HOT_TOP = 6;
+	constexpr u32 JIT_HOT_BEFORE = 64;
+	constexpr u32 JIT_HOT_AFTER = 64;
 	constexpr u32 LOG_TOP = 6;
 
 	struct Settings
@@ -407,7 +408,7 @@ namespace
 	};
 
 	// The innermost STACK_KEY_DEPTH distinct functions of a sample, innermost first (KEY_UNKNOWN padded).
-	constexpr u32 STACK_KEY_DEPTH = 4;
+	constexpr u32 STACK_KEY_DEPTH = 6;
 	struct StackKey
 	{
 		u32 keys[STACK_KEY_DEPTH];
@@ -437,6 +438,8 @@ namespace
 		std::unordered_map<u32, u32> guest_pcs;
 		std::unordered_map<StackKey, u32, StackKeyHash> stacks;
 		std::unordered_map<u64, u32> jit_buckets; // host PC >> JIT_BUCKET_SHIFT
+		std::unordered_map<u32, u32> alloc_callers; // first function outside malloc/free and their locks
+		u32 alloc_samples = 0;
 
 		void Clear()
 		{
@@ -448,6 +451,8 @@ namespace
 			guest_pcs.clear();
 			stacks.clear();
 			jit_buckets.clear();
+			alloc_callers.clear();
+			alloc_samples = 0;
 		}
 
 		void Merge(const TargetProfile& other)
@@ -466,6 +471,9 @@ namespace
 				stacks[k] += v;
 			for (const auto& [k, v] : other.jit_buckets)
 				jit_buckets[k] += v;
+			for (const auto& [k, v] : other.alloc_callers)
+				alloc_callers[k] += v;
+			alloc_samples += other.alloc_samples;
 		}
 	};
 
@@ -552,6 +560,34 @@ namespace
 		return ok;
 	}
 
+	// 0 = not allocator code, 1 = malloc/free/new/delete, 2 = a lock they take (also used elsewhere).
+	u32 AllocatorKind(u32 key)
+	{
+		static std::unordered_map<u32, u32> cache;
+		if (key >= s_symbols.size())
+			return 0;
+		auto it = cache.find(key);
+		if (it != cache.end())
+			return it->second;
+
+		static constexpr const char* ALLOC_FUNCS[] = {"_malloc_r", "_free_r", "_memalign_r", "_realloc_r", "_calloc_r",
+			"_malloc_trim_r", "malloc", "free", "memalign", "posix_memalign", "realloc", "calloc", "_Z15_aligned_mallocmm",
+			"_Z13_aligned_freePv", "_Znwm", "_Znam", "_ZdlPv", "_ZdlPvm", "_ZdaPv", "_ZnwmSt11align_val_t",
+			"_ZdlPvSt11align_val_t"};
+		static constexpr const char* LOCK_FUNCS[] = {"__malloc_lock", "__malloc_unlock", "rmutexLock", "rmutexUnlock",
+			"mutexLock", "mutexUnlock", "svcArbitrateLock", "svcArbitrateUnlock", "__libc_lock_acquire",
+			"__libc_lock_acquire_recursive", "__libc_lock_release", "__libc_lock_release_recursive",
+			"__syscall_lock_acquire", "__syscall_lock_acquire_recursive", "__syscall_lock_release",
+			"__syscall_lock_release_recursive"};
+		u32 kind = 0;
+		for (const char* name : ALLOC_FUNCS)
+			kind = (std::strcmp(s_symbols[key].name, name) == 0) ? 1 : kind;
+		for (const char* name : LOCK_FUNCS)
+			kind = (kind == 0 && std::strcmp(s_symbols[key].name, name) == 0) ? 2 : kind;
+		cache.emplace(key, kind);
+		return kind;
+	}
+
 	void AggregateSample(u32 target, const RawSample& sample)
 	{
 		TargetProfile& prof = s_window_profile[target];
@@ -616,6 +652,23 @@ namespace
 
 		if (keys[0] >= KEY_REGION_BASE && keys[0] != KEY_UNKNOWN)
 			prof.jit_buckets[sample.frames[0] >> JIT_BUCKET_SHIFT]++;
+
+		// Time in malloc/free (including waiting for their lock), charged to whoever called them.
+		u32 depth_in_alloc = 0;
+		bool through_allocator = false;
+		while (depth_in_alloc < key_count)
+		{
+			const u32 kind = AllocatorKind(keys[depth_in_alloc]);
+			if (kind == 0)
+				break;
+			through_allocator |= (kind == 1);
+			depth_in_alloc++;
+		}
+		if (through_allocator)
+		{
+			prof.alloc_samples++;
+			prof.alloc_callers[(depth_in_alloc < key_count) ? keys[depth_in_alloc] : KEY_UNKNOWN]++;
+		}
 	}
 
 	template <typename Map>
@@ -633,29 +686,27 @@ namespace
 	// written: if the code cache was reset since, the bytes may be different code.
 	void FormatHotJitCode(std::string& out, const TargetProfile& prof, double total)
 	{
-		std::vector<std::pair<uptr, uptr>> shown;
+		// Rank 256-byte windows (8 lines): straight-line VU code spreads its samples thinly over many lines.
+		constexpr u32 WINDOW_SHIFT = JIT_BUCKET_SHIFT + 3;
+		std::unordered_map<u64, u32> windows;
+		for (const auto& [bucket, count] : prof.jit_buckets)
+			windows[(bucket << JIT_BUCKET_SHIFT) >> WINDOW_SHIFT] += count;
+
 		bool header = false;
-		for (const auto& [bucket, count] : TopEntries(prof.jit_buckets, JIT_HOT_TOP * 2))
+		for (const auto& [window, count] : TopEntries(windows, JIT_HOT_TOP))
 		{
 			const double pct = 100.0 * count / total;
-			if (pct < 1.0 || shown.size() >= JIT_HOT_TOP)
+			if (pct < 0.5)
 				break;
 
-			const uptr start = static_cast<uptr>(bucket << JIT_BUCKET_SHIFT);
+			const uptr start = static_cast<uptr>(window << WINDOW_SHIFT);
 			const u32 key = Resolve(start);
 			if (key < KEY_REGION_BASE || key == KEY_UNKNOWN)
 				continue;
 			const CodeRegion& region = s_regions[key - KEY_REGION_BASE];
 
-			// Neighbouring hot blocks are usually the same loop: show each area once.
-			bool already_shown = false;
-			for (const auto& [lo, hi] : shown)
-				already_shown |= (start >= lo && start < hi);
-			if (already_shown)
-				continue;
-
 			const uptr first = (start - region.start > JIT_HOT_BEFORE) ? (start - JIT_HOT_BEFORE) : region.start;
-			const uptr last = std::min<uptr>(region.end, start + (1u << JIT_BUCKET_SHIFT) + JIT_HOT_AFTER);
+			const uptr last = std::min<uptr>(region.end, start + (1u << WINDOW_SHIFT) + JIT_HOT_AFTER);
 
 			MemoryInfo mi = {};
 			u32 page_info = 0;
@@ -664,7 +715,7 @@ namespace
 
 			if (!header)
 			{
-				out += "\n  hottest JIT code (32-byte lines, '*' = the hot line, % = samples in that line, A64 instruction words):\n";
+				out += "\n  hottest JIT code (256-byte windows; per 32-byte line: % of samples, then A64 instruction words):\n";
 				header = true;
 			}
 			out += fmt::format("  {:5.1f}  {}+0x{:x}\n", pct, region.name, start - region.start);
@@ -672,14 +723,14 @@ namespace
 			{
 				const auto hit = prof.jit_buckets.find(line >> JIT_BUCKET_SHIFT);
 				const u32 line_count = (hit != prof.jit_buckets.end()) ? hit->second : 0;
-				std::string text = fmt::format("    {} +0x{:06x} {:4.1f}%:", (line == start) ? '*' : ' ', line - region.start,
+				const bool in_window = (line >= start && line < start + (1u << WINDOW_SHIFT));
+				std::string text = fmt::format("    {} +0x{:06x} {:4.1f}%:", in_window ? '*' : ' ', line - region.start,
 					100.0 * line_count / total);
 				for (uptr a = line; a < std::min<uptr>(line + 32, last); a += 4)
 					text += fmt::format(" {:08x}", *reinterpret_cast<const u32*>(a));
 				out += text;
 				out += '\n';
 			}
-			shown.emplace_back(first, last);
 		}
 	}
 
@@ -758,6 +809,14 @@ namespace
 					line += fmt::format(" <- {}", KeyName(stack.keys[i]));
 				out += line;
 				out += '\n';
+			}
+
+			if (prof.alloc_samples * 200 >= prof.samples) // >= 0.5%
+			{
+				out += fmt::format("\n  in malloc/free (including waiting for their lock): {:.1f}%, called from:\n",
+					100.0 * prof.alloc_samples / total);
+				for (const auto& [key, count] : TopEntries(prof.alloc_callers, ALLOC_TOP))
+					out += fmt::format("  {:5.1f}  {}\n", 100.0 * count / total, KeyName(key));
 			}
 
 			if (include_code)
