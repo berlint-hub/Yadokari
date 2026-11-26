@@ -973,13 +973,13 @@ void armEor(const a64::Register& p_reg, const void* p_mop, a64::Operand p_value)
 // kArm64I32x4BitMask
 void armMOVMSKPS(const a64::Register& reg32, const a64::VRegister& regQ)
 {
-    // One load instead of materialising {1,2,4,8} with Movi (6 instructions).
-    armAsm->Ldr(RQSCRATCH2.Q(), PTR_CPU(mVUss4.movmsk_weights));
-    ////
-    armAsm->Sshr(RQSCRATCH.V4S(), regQ.V4S(), 31);
-    armAsm->And(RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH.V16B());
-
-    armAsm->Addv(RQSCRATCH.S(), RQSCRATCH.V4S());
+    // Sign bits {a, b, c, d} -> a | b << 1 | c << 2 | d << 3 with shifts only: no constant and no state
+    // register, because this is also emitted into helpers that C++ calls directly (microVU's
+    // compareStateF), where x27 is not the CPU state pointer.
+    armAsm->Ushr(RQSCRATCH.V4S(), regQ.V4S(), 31);          // a, b, c, d (0 or 1)
+    armAsm->Usra(RQSCRATCH.V2D(), RQSCRATCH.V2D(), 31);     // low words: a + 2b, c + 2d
+    armAsm->Xtn(RQSCRATCH.V2S(), RQSCRATCH.V2D());          // {a + 2b, c + 2d}
+    armAsm->Usra(RQSCRATCH.D(), RQSCRATCH.D(), 30);         // low word: a + 2b + 4c + 8d
     armAsm->Fmov(reg32, RQSCRATCH.S());
 }
 
