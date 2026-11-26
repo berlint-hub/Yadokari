@@ -27,8 +27,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <sys/iosupport.h>
 #include <sys/stat.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "common/Horizon/Horizon.h"
@@ -384,6 +386,26 @@ namespace
 			INFO_LOG("USB volume '{}' mounted at {} ({})", volume.label, volume.root, volume.filesystem);
 	}
 
+	// Closes the descriptors of files still open on a device that is about to be unmounted. newlib closes
+	// every FILE in exit(), after main(); for one on an unmounted device that looks up a devoptab entry that
+	// is gone and crashes in lseek/close ("the software was closed because an error occurred"). With the
+	// descriptor closed here, those calls fail with EBADF instead.
+	int CloseFilesOnDevice(const char* device)
+	{
+		const int dev = FindDevice(device);
+		if (dev < 0)
+			return 0;
+
+		int closed = 0;
+		for (int fd = 3; fd < 1024; fd++)
+		{
+			const __handle* const handle = __get_handle(fd);
+			if (handle && handle->device == dev && close(fd) == 0)
+				closed++;
+		}
+		return closed;
+	}
+
 	// Boot a disc image directly when passed as argv[1]
 	void BootImage(std::string path)
 	{
@@ -656,17 +678,23 @@ int main(int argc, char** argv)
 	VMManager::Internal::CPUThreadShutdown();
 	INFO_LOG("================ Exiting ================");
 
-	// patches.zip is read from the romfs and would otherwise be closed at exit, after the romfs is gone:
-	// closing its FILE then crashed in lseek ("the software was closed because an error occurred").
+	// patches.zip is read from the romfs and would otherwise be closed at exit, after the romfs is gone.
 	Patch::ClosePatchesZip();
 
 	if (have_romfs)
+	{
+		if (const int left_open = CloseFilesOnDevice("romfs:"); left_open > 0)
+			WARNING_LOG("Closed {} file(s) still open on the romfs before unmounting it", left_open);
 		romfsExit();
+	}
 
 	// After romfsExit(): until then the running .nro is held open for its romfs.
 	HorizonUpdater::FinishPendingInstall();
 
 	if (have_socket)
+	{
+		CloseFilesOnDevice("soc:");
 		socketExit();
+	}
 	return 0;
 }
