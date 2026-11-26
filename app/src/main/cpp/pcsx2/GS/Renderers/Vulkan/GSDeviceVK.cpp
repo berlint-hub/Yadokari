@@ -6502,8 +6502,10 @@ namespace
 
 void GSDeviceVK::GameChanged()
 {
+	// VMManager reports the game while the VM is still initializing (and not again for the ELF it boots),
+	// so go by the disc details alone; they are cleared when the VM shuts down.
 	std::string game_id;
-	if (VMManager::HasValidVM() && Host::GetBaseBoolSettingValue("EmuCore/GS", "VulkanPipelinePrewarm", true))
+	if (Host::GetBaseBoolSettingValue("EmuCore/GS", "VulkanPipelinePrewarm", true))
 	{
 		const std::string serial = VMManager::GetDiscSerial();
 		const u32 crc = VMManager::GetDiscCRC();
