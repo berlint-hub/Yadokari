@@ -16,6 +16,7 @@
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/MTGS.h"
 #include "pcsx2/Patch.h"
+#include "pcsx2/Horizon/HorizonSystemInfo.h"
 #include "pcsx2/SIO/Pad/Pad.h"
 #include "pcsx2/SIO/Pad/PadDualshock2.h"
 #include "pcsx2/VMManager.h"
@@ -680,6 +681,9 @@ int main(int argc, char** argv)
 
 	// patches.zip is read from the romfs and would otherwise be closed at exit, after the romfs is gone.
 	Patch::ClosePatchesZip();
+
+	// CPU clock service session (performance overlay and log).
+	HorizonSystemInfo::Shutdown();
 
 	if (have_romfs)
 	{

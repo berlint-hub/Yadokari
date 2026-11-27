@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 
 #include "Horizon/HorizonProfiler.h"
+#include "Horizon/HorizonSystemInfo.h"
 
 #include "GS/GSPerfMon.h"
 #include "Config.h"
@@ -133,6 +134,20 @@ namespace
 		std::vector<HitchRecord> hitches;
 		u32 hitches_dropped = 0;
 
+		// CPU clock readings, taken by the profiler thread (a governor or overclock tool can change it mid-game).
+		u32 cpu_mhz_min = 0;
+		u32 cpu_mhz_max = 0;
+		u64 cpu_mhz_sum = 0;
+		u32 cpu_mhz_count = 0;
+
+		void AddCPUClock(u32 mhz)
+		{
+			cpu_mhz_min = cpu_mhz_count ? std::min(cpu_mhz_min, mhz) : mhz;
+			cpu_mhz_max = std::max(cpu_mhz_max, mhz);
+			cpu_mhz_sum += mhz;
+			cpu_mhz_count++;
+		}
+
 		void Clear()
 		{
 			vsyncs = 0;
@@ -142,6 +157,9 @@ namespace
 			std::memset(perf, 0, sizeof(perf));
 			hitches.clear();
 			hitches_dropped = 0;
+			cpu_mhz_min = cpu_mhz_max = 0;
+			cpu_mhz_sum = 0;
+			cpu_mhz_count = 0;
 		}
 	};
 
@@ -1057,9 +1075,18 @@ namespace
 
 		const double t_start = static_cast<double>(a.time_ns - vm_start_ns) / 1.0e9;
 		const double t_end = static_cast<double>(b.time_ns - vm_start_ns) / 1.0e9;
-		INFO_LOG("[Perf] {:.0f}-{:.0f}s{}: speed {:.0f}% | {:.1f} fps (game {:.0f}) | frame avg {:.1f} max {:.1f} ms | limiter {}",
+		std::string clock;
+		if (fw.cpu_mhz_count > 0)
+		{
+			if (fw.cpu_mhz_min == fw.cpu_mhz_max)
+				clock = fmt::format(" | CPU {} MHz", fw.cpu_mhz_max);
+			else
+				clock = fmt::format(" | CPU {}-{} MHz (avg {})", fw.cpu_mhz_min, fw.cpu_mhz_max,
+					static_cast<u32>((fw.cpu_mhz_sum + fw.cpu_mhz_count / 2) / fw.cpu_mhz_count));
+		}
+		INFO_LOG("[Perf] {:.0f}-{:.0f}s{}: speed {:.0f}% | {:.1f} fps (game {:.0f}) | frame avg {:.1f} max {:.1f} ms | limiter {}{}",
 			t_start, t_end, paused_s > 0.05 ? fmt::format(" (paused {:.1f}s)", paused_s) : std::string(), speed, fps,
-			PerformanceMetrics::GetInternalFPS(), avg_present_ms, fw.frame_ms_max, limiter);
+			PerformanceMetrics::GetInternalFPS(), avg_present_ms, fw.frame_ms_max, limiter, clock);
 
 		std::string cpu = fmt::format("[Perf]   EE {:.0f}% {:.1f}ms/f (wait VU {:.1f} GS {:.1f} vsync {:.1f})", cpu_pct[TARGET_EE],
 			cpu_ms[TARGET_EE], ee_wait_vu, ee_wait_gs, ee_wait_vsync);
@@ -1169,6 +1196,7 @@ namespace
 		FrameWindow fw;
 		fw.hitches.reserve(MAX_HITCHES_PER_WINDOW);
 		RawSample sample;
+		u64 next_clock_read = 0;
 
 		auto flush_summary = [&](u64 now) {
 			{
@@ -1234,6 +1262,13 @@ namespace
 			if (state == VMState::Paused)
 				paused_ns += now - last_iteration;
 			last_iteration = now;
+
+			if (state == VMState::Running && now >= next_clock_read)
+			{
+				if (const u32 mhz = HorizonSystemInfo::GetCPUClockMHz(); mhz != 0)
+					fw.AddCPUClock(mhz);
+				next_clock_read = now + 250000000ull;
+			}
 
 			if (now >= next_log)
 			{

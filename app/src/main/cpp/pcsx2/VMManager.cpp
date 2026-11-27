@@ -96,6 +96,7 @@
 
 #ifdef __SWITCH__
 #include "common/Horizon/Horizon.h"
+#include "Horizon/HorizonSystemInfo.h"
 #endif
 
 namespace VMManager
@@ -704,8 +705,10 @@ bool VMManager::Internal::CPUThreadInitialize()
 	// Use the default rounding mode, just in case it differs on some platform.
 	FPControlRegister::SetCurrent(FPControlRegister::GetDefault());
 
+#ifndef __SWITCH__ // Expected on Horizon: see HorizonSystemInfo.
 	if (!cpuinfo_initialize())
 		ConsoleLogWriter<LOGLEVEL_INFO>::Error("cpuinfo_initialize() failed.");
+#endif
 
 	LogCPUCapabilities();
 
@@ -2848,6 +2851,13 @@ void VMManager::LogCPUCapabilities()
 		GetPhysicalMemory() / _1mb,
 		static_cast<double>(GetPhysicalMemory()) / static_cast<double>(_1gb));
 
+#ifdef __SWITCH__
+	// cpuinfo cannot identify the processor on Horizon.
+	ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  Processor        = {}", HorizonSystemInfo::GetCPUName());
+	ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  Core Count       = {} cores", HorizonSystemInfo::CPU_CORES);
+	if (const u32 mhz = HorizonSystemInfo::GetCPUClockMHz(); mhz != 0)
+		ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  CPU Clock        = {} MHz", mhz);
+#else
 	// This crashes on platforms that cannot get some of this information, so
 	// verify it can do so before running it.
 	if (cpuinfo_initialize())
@@ -2862,6 +2872,7 @@ void VMManager::LogCPUCapabilities()
 	{
 		ConsoleLogWriter<LOGLEVEL_INFO>::WriteLn("  Processor        = Unknown (cpuinfo unavailable)");
 	}
+#endif
 #ifdef _WIN32
 	LogUserPowerPlan();
 #endif
