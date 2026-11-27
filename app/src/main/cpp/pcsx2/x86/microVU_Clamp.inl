@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "arm64/ClampTracker.h"
+
+#include <cstring>
+
 //------------------------------------------------------------------
 // Micro VU - Clamp Functions
 //------------------------------------------------------------------
@@ -28,6 +32,38 @@
 // COP2 (macro mode) code runs inside EE blocks, so it keeps loading them each time.
 static thread_local u32 s_mVUclampConstsBarrier = 0xffffffffu;
 
+// Registers known to hold clamped values (see ClampTracker.h), brought up to date with the code emitted since
+// the last call. Reset at a barrier, or if the code buffer changed or moved backwards.
+static thread_local u32 s_mVUclampedMask = 0;
+static thread_local u32 s_mVUclampedBarrier = 0xffffffffu;
+static thread_local const u8* s_mVUclampedBuffer = nullptr;
+static thread_local ptrdiff_t s_mVUclampedOffset = 0;
+
+static u32 mVUsyncClampedRegs()
+{
+	const ptrdiff_t offset = armAsm->GetCursorOffset();
+	const u8* const buffer = armAsm->GetCursorAddress<const u8*>() - offset;
+	if (s_mVUclampedBarrier != armCodegenBarrier || s_mVUclampedBuffer != buffer || offset < s_mVUclampedOffset)
+	{
+		s_mVUclampedMask = 0;
+		s_mVUclampedBarrier = armCodegenBarrier;
+		s_mVUclampedBuffer = buffer;
+		s_mVUclampedOffset = offset;
+		return 0;
+	}
+
+	u32 mask = s_mVUclampedMask;
+	for (ptrdiff_t at = s_mVUclampedOffset; at + 4 <= offset; at += 4)
+	{
+		u32 insn;
+		std::memcpy(&insn, buffer + at, sizeof(insn));
+		mask = ClampTracker::Apply(insn, mask);
+	}
+	s_mVUclampedMask = mask;
+	s_mVUclampedOffset = offset;
+	return mask;
+}
+
 static __fi bool mVUloadClampConsts(microVU& mVU)
 {
 	if (isCOP2)
@@ -48,6 +84,11 @@ void mVUclamp1(microVU& mVU, const xmm& reg, const xmm& regT1, int xyzw, bool bC
 	{
 		if (mVUloadClampConsts(mVU))
 		{
+			// Nothing wrote it since it was clamped: clamping again would not change it.
+			const u32 bit = 1u << reg.GetCode();
+			if (mVUsyncClampedRegs() & bit)
+				return;
+
 			if (xyzw == 1 || xyzw == 2 || xyzw == 4 || xyzw == 8)
 			{
 				armAsm->Fminnm(reg.S(), reg.S(), xmmClampMax.S());
@@ -58,6 +99,9 @@ void mVUclamp1(microVU& mVU, const xmm& reg, const xmm& regT1, int xyzw, bool bC
 				armAsm->Fminnm(reg.V4S(), reg.V4S(), xmmClampMax.V4S());
 				armAsm->Fmaxnm(reg.V4S(), reg.V4S(), xmmClampMin.V4S());
 			}
+
+			// Both forms leave every lane in range: the scalar ones zero lanes 1-3.
+			s_mVUclampedMask = mVUsyncClampedRegs() | bit;
 			return;
 		}
 
