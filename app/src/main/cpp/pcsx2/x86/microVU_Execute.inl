@@ -251,7 +251,8 @@ static void mVUGenerateCopyPipelineState(mV)
     mVU.copyPLState = armGetCurrentCodePointer();
     {
         auto mop_rax = a64::MemOperand(RAX);
-        auto mop_lpState = PTR_MVU(microVU[mVU.index].prog.lpState);
+        // prog is not part of vuRegistersPack (see microVU.h), so address it directly.
+        auto mop_lpState = armMemOperandPtr(&mVU.prog.lpState);
 
 //		xMOVAPS(xmm0, ptr[rax]);
         armAsm->Ldr(xmm0, mop_rax);

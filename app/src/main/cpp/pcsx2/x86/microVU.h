@@ -100,7 +100,10 @@ struct microVU
 	u32 progMemMask;  // VU Micro Memory Size (in u32's)
 	u32 cacheSize;    // VU Cache Size
 
-	microProgManager               prog;     // Micro Program Data
+	// Micro Program Data. Kept out of line: it is ~290 KB, and inside the struct it put the fields after it, and all of
+	// microVU[1], too far from RSTATE_MVU for an immediate offset, so every access from VU1 code (flag instances,
+	// branch and cycle state) first needed a MOVZ/MOVK of the offset.
+	microProgManager&              prog = *new microProgManager();
 	microProfiler                  profiler; // Opcode Profiler
 	std::unique_ptr<microRegAlloc> regAlloc; // Reg Alloc Class
 	std::FILE*                     logFile;  // Log File Pointer

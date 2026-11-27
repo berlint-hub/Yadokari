@@ -19,7 +19,6 @@
 class VU_Thread final {
 	static const s32 buffer_size = (_1mb * 16) / sizeof(s32);
 
-	u32 buffer[buffer_size];
 	// Note: keep atomic on separate cache line to avoid CPU conflict
 	alignas(__cachelinesize) std::atomic<int> m_ato_read_pos; // Only modified by VU thread
 	alignas(__cachelinesize) std::atomic<int> m_ato_write_pos;    // Only modified by EE thread
@@ -118,6 +117,10 @@ private:
 	void WriteRegs(VIFregisters* src);
 
 	u32 Get_vuCycles();
+
+	// The 16 MB ring buffer goes last: in front it put vifRegs and vuFBRST, which VU1 code reads, 16 MB past
+	// RSTATE_MVU, out of reach of an immediate offset.
+	alignas(__cachelinesize) u32 buffer[buffer_size];
 };
 
 extern VU_Thread& vu1Thread;
