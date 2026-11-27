@@ -161,8 +161,9 @@ mVUop(mVU_RSQRT)
                 armAsm->B(&cjmp);
 //			bjmp.SetTarget();
             armBind(&bjmp);
-//				xMOV(ptr32[&mVU.divFlag], divD); // Zero divide flag (only when not 0/0)
-                armStorePtr(divD, PTR_MVU(microVU[mVU.index].divFlag));
+//				xOR(ptr32[&mVU.divFlag], divD); // Zero divide flag (only when not 0/0)
+                // OR, not MOV: x / -0 also keeps the invalid flag testNeg set for the negative operand.
+                armOrr(gprT1, PTR_MVU(microVU[mVU.index].divFlag), divD);
 //			cjmp.SetTarget();
             armBind(&cjmp);
 

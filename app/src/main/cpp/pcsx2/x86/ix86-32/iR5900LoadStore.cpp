@@ -386,7 +386,6 @@ void recLWR()
 	}
 
 	const int treg = _allocX86reg(X86TYPE_GPR, _Rt_, MODE_READ | MODE_WRITE);
-    auto reg32 = a64::WRegister(treg);
 
 //	xAND(temp, 3);
     armAsm->And(temp, temp, 3);
@@ -401,20 +400,22 @@ void recLWR()
     armAsm->Mov(ECX, 24);
 //	xSUB(ecx, temp);
     armAsm->Sub(ECX, ECX, temp);
-//	xMOV(edx, 0xffffff00);
-    armAsm->Mov(EDX, 0xffffff00);
-//	xSHL(edx, cl);
-    armAsm->Lsl(EDX, EDX, ECX);
-//	xAND(xRegister32(treg), edx);
-    armAsm->And(reg32, reg32, EDX);
+	// 64-bit mask and OR: LWR with a non-zero offset only replaces the loaded bytes and keeps the upper
+	// 32 bits of rt (a 32-bit AND/ORR would clear them).
+//	xMOV(rdx, ~0xff);
+    armAsm->Mov(EDX.X(), ~UINT64_C(0xff));
+//	xSHL(rdx, cl);
+    armAsm->Lsl(EDX.X(), EDX.X(), ECX.X());
+//	xAND(xRegister64(treg), rdx);
+    armAsm->And(a64::XRegister(treg), a64::XRegister(treg), EDX.X());
 
 	// OR in bytes loaded
 //	xMOV(ecx, temp);
     armAsm->Mov(ECX, temp);
 //	xSHR(eax, cl);
-    armAsm->Lsr(EAX, EAX, ECX);
-//	xOR(xRegister32(treg), eax);
-    armAsm->Orr(reg32, reg32, EAX);
+    armAsm->Lsr(EAX, EAX, ECX); // 32-bit shift, so the upper half of rax is zero
+//	xOR(xRegister64(treg), rax);
+    armAsm->Orr(a64::XRegister(treg), a64::XRegister(treg), EAX.X());
 
 //	xForwardJump8 end;
     a64::Label end;
