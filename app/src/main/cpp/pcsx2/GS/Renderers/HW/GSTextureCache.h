@@ -318,6 +318,14 @@ public:
 		Source(const GIFRegTEX0& TEX0, const GIFRegTEXA& TEXA);
 		virtual ~Source();
 
+#ifdef __SWITCH__
+		// Some games create and destroy a source for nearly every draw (GT4 samples render targets it keeps
+		// drawing to). newlib's memalign for each, under its global lock, was ~10% of the GS thread, so freed
+		// sources are kept for reuse.
+		static void* operator new(size_t size);
+		static void operator delete(void* ptr, size_t size);
+#endif
+
 		__fi bool CanPreload() const { return CanPreloadTextureSize(m_TEX0.TW, m_TEX0.TH); }
 		__fi bool IsFromTarget() const { return m_target; }
 		bool IsPaletteFormat() const;
