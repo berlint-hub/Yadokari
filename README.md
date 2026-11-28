@@ -204,9 +204,10 @@ intervals.
 Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on
 this repository tagged `nightly` for the default branch, or `nightly-<branch>` for other branches.
 
-Choose **Update** in the app's main menu to check the channel the running build came from. If there is a
-newer build, the app downloads it and installs it when it closes. **Restart now** restarts straight into
-the new build. The previous build is kept next to it as `armsx2nx.nro.bak`. The app also checks once on
+Choose **Update** in the app's main menu to check the selected channel. On Switch, choose the channel in
+**Settings → Interface Settings → Updates → Update Channel**: `Nightly (default branch)` or `This Arena branch`.
+If there is a newer build, the app downloads it and installs it when it closes. **Restart now** restarts straight
+into the new build. The previous build is kept next to it as `armsx2nx.nro.bak`. The app also checks once on
 startup when it is online. Both need an internet connection on the Switch.
 
 The defaults come from the build. They can be overridden in `sdmc:/switch/armsx2/armsx2.ini`:

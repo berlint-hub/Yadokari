@@ -13,6 +13,7 @@
 #include "INISettingsInterface.h"
 #include "ImGui/FullscreenUI.h"
 #ifdef __SWITCH__
+#include "Horizon/HorizonUpdater.h"
 #include "ImGui/HorizonCheatDownload.h"
 #include "Input/HorizonInputSettings.h"
 #endif
@@ -1518,7 +1519,7 @@ void FullscreenUI::DrawLandingWindow()
 
 #ifdef __SWITCH__
 		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Update"),
-				FSUI_CSTR("Download and install the newest build of this app.")))
+				FSUI_CSTR("Check and install a build from the channel selected in Interface Settings.")))
 		{
 			Host::OnUpdateCheckRequested();
 		}
@@ -3606,6 +3607,22 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 			CloseChoiceDialog();
 		});
 	}
+
+#ifdef __SWITCH__
+	static constexpr const char* s_update_channel_names[] = {
+		FSUI_NSTR("Nightly (default branch)"),
+		FSUI_NSTR("This Arena branch"),
+	};
+	static constexpr const char* s_update_channel_values[] = {
+		"nightly",
+		"nightly-arena-ad7f4507-yadokari",
+	};
+	MenuHeading(FSUI_CSTR("Updates"));
+	DrawStringListSetting(bsi, FSUI_CSTR("Update Channel"),
+		FSUI_CSTR("Selects which build the Update menu checks. Nightly follows the default branch; the Arena channel follows this development branch."),
+		"Horizon", "UpdateChannel", HorizonUpdater::GetDefaultChannel(), s_update_channel_names, s_update_channel_values,
+		std::size(s_update_channel_names), true);
+#endif
 
 	MenuHeading(FSUI_CSTR("Integration"));
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_USER_CIRCLE, "Enable Discord Presence"),

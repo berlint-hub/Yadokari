@@ -8,6 +8,7 @@
 #include "common/FileSystem.h"
 
 #include "pcsx2/Host.h"
+#include "pcsx2/Horizon/HorizonUpdater.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiFullscreen.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
@@ -43,6 +44,11 @@
 
 namespace HorizonUpdater
 {
+const char* GetDefaultChannel()
+{
+	return ARMSX2_UPDATE_TAG;
+}
+
 namespace
 {
 	constexpr const char* SETTINGS_SECTION = "Horizon";
