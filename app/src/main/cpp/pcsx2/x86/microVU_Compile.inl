@@ -84,6 +84,8 @@ void mVUsetupRange(microVU& mVU, s32 pc, bool isStartPC)
 	// marks a newly opened range, whose first covered byte is its start.
 	const s32 copyStart = (mVUrange.end >= 0) ? mVUrange.end : mVUrange.start;
 	s32 copyEnd;
+	s32 wrapCopyEnd = 0;
+	bool wrapped = false;
 	if (mVUrange.start <= cur_pc)
 	{
 		copyEnd = cur_pc;
@@ -107,12 +109,18 @@ void mVUsetupRange(microVU& mVU, s32 pc, bool isStartPC)
 		copyEnd = mVU.microMemSize;
 		mVUrange.end = mVU.microMemSize;
 		DevCon.WriteLn(Color_Green, "microVU%d: Prog Range Wrap [%04x] [%04x] PC %x", mVU.index, mVUrange.start, mVUrange.end, cur_pc);
+		wrapCopyEnd = cur_pc;
+		wrapped = true;
 		microRange mRange = {0, cur_pc };
 		ranges->push_front(mRange);
 	}
 
 	if (!doWholeProgCompare)
+	{
 		mVUcacheProgRange(mVU, *mVU.prog.cur, copyStart, copyEnd);
+		if (wrapped)
+			mVUcacheProgRange(mVU, *mVU.prog.cur, 0, wrapCopyEnd);
+	}
 }
 
 //------------------------------------------------------------------

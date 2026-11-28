@@ -122,7 +122,7 @@ int main() {
 				if (!(mask & (1u << r))) continue;
 				claimed++;
 				for (int l = 0; l < 4; l++)
-					if (!InRange(io.vout[r][l], fz)) { std::printf("UNSOUND: prog %d run %d v%d lane %d = %08x (fz %d)\n", prog, run, r, l, io.vout[r][l], fz); j.~Jit(); return 1; }
+					if (!InRange(io.vout[r][l], fz)) { std::printf("UNSOUND: prog %d run %d v%d lane %d = %08x (fz %d)\n", prog, run, r, l, io.vout[r][l], fz); return 1; }
 			}
 			checked++;
 		}

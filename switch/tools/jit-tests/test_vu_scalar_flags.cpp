@@ -10,7 +10,7 @@ static Jit MakeVectorFlagsJit()
 {
 	return Jit([&] {
 		armAsm->Ldr(a64::q31, a64::MemOperand(a64::x27, offsetof(State, movmsk_weights)));
-		armAsm->Cmlt(V(1).V4S(), V(0).V4S(), 0);
+		armAsm->Sshr(V(1).V4S(), V(0).V4S(), 31);
 		armAsm->Fcmeq(V(2).V4S(), V(0).V4S(), 0.0);
 		armAsm->And(V(1).V16B(), V(1).V16B(), V(31).V16B());
 		armAsm->And(V(2).V16B(), V(2).V16B(), V(31).V16B());

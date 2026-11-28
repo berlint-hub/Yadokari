@@ -190,7 +190,7 @@ static void mVUupdateFlags(mV, const xmm& reg, const xmm& regT1in = a64::NoVReg,
 		// otherwise bit 0 = X. AND_XYZW masks in that same order.
 		const bool flipLanes = mFLAG.doFlag;
 		armAsm->Ldr(RQSCRATCH2.Q(), flipLanes ? PTR_CPU(mVUss4.movmsk_weights_rev) : PTR_CPU(mVUss4.movmsk_weights));
-		armAsm->Cmlt(RQSCRATCH3.V4S(), reg.V4S(), 0); // sign bit set
+		armAsm->Sshr(RQSCRATCH3.V4S(), reg.V4S(), 31); // raw sign bit, including signed NaNs (MOVMSKPS semantics)
 		armAsm->Fcmeq(RQSCRATCH.V4S(), reg.V4S(), 0.0); // +0 or -0
 		armAsm->And(RQSCRATCH3.V16B(), RQSCRATCH3.V16B(), RQSCRATCH2.V16B());
 		armAsm->And(RQSCRATCH.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B());
