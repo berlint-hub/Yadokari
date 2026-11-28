@@ -252,8 +252,15 @@ bool GSDeviceVK::SelectInstanceExtensions(ExtensionList* extension_list, const W
 	if (enable_debug_utils && !SupportsExtension(VK_EXT_DEBUG_UTILS_EXTENSION_NAME, false))
 		Console.Warning("VK: Debug report requested, but extension is not available.");
 
+#ifdef __SWITCH__
+	// NXVK advertises VK_EXT_swapchain_maintenance1, but its Horizon WSI backend has no release_images hook, so
+	// vkReleaseSwapchainImagesEXT (used when the swap chain is recreated, e.g. for a VSync change) jumps to a null
+	// pointer. Without the extension the acquired image is simply released with the old swap chain.
+	oe->vk_ext_swapchain_maintenance1 = false;
+#else
 	oe->vk_ext_swapchain_maintenance1 = (wi.type != WindowInfo::Type::Surfaceless &&
 										 SupportsExtension(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME, false));
+#endif
 
 	// Needed for exclusive fullscreen control.
 	SupportsExtension(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME, false);
