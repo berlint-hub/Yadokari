@@ -1032,9 +1032,18 @@ void VMManager::ApplyGameFixes()
 	}
 
 #ifdef __SWITCH__
-	// The game database's VU1 clamp mode normally replaces the user's. This setting (usually per game) replaces it
-	// in turn, to trade accuracy for speed: Extra clamping is about a third of the hottest VU1 code in Gran Turismo 4.
+	// Game database VU clamp modes normally replace the user's. These settings (often per game) can override them,
+	// trading accuracy for speed. Extra clamping is about a third of the hottest VU1 code in Gran Turismo 4.
 	// Called with the settings lock held, so read the layered interface directly.
+	const int vu0_clamp = Host::GetSettingsInterface()->GetIntValue("EmuCore/CPU/Recompiler", "vu0ClampOverride", -1);
+	if (vu0_clamp >= 0 && vu0_clamp <= 3)
+	{
+		Console.WriteLn("VU0 clamp mode %d (overrides the game database)", vu0_clamp);
+		EmuConfig.Cpu.Recompiler.vu0Overflow = (vu0_clamp >= 1);
+		EmuConfig.Cpu.Recompiler.vu0ExtraOverflow = (vu0_clamp >= 2);
+		EmuConfig.Cpu.Recompiler.vu0SignOverflow = (vu0_clamp >= 3);
+	}
+
 	const int vu1_clamp = Host::GetSettingsInterface()->GetIntValue("EmuCore/CPU/Recompiler", "vu1ClampOverride", -1);
 	if (vu1_clamp >= 0 && vu1_clamp <= 3)
 	{

@@ -3132,6 +3132,7 @@ void FullscreenUI::DrawSettingsWindow()
 			ICON_PF_PICTURE,
 			ICON_PF_SOUND,
 			ICON_PF_MEMORY_CARD,
+			ICON_FA_BIOHAZARD,
 			ICON_FA_EXCLAMATION_TRIANGLE,
 		};
 		static constexpr SettingsPage global_pages[] = {
@@ -3155,6 +3156,7 @@ void FullscreenUI::DrawSettingsWindow()
 			SettingsPage::Graphics,
 			SettingsPage::Audio,
 			SettingsPage::MemoryCard,
+			SettingsPage::Advanced,
 			SettingsPage::GameFixes,
 		};
 		static constexpr const char* titles[] = {
@@ -5262,6 +5264,12 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 
 	BeginMenuButtons();
 
+	if (IsEditingGameSettings(bsi) && !show_advanced_settings)
+	{
+		ImGui::TextWrapped("%s", FSUI_CSTR("Enable Show Advanced Settings in the app-wide Advanced Settings page to expose per-game VU clamping and recompiler options."));
+		ImGui::Spacing();
+	}
+
 	if (!IsEditingGameSettings(bsi))
 	{
 		DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_BIOHAZARD, "Show Advanced Settings"),
@@ -5348,18 +5356,22 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 			FSUI_CSTR("Determines how out-of-range floating point numbers are handled. Some games need specific settings."), 1);
 #ifdef __SWITCH__
 		{
-			static constexpr const char* vu1_clamp_override_options[] = {
+			static constexpr const char* vu_clamp_override_options[] = {
 				FSUI_NSTR("Use Game Database"),
 				FSUI_NSTR("None"),
 				FSUI_NSTR("Normal (Default)"),
 				FSUI_NSTR("Extra"),
 				FSUI_NSTR("Extra + Preserve Sign"),
 			};
+			DrawIntListSetting(bsi, FSUI_CSTR("VU0 Clamping Override"),
+				FSUI_CSTR("Replaces the game database's VU0 clamping mode. Lower clamping is faster but can break games."),
+				"EmuCore/CPU/Recompiler", "vu0ClampOverride", -1, vu_clamp_override_options,
+				std::size(vu_clamp_override_options), true, -1);
 			DrawIntListSetting(bsi, FSUI_CSTR("VU1 Clamping Override"),
 				FSUI_CSTR("Replaces the game database's VU1 clamping mode, which otherwise takes precedence over the setting above. "
 						  "Lower clamping is faster but can break graphics."),
-				"EmuCore/CPU/Recompiler", "vu1ClampOverride", -1, vu1_clamp_override_options,
-				std::size(vu1_clamp_override_options), true, -1);
+				"EmuCore/CPU/Recompiler", "vu1ClampOverride", -1, vu_clamp_override_options,
+				std::size(vu_clamp_override_options), true, -1);
 		}
 #endif
 		DrawToggleSetting(bsi, FSUI_CSTR("Enable VU0 Recompiler (Micro Mode)"),
@@ -7918,6 +7930,11 @@ TRANSLATE_NOOP("FullscreenUI", "VU0 Rounding Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU0 Clamping Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU1 Rounding Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU1 Clamping Mode");
+TRANSLATE_NOOP("FullscreenUI", "VU0 Clamping Override");
+TRANSLATE_NOOP("FullscreenUI", "VU1 Clamping Override");
+TRANSLATE_NOOP("FullscreenUI", "Replaces the game database's VU0 clamping mode. Lower clamping is faster but can break games.");
+TRANSLATE_NOOP("FullscreenUI", "Replaces the game database's VU1 clamping mode, which otherwise takes precedence over the setting above. Lower clamping is faster but can break graphics.");
+TRANSLATE_NOOP("FullscreenUI", "Use Game Database");
 TRANSLATE_NOOP("FullscreenUI", "Enable VU0 Recompiler (Micro Mode)");
 TRANSLATE_NOOP("FullscreenUI", "New Vector Unit recompiler with much improved compatibility. Recommended.");
 TRANSLATE_NOOP("FullscreenUI", "Enable VU1 Recompiler");
@@ -8073,6 +8090,14 @@ TRANSLATE_NOOP("FullscreenUI", "Achievements Settings");
 TRANSLATE_NOOP("FullscreenUI", "Controller Settings");
 TRANSLATE_NOOP("FullscreenUI", "Hotkey Settings");
 TRANSLATE_NOOP("FullscreenUI", "Advanced Settings");
+TRANSLATE_NOOP("FullscreenUI", "Update");
+TRANSLATE_NOOP("FullscreenUI", "Updates");
+TRANSLATE_NOOP("FullscreenUI", "Update Channel");
+TRANSLATE_NOOP("FullscreenUI", "Nightly (default branch)");
+TRANSLATE_NOOP("FullscreenUI", "This Arena branch");
+TRANSLATE_NOOP("FullscreenUI", "Selects which build the Update menu checks. Nightly follows the default branch; the Arena channel follows this development branch.");
+TRANSLATE_NOOP("FullscreenUI", "Check and install a build from the channel selected in Interface Settings.");
+TRANSLATE_NOOP("FullscreenUI", "Enable Show Advanced Settings in the app-wide Advanced Settings page to expose per-game VU clamping and recompiler options.");
 TRANSLATE_NOOP("FullscreenUI", "Patches");
 TRANSLATE_NOOP("FullscreenUI", "Cheats");
 TRANSLATE_NOOP("FullscreenUI", "Dark");
