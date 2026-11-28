@@ -29,7 +29,7 @@ static void EmitRandom(int n) {
 	armAsm->Ldr(a64::q28, a64::MemOperand(a64::x27, offsetof(CState, minvals)));
 	for (int k = 0; k < n; k++) {
 		const int d = rng() % 8, a = rng() % 8, b = rng() % 8;
-		switch (rng() % 20) {
+		switch (rng() % 22) {
 			case 0: case 1: case 2: Clamp(d, false); break;
 			case 3: Clamp(d, true); break;
 			case 4: armAsm->Fadd(V(d).V4S(), V(a).V4S(), V(b).V4S()); break;
@@ -48,6 +48,8 @@ static void EmitRandom(int n) {
 			case 17: armAsm->Fneg(V(d).V4S(), V(a).V4S()); break;
 			case 18: armAsm->Fabs(V(d).V4S(), V(a).V4S()); break;
 			case 19: armAsm->And(V(d).V16B(), V(a).V16B(), V(b).V16B()); break;
+			case 20: armAsm->Bic(V(d).V16B(), V(a).V16B(), V(b).V16B()); break;
+			case 21: armAsm->Eor(V(d).V16B(), V(a).V16B(), V(a).V16B()); break;
 		}
 	}
 	Sync();
@@ -66,8 +68,16 @@ static bool TestRangePreservingPropagation() {
 		Clamp(2, false);
 		armAsm->And(V(3).V16B(), V(2).V16B(), V(4).V16B());
 		Clamp(3, false);
+		armAsm->Bic(V(5).V16B(), V(3).V16B(), V(4).V16B());
+		Clamp(5, false);
+		armAsm->Eor(V(6).V16B(), V(7).V16B(), V(7).V16B());
+		Clamp(6, false);
+		armAsm->Mov(V(7).V16B(), V(3).V16B());
+		armAsm->Ins(V(7).V4S(), 1, V(5).V4S(), 2);
+		Clamp(7, false);
 	});
-	if ((g_mask & 15u) != 15u || g_emitted != 1 || g_skipped != 3) {
+	constexpr u32 expected_mask = 0xefu;
+	if ((g_mask & expected_mask) != expected_mask || g_emitted != 1 || g_skipped != 6) {
 		std::printf("range-preserving clamp propagation failed: mask=%08x emitted=%u skipped=%u\n", g_mask, g_emitted, g_skipped);
 		return false;
 	}
@@ -80,12 +90,14 @@ static bool TestRangePreservingPropagation() {
 			io.vin[4][lane] = 0xffffffffu;
 		}
 		j.run(io, *reinterpret_cast<State*>(&g_c));
-		for (u32 reg = 0; reg < 4; reg++)
+		for (u32 reg = 0; reg < 8; reg++) {
+			if (!(expected_mask & (1u << reg))) continue;
 			for (u32 lane = 0; lane < 4; lane++)
 				if (!InRange(io.vout[reg][lane], false)) {
 					std::printf("range-preserving operation produced out-of-range v%u lane %u = %08x\n", reg, lane, io.vout[reg][lane]);
 					return false;
 				}
+		}
 	}
 	return true;
 }
