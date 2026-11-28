@@ -276,6 +276,9 @@ All contributions to this project are welcome! There's a lot still to be re-impl
 
 If you don't know/don't want to code, please just open issues for games not rendering properly, app crashes, missing features, or anything else that needs done/fixing.
 
+[AGENTS.md](AGENTS.md) has the working notes for code changes: layout, building and testing without a Switch,
+reading the logs and crash reports, recompiler conventions, known traps and the current performance work.
+
 ## Additional Credits
 
 [ARMSX2](https://armsx2.net/) - ARMSX2-NX would never have got anywhere near the performance it (already doesn't) have without the outstanding work of the ARSMX2 team. 
