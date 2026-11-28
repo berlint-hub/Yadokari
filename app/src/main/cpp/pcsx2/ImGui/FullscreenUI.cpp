@@ -335,7 +335,7 @@ namespace FullscreenUI
 	static void DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& settings_lock);
 	static void DrawControllerSettingsPage();
 	static void DrawHotkeySettingsPage();
-	static void DrawAdvancedSettingsPage();
+	static void DrawAdvancedSettingsPage(bool show_advanced_settings);
 	static void DrawPatchesOrCheatsSettingsPage(bool cheats);
 	static void DrawGameFixesSettingsPage();
 
@@ -3384,7 +3384,8 @@ void FullscreenUI::DrawSettingsWindow()
 				break;
 
 			case SettingsPage::Advanced:
-				DrawAdvancedSettingsPage();
+				// The settings lock is held here; pass the value computed before locking to avoid re-locking it.
+				DrawAdvancedSettingsPage(show_advanced_settings);
 				break;
 
 			case SettingsPage::GameFixes:
@@ -5315,7 +5316,7 @@ void FullscreenUI::DrawFoldersSettingsPage()
 	EndMenuButtons();
 }
 
-void FullscreenUI::DrawAdvancedSettingsPage()
+void FullscreenUI::DrawAdvancedSettingsPage(bool show_advanced_settings)
 {
 	static constexpr const char* ee_rounding_mode_settings[] = {
 		FSUI_NSTR("Nearest"),
@@ -5325,8 +5326,6 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 	};
 
 	SettingsInterface* bsi = GetEditingSettingsInterface();
-
-	const bool show_advanced_settings = ShouldShowAdvancedSettings(bsi);
 
 	BeginMenuButtons();
 
