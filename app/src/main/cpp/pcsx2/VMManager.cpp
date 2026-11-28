@@ -1021,15 +1021,29 @@ void VMManager::ApplyGameFixes()
 	}
 
 	const GameDatabaseSchema::GameEntry* game = GameDatabase::findGame(s_disc_serial);
-	if (!game)
-		return;
+	if (game)
+	{
+		game->applyGameFixes(EmuConfig, EmuConfig.EnableGameFixes);
+		game->applyGSHardwareFixes(EmuConfig.GS);
 
-	game->applyGameFixes(EmuConfig, EmuConfig.EnableGameFixes);
-	game->applyGSHardwareFixes(EmuConfig.GS);
+		// Re-remove upscaling fixes, make sure they don't apply at native res.
+		// We do this in LoadCoreSettings(), but game fixes get applied afterwards because of the unsafe warning.
+		EmuConfig.GS.MaskUpscalingHacks();
+	}
 
-	// Re-remove upscaling fixes, make sure they don't apply at native res.
-	// We do this in LoadCoreSettings(), but game fixes get applied afterwards because of the unsafe warning.
-	EmuConfig.GS.MaskUpscalingHacks();
+#ifdef __SWITCH__
+	// The game database's VU1 clamp mode normally replaces the user's. This setting (usually per game) replaces it
+	// in turn, to trade accuracy for speed: Extra clamping is about a third of the hottest VU1 code in Gran Turismo 4.
+	// Called with the settings lock held, so read the layered interface directly.
+	const int vu1_clamp = Host::GetSettingsInterface()->GetIntValue("EmuCore/CPU/Recompiler", "vu1ClampOverride", -1);
+	if (vu1_clamp >= 0 && vu1_clamp <= 3)
+	{
+		Console.WriteLn("VU1 clamp mode %d (overrides the game database)", vu1_clamp);
+		EmuConfig.Cpu.Recompiler.vu1Overflow = (vu1_clamp >= 1);
+		EmuConfig.Cpu.Recompiler.vu1ExtraOverflow = (vu1_clamp >= 2);
+		EmuConfig.Cpu.Recompiler.vu1SignOverflow = (vu1_clamp >= 3);
+	}
+#endif
 }
 
 void VMManager::ApplySettings()

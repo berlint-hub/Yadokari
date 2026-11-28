@@ -140,6 +140,14 @@ each frame) during the boot logos and menus, so gameplay no longer pauses to cre
 discarded after an emulator, driver or GPU feature change. Turn it off with
 `[EmuCore/GS] VulkanPipelinePrewarm = false` in `armsx2.ini`.
 
+## VU1 clamping override
+
+The game database sets how strictly each game's VU1 code clamps out-of-range floats, and that normally replaces the
+**VU1 Clamping Mode** setting. **Settings > Advanced > VU1 Clamping Override** (best set in a game's own
+properties) replaces the database's choice in turn. Gran Turismo 4 is set to *Extra*, which clamps the operands
+and the result of every VU1 float operation; its hottest VU1 code is about a third clamps. *Normal* is much
+lighter on VU1 but can break graphics in games that need *Extra*.
+
 ## Performance log and profiler
 
 While a game runs, the log (`sdmc:/switch/armsx2/logs/emulog.txt`) gets a summary every 5 seconds:

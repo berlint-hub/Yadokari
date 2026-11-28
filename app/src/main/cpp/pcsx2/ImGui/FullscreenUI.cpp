@@ -5320,6 +5320,22 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 			ee_rounding_mode_settings, std::size(ee_rounding_mode_settings), true);
 		DrawClampingModeSetting(bsi, FSUI_CSTR("VU1 Clamping Mode"),
 			FSUI_CSTR("Determines how out-of-range floating point numbers are handled. Some games need specific settings."), 1);
+#ifdef __SWITCH__
+		{
+			static constexpr const char* vu1_clamp_override_options[] = {
+				FSUI_NSTR("Use Game Database"),
+				FSUI_NSTR("None"),
+				FSUI_NSTR("Normal (Default)"),
+				FSUI_NSTR("Extra"),
+				FSUI_NSTR("Extra + Preserve Sign"),
+			};
+			DrawIntListSetting(bsi, FSUI_CSTR("VU1 Clamping Override"),
+				FSUI_CSTR("Replaces the game database's VU1 clamping mode, which otherwise takes precedence over the setting above. "
+						  "Lower clamping is faster but can break graphics."),
+				"EmuCore/CPU/Recompiler", "vu1ClampOverride", -1, vu1_clamp_override_options,
+				std::size(vu1_clamp_override_options), true, -1);
+		}
+#endif
 		DrawToggleSetting(bsi, FSUI_CSTR("Enable VU0 Recompiler (Micro Mode)"),
 			FSUI_CSTR("New Vector Unit recompiler with much improved compatibility. Recommended."), "EmuCore/CPU/Recompiler", "EnableVU0",
 			true);
