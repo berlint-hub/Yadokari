@@ -1259,8 +1259,13 @@ namespace
 			svcSleepThread(static_cast<s64>(settings.sample ? settings.sample_period_us : 100000u) * 1000);
 
 			const u64 now = GetTimeNs();
-			if (state == VMState::Paused)
+			// The loop wakes at least every 100 ms, so a much longer gap means the console was asleep: count it
+			// like a pause, or it would be averaged into this interval's speed and fps.
+			const bool slept = (now - last_iteration) > 2000000000ull;
+			if (state == VMState::Paused || slept)
 				paused_ns += now - last_iteration;
+			if (slept)
+				INFO_LOG("[Perf] console was asleep for {:.0f}s", static_cast<double>(now - last_iteration) / 1.0e9);
 			last_iteration = now;
 
 			if (state == VMState::Running && now >= next_clock_read)
@@ -1377,7 +1382,9 @@ void HorizonProfiler::OnVMDestroyed()
 void HorizonProfiler::OnFrame(float frame_time_ms)
 {
 	GSFrameState& st = s_gs_state;
-	if (!s_running.load(std::memory_order_acquire))
+	// A frame "taking" over 10 s spans a sleep of the console (or a debugger stop), not emulation: start over from
+	// the next frame instead of reporting it as a hitch.
+	if (!s_running.load(std::memory_order_acquire) || frame_time_ms > 10000.0f)
 	{
 		st.valid = false;
 		return;
