@@ -1002,8 +1002,8 @@ namespace
 				NsToMs(Counters(Counter::A64EmitNs, c)), NsToMs(Counters(Counter::A64FinalizeNs, c)),
 				NsToMs(Counters(Counter::A64SetupNs, c)), NsToMs(Counters(Counter::A64DestroyNs, c)),
 				NsToMs(Counters(Counter::A64IcacheNs, c)), Counters(Counter::VU0A64AsmBlocks, c),
-				Counters(Counter::VU0A64AsmBytes, c) / 1024, Counters(Counter::VU1A64AsmBlocks, c),
-				Counters(Counter::VU1A64AsmBytes, c) / 1024);
+				Counters(Counter::VU0A64AsmBytes, c) / 1024.0, Counters(Counter::VU1A64AsmBlocks, c),
+				Counters(Counter::VU1A64AsmBytes, c) / 1024.0);
 		line += fmt::format(" | EE wait VU {:.1f} GS {:.1f} vsync {:.1f}", NsToMs(Counters(Counter::EEWaitVUNs, c)),
 			NsToMs(Counters(Counter::EEWaitGSNs, c)), NsToMs(Counters(Counter::EEWaitVsyncNs, c)));
 		line += fmt::format(" | GS wait idle {:.1f} swap {:.1f} gpu {:.1f}", NsToMs(Counters(Counter::GSWaitWorkNs, c)),
