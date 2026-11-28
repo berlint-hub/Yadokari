@@ -170,20 +170,35 @@ static void mVUupdateFlags(mV, const xmm& reg, const xmm& regT1in = a64::NoVReg,
 			armAsm->And(sReg, sReg, 0xfffc00ff); // Clear O,U,S,Z flags
 	}
 
-	// Builds the same mReg = (sign bits << 4) | zero bits as PSHUFD + 2x MOVMSKPS in the original, in 9
-	// instructions and without allocating temporaries (q29-q31 are codegen scratch, reg is never one of them).
-	// Bit order matches the original flip: bit 3 = X when the MAC flag is written by a non-scalar op,
-	// otherwise bit 0 = X. AND_XYZW masks in that same order.
-	const bool flipLanes = mFLAG.doFlag && !(_XYZW_SS && modXYZW);
-	armAsm->Ldr(RQSCRATCH2.Q(), flipLanes ? PTR_CPU(mVUss4.movmsk_weights_rev) : PTR_CPU(mVUss4.movmsk_weights));
-	armAsm->Cmlt(RQSCRATCH3.V4S(), reg.V4S(), 0); // sign bit set
-	armAsm->Fcmeq(RQSCRATCH.V4S(), reg.V4S(), 0.0); // +0 or -0
-	armAsm->And(RQSCRATCH3.V16B(), RQSCRATCH3.V16B(), RQSCRATCH2.V16B());
-	armAsm->And(RQSCRATCH.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B());
-	armAsm->Sli(RQSCRATCH.V4S(), RQSCRATCH3.V4S(), 4);
-	armAsm->Addv(RQSCRATCH.S(), RQSCRATCH.V4S());
-	armAsm->Fmov(mReg, RQSCRATCH.S());
-	armAsm->And(mReg, mReg, ((AND_XYZW) << 4) | (AND_XYZW));
+	if (_XYZW_SS && modXYZW)
+	{
+		// A scalar VU op only updates flags from lane X. Extract the raw sign bit and
+		// compare only lane X for zero, instead of loading lane weights and reducing four
+		// SIMD lanes (9 instructions). FCMEQ preserves the existing FPCR denormal behavior.
+		armAsm->Fmov(mReg, reg.S());
+		armAsm->Lsr(mReg, mReg, 31);
+		armAsm->Fcmeq(RSSCRATCH, reg.S(), 0.0);
+		armAsm->Fmov(gprT2, RSSCRATCH);
+		armAsm->Lsr(gprT2, gprT2, 31);
+		armAsm->Orr(mReg, mReg, a64::Operand(gprT2, a64::LSL, 4));
+	}
+	else
+	{
+		// Builds the same mReg = (sign bits << 4) | zero bits as PSHUFD + 2x MOVMSKPS in the original, in 9
+		// instructions and without allocating temporaries (q29-q31 are codegen scratch, reg is never one of them).
+		// Bit order matches the original flip: bit 3 = X when the MAC flag is written by a non-scalar op,
+		// otherwise bit 0 = X. AND_XYZW masks in that same order.
+		const bool flipLanes = mFLAG.doFlag;
+		armAsm->Ldr(RQSCRATCH2.Q(), flipLanes ? PTR_CPU(mVUss4.movmsk_weights_rev) : PTR_CPU(mVUss4.movmsk_weights));
+		armAsm->Cmlt(RQSCRATCH3.V4S(), reg.V4S(), 0); // sign bit set
+		armAsm->Fcmeq(RQSCRATCH.V4S(), reg.V4S(), 0.0); // +0 or -0
+		armAsm->And(RQSCRATCH3.V16B(), RQSCRATCH3.V16B(), RQSCRATCH2.V16B());
+		armAsm->And(RQSCRATCH.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B());
+		armAsm->Sli(RQSCRATCH.V4S(), RQSCRATCH3.V4S(), 4);
+		armAsm->Addv(RQSCRATCH.S(), RQSCRATCH.V4S());
+		armAsm->Fmov(mReg, RQSCRATCH.S());
+		armAsm->And(mReg, mReg, ((AND_XYZW) << 4) | (AND_XYZW));
+	}
 
 	//-------------------------Write back flags------------------------------
 	if (mFLAG.doFlag)
