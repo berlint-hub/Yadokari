@@ -168,7 +168,19 @@ jobs:
             -DARMSX2_UPDATE_TAG="${{ steps.channel.outputs.tag }}"
 
       - name: Build
-        run: cmake --build build/switch-core --target armsx2_nro -j"$(nproc)"
+        run: |
+          set -o pipefail
+          if ! cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee /tmp/armsx2-build.log; then
+            errors=$(grep -E '(^|[[:space:]])(fatal )?error:|undefined reference|collect2:|make: \*\*\*|Error [0-9]' /tmp/armsx2-build.log | tail -n 20 || true)
+            if [ -z "$errors" ]; then
+              errors=$(tail -n 20 /tmp/armsx2-build.log)
+            fi
+            while IFS= read -r line; do
+              escaped=$(printf '%s' "$line" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e 's/\n/%0A/g')
+              echo "::error title=Build diagnostic::$escaped"
+            done <<< "$errors"
+            exit 1
+          fi
 
       - name: Summary
         run: |
