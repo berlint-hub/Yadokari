@@ -3,7 +3,7 @@
 
 // Tracks which host vector registers hold a value that is already clamped to [-FLT_MAX, FLT_MAX] in every lane,
 // by reading the A64 instructions that were actually emitted. microVU uses it to skip a clamp of a register
-// that nothing has written since it was clamped (or that is a MOV/DUP copy of a clamped register): with
+// that nothing has written since it was clamped, or a range-preserving MOV/DUP/AND/FABS/FNEG transform: with
 // "extra" VU clamping about a third of the clamps in GT4's VU1 code were of that kind.
 //
 // Everything is conservative: an instruction that may write a vector register clears it, and unconditional
@@ -60,6 +60,24 @@ namespace ClampTracker
 
 			// DUP Vd.<T>, Vn.<Ts>[i]: lanes of Vn (the 64-bit forms zero the upper half).
 			if ((insn & 0xBFE0FC00u) == 0x0E000400u)
+				return (mask & (1u << rn)) ? (mask | (1u << rd)) : (mask & ~(1u << rd));
+
+			// AND Vd.16B, Vn.16B, Vm.16B: every output bit is a subset of either input.
+			// In particular, a finite FP32 input with exponent != 255 cannot become Inf/NaN
+			// or grow past FLT_MAX by clearing bits. This covers the VU ABS sign-bit mask.
+			if ((insn & 0xBFE0FC00u) == 0x0E201C00u)
+			{
+				const uint32_t rm = (insn >> 16) & 31;
+				const uint32_t sources = (1u << rn) | (1u << rm);
+				return (mask & sources) ? (mask | (1u << rd)) : (mask & ~(1u << rd));
+			}
+
+			// FABS/FNEG Vd.<2S|4S>, Vn.<2S|4S>: these preserve finite values in
+			// [-FLT_MAX, FLT_MAX]. Restrict to FP32 so half/double operations are not
+			// mistaken for range-preserving transforms of the VU's single-precision values.
+			const uint32_t fp_misc = insn & 0xBF3FFC00u;
+			if ((insn & 0x00400000u) == 0 &&
+				(fp_misc == 0x0E20F800u || fp_misc == 0x2E20F800u))
 				return (mask & (1u << rn)) ? (mask | (1u << rd)) : (mask & ~(1u << rd));
 
 			return mask & ~(1u << rd);

@@ -29,7 +29,7 @@ static void EmitRandom(int n) {
 	armAsm->Ldr(a64::q28, a64::MemOperand(a64::x27, offsetof(CState, minvals)));
 	for (int k = 0; k < n; k++) {
 		const int d = rng() % 8, a = rng() % 8, b = rng() % 8;
-		switch (rng() % 18) {
+		switch (rng() % 20) {
 			case 0: case 1: case 2: Clamp(d, false); break;
 			case 3: Clamp(d, true); break;
 			case 4: armAsm->Fadd(V(d).V4S(), V(a).V4S(), V(b).V4S()); break;
@@ -46,12 +46,51 @@ static void EmitRandom(int n) {
 			case 15: armAsm->Movi(V(d).V4S(), 0xff, a64::LSL, 24 * (rng() % 2)); break;
 			case 16: armAsm->Fadd(V(d).S(), V(a).S(), V(b).S()); break;
 			case 17: armAsm->Fneg(V(d).V4S(), V(a).V4S()); break;
+			case 18: armAsm->Fabs(V(d).V4S(), V(a).V4S()); break;
+			case 19: armAsm->And(V(d).V16B(), V(a).V16B(), V(b).V16B()); break;
 		}
 	}
 	Sync();
 }
 static bool InRange(u32 v, bool fz) { if ((v & 0x7f800000u) == 0x7f800000u) return false; if (fz && (v & 0x7f800000u) == 0 && (v & 0x007fffffu)) return false; return true; }
+static bool TestRangePreservingPropagation() {
+	g_mask = 0; g_off = 0; g_skipped = g_emitted = 0;
+	Jit j([&] {
+		g_off = armAsm->GetCursorOffset();
+		armAsm->Ldr(a64::q27, a64::MemOperand(a64::x27, offsetof(CState, maxvals)));
+		armAsm->Ldr(a64::q28, a64::MemOperand(a64::x27, offsetof(CState, minvals)));
+		Clamp(0, false);
+		armAsm->Fneg(V(1).V4S(), V(0).V4S());
+		Clamp(1, false);
+		armAsm->Fabs(V(2).V4S(), V(1).V4S());
+		Clamp(2, false);
+		armAsm->And(V(3).V16B(), V(2).V16B(), V(4).V16B());
+		Clamp(3, false);
+	});
+	if ((g_mask & 15u) != 15u || g_emitted != 1 || g_skipped != 3) {
+		std::printf("range-preserving clamp propagation failed: mask=%08x emitted=%u skipped=%u\n", g_mask, g_emitted, g_skipped);
+		return false;
+	}
+	const u32 values[] = {0u, 0x80000000u, 0x7f800000u, 0xff800000u, 0x7fc00000u, 0xffc00000u,
+		0x7f800001u, 0x7f7fffffu, 0xff7fffffu, 0x00000001u, 0x807fffffu};
+	for (u32 value : values) {
+		Io io = {};
+		for (u32 lane = 0; lane < 4; lane++) {
+			io.vin[0][lane] = value;
+			io.vin[4][lane] = 0xffffffffu;
+		}
+		j.run(io, *reinterpret_cast<State*>(&g_c));
+		for (u32 reg = 0; reg < 4; reg++)
+			for (u32 lane = 0; lane < 4; lane++)
+				if (!InRange(io.vout[reg][lane], false)) {
+					std::printf("range-preserving operation produced out-of-range v%u lane %u = %08x\n", reg, lane, io.vout[reg][lane]);
+					return false;
+				}
+	}
+	return true;
+}
 int main() {
+	if (!TestRangePreservingPropagation()) return 1;
 	const u32 sp[] = {0, 0x80000000u, 0x7f800000u, 0xff800000u, 0x7fc00000u, 0xffc00000u, 0x7f800001u, 0x7f7fffffu, 0xff7fffffu, 0x00000001u, 0x807fffffu, 0x3f800000u, 0x7f000000u};
 	u64 checked = 0, claimed = 0;
 	for (int prog = 0; prog < 4000; prog++) {
