@@ -9,6 +9,11 @@
 #include "common/Console.h"
 #include "common/HostSys.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#include "Memory.h"
+#endif
+
 const a64::Register& armWRegister(int n)
 {
     using namespace vixl::aarch64;
@@ -68,6 +73,10 @@ const a64::VRegister& armQRegister(int n)
 
 thread_local a64::MacroAssembler* armAsm;
 thread_local u32 armCodegenBarrier = 0;
+#ifdef __SWITCH__
+static thread_local u64 armEmitStartNs;
+static thread_local u32 armEmitTarget = 0; // 0 = other, 1 = VU0 code cache, 2 = VU1 code cache
+#endif
 thread_local u8* armAsmPtr;
 thread_local size_t armAsmCapacity;
 thread_local ArmConstantPool* armConstantPool;
@@ -105,9 +114,24 @@ u8* armStartBlock()
     pxAssert(!armAsm);
     // armAsmPtr is the executable pointer, which is identical the writeable
     // pointer on everything but Horizon because AAAAAAA
+#ifdef __SWITCH__
+    const uptr code_addr = reinterpret_cast<uptr>(armAsmPtr);
+    const uptr vu0_start = reinterpret_cast<uptr>(SysMemory::GetVU0Rec());
+    const uptr vu0_end = reinterpret_cast<uptr>(SysMemory::GetVU0RecEnd());
+    const uptr vu1_start = reinterpret_cast<uptr>(SysMemory::GetVU1Rec());
+    const uptr vu1_end = reinterpret_cast<uptr>(SysMemory::GetVU1RecEnd());
+    armEmitTarget = (code_addr >= vu0_start && code_addr < vu0_end) ? 1 :
+                    (code_addr >= vu1_start && code_addr < vu1_end) ? 2 : 0;
+    const u64 setup_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     armAsm = new a64::MacroAssembler(static_cast<vixl::byte*>(HostSys::JitGetWritablePointer(armAsmPtr)), armAsmCapacity);
     armAsm->GetScratchVRegisterList()->Remove(31);
     armAsm->GetScratchRegisterList()->Remove(RSCRATCHADDR.GetCode());
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64AsmBlocks);
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64SetupNs, HorizonProfiler::GetTimeNs() - setup_start_ns);
+    armEmitStartNs = HorizonProfiler::GetTimeNs();
+#endif
     return armAsmPtr;
 }
 
@@ -115,17 +139,52 @@ u8* armEndBlock()
 {
     pxAssert(armAsm);
 
+#ifdef __SWITCH__
+    const u64 emit_ns = HorizonProfiler::GetTimeNs() - armEmitStartNs;
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64EmitNs, emit_ns);
+    if (armEmitTarget == 1)
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64EmitNs, emit_ns);
+    else if (armEmitTarget == 2)
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64EmitNs, emit_ns);
+    const u64 finalize_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     armAsm->FinalizeCode();
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64FinalizeNs, HorizonProfiler::GetTimeNs() - finalize_start_ns);
+#endif
 
     const u32 size = static_cast<u32>(armAsm->GetSizeOfCodeGenerated());
     pxAssert(size < armAsmCapacity);
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64AsmBytes, size);
+    if (armEmitTarget == 1)
+    {
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64AsmBlocks);
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64AsmBytes, size);
+    }
+    else if (armEmitTarget == 2)
+    {
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64AsmBlocks);
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64AsmBytes, size);
+    }
+    const u64 destroy_start_ns = HorizonProfiler::GetTimeNs();
+#endif
 
     delete armAsm;
     armAsm = nullptr;
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64DestroyNs, HorizonProfiler::GetTimeNs() - destroy_start_ns);
+#endif
 
     HostSys::EndCodeWrite();
 
+#ifdef __SWITCH__
+    const u64 icache_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     HostSys::FlushInstructionCache(armAsmPtr, size);
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64IcacheNs, HorizonProfiler::GetTimeNs() - icache_start_ns);
+#endif
 
     armAsmPtr = armAsmPtr + size;
     armAsmCapacity -= size;

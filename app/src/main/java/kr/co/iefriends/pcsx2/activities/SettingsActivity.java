@@ -1461,6 +1461,28 @@ public class SettingsActivity extends AppCompatActivity {
             });
         }
 
+        Slider sbVu1Skip = findViewById(R.id.sb_vu1_cycle_skip);
+        TextView tvVu1Skip = findViewById(R.id.tv_vu1_cycle_skip);
+        if (sbVu1Skip != null && tvVu1Skip != null) {
+            final String[] vu1SkipLabels = {"Off", "Every 2nd dispatch", "Every 4th dispatch", "Every 8th dispatch"};
+            try {
+                String skip = NativeApp.getSetting("EmuCore/Speedhacks", "VU1CycleSkip", "int");
+                int v = (skip == null || skip.isEmpty()) ? 0 : Integer.parseInt(skip);
+                v = Math.max(0, Math.min(3, v));
+                sbVu1Skip.setValue(v);
+                tvVu1Skip.setText(getString(R.string.settings_vu1_cycle_skip_value, vu1SkipLabels[v]));
+            } catch (Exception ignored) {
+                sbVu1Skip.setValue(0f);
+                tvVu1Skip.setText(R.string.settings_vu1_cycle_skip_default);
+            }
+            sbVu1Skip.addOnChangeListener((slider, value, fromUser) -> {
+                int v = Math.max(0, Math.min(3, Math.round(value)));
+                if (v != Math.round(value)) slider.setValue(v);
+                tvVu1Skip.setText(getString(R.string.settings_vu1_cycle_skip_value, vu1SkipLabels[v]));
+                NativeApp.speedhackVu1cycleskip(v);
+            });
+        }
+
 		MaterialSwitch swWaitLoop = findViewById(R.id.sw_wait_loop);
 		if (swWaitLoop != null) {
 			boolean enabled = true;

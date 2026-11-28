@@ -1055,6 +1055,7 @@ struct Pcsx2Config
 		static constexpr s8 MIN_EE_CYCLE_RATE = -3;
 		static constexpr s8 MAX_EE_CYCLE_RATE = 3;
 		static constexpr u8 MAX_EE_CYCLE_SKIP = 3;
+		static constexpr u8 MAX_VU1_CYCLE_SKIP = 3;
 
 		BITFIELD32()
 		bool
@@ -1068,6 +1069,7 @@ struct Pcsx2Config
 
 		s8 EECycleRate; // EE cycle rate selector (1.0, 1.5, 2.0)
 		u8 EECycleSkip; // EE Cycle skip factor (0, 1, 2, or 3)
+		u8 VU1CycleSkip; // Experimental: skip every 2/4/8th threaded VU1 dispatch (0 = off)
 
 		SpeedhackOptions();
 		void LoadSave(SettingsWrapper& conf);

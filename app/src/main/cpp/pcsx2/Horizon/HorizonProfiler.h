@@ -33,6 +33,23 @@ namespace HorizonProfiler
 		VU1Programs,
 		VU1CacheResets,
 
+		// AArch64 assembler (all JITs: EE, IOP, VU0/VU1, VIF). EmitNs is the time
+		// spent between MacroAssembler construction and FinalizeCode; it includes the
+		// emulator's code-generation logic as well as calls into VIXL.
+		A64AsmBlocks,
+		A64AsmBytes,
+		A64EmitNs,
+		A64SetupNs,
+		A64FinalizeNs,
+		A64DestroyNs,
+		A64IcacheNs,
+		VU0A64AsmBlocks,
+		VU0A64AsmBytes,
+		VU0A64EmitNs,
+		VU1A64AsmBlocks,
+		VU1A64AsmBytes,
+		VU1A64EmitNs,
+
 		// GS thread / Vulkan
 		VKPipelines,
 		VKPipelineNs,

@@ -117,6 +117,8 @@ void VU_Thread::Close()
 void VU_Thread::Reset()
 {
 	vuCycleIdx = 0;
+	m_vu1DispatchCount = 0;
+	m_vu1SkippedDispatches = 0;
 	m_ato_write_pos = 0;
 	m_write_pos = 0;
 	m_ato_read_pos = 0;
@@ -153,7 +155,30 @@ void VU_Thread::ExecuteRingBuffer()
 					if (addr != -1)
 						VU1.VI[REG_TPC].UL = addr & 0x7FF;
 					CpuVU1->SetStartPC(VU1.VI[REG_TPC].UL << 3);
-					CpuVU1->Execute(vu1RunCycles);
+
+					// Experimental, deliberately destructive speedhack: drop one complete VU1
+					// dispatch at a configurable interval, then approximate its time from recent
+					// runs. This does NOT skip harmless idle cycles: all VU register/memory writes,
+					// branches, interrupts, and GIF output from the dropped dispatch are lost.
+					const u32 dispatch = ++m_vu1DispatchCount;
+					const u8 skip_mode = EmuConfig.Speedhacks.VU1CycleSkip;
+					const u32 skip_interval = skip_mode ? (1u << (skip_mode + 1)) : 0;
+					const bool skip_vu1 = skip_interval != 0 && (dispatch % skip_interval) == 0;
+					if (skip_vu1)
+					{
+						VU1.cycle = std::max(Get_vuCycles(), 4u);
+						++m_vu1SkippedDispatches;
+						if ((m_vu1SkippedDispatches & 0xffu) == 1)
+							INFO_LOG("MTVU experimental cycle skip: dropped {} VU1 dispatches (mode {}, every {}th)",
+								m_vu1SkippedDispatches, static_cast<u32>(skip_mode), skip_interval);
+					}
+					else
+					{
+						CpuVU1->Execute(vu1RunCycles);
+					}
+
+					// Keep packet completion and GS wakeup unconditional; otherwise a dropped
+					// dispatch would deadlock the producer/consumer queue.
 					gifUnit.gifPath[GIF_PATH_1].FinishGSPacketMTVU();
 					semaXGkick.Post(); // Tell MTGS a path1 packet is complete
 					vuCycles[vuCycleIdx].store(VU1.cycle, std::memory_order_release);

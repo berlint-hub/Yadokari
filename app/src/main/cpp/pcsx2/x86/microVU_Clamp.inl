@@ -132,11 +132,24 @@ void mVUclamp2(microVU& mVU, const xmm& reg, const xmm& regT1in, int xyzw, bool 
 {
 	if (((!clampE && CHECK_VU_SIGN_OVERFLOW(mVU.index)) || (clampE && bClampE && CHECK_VU_SIGN_OVERFLOW(mVU.index))) && mVU.regAlloc->checkVFClamp(reg.GetCode()))
 	{
-		int i = (xyzw == 1 || xyzw == 2 || xyzw == 4 || xyzw == 8) ? 0 : 1;
-//		xPMIN.SD(reg, ptr128[&sse4_maxvals[i][0]]);
-        armAsm->Smin(reg.V4S(), reg.V4S(), armLoadPtrV(PTR_CPU(mVUss4.sse4_maxvals[i][0])).V4S());
-//		xPMIN.UD(reg, ptr128[&sse4_minvals[i][0]]);
-        armAsm->Umin(reg.V4S(), reg.V4S(), armLoadPtrV(PTR_CPU(mVUss4.sse4_minvals[i][0])).V4S());
+		const bool scalar = (xyzw == 1 || xyzw == 2 || xyzw == 4 || xyzw == 8);
+		if (!scalar && mVUloadClampConsts(mVU))
+		{
+			// The full-width sign-preserving bounds are the same +FLT_MAX/-FLT_MAX
+			// pair as the resident result-clamp constants. Reuse q27/q28 instead of
+			// reloading both vectors for every operand clamp. Scalar mode has sentinel
+			// lanes, and COP2 has its own clamp state, so both keep the table loads.
+			armAsm->Smin(reg.V4S(), reg.V4S(), xmmClampMax.V4S());
+			armAsm->Umin(reg.V4S(), reg.V4S(), xmmClampMin.V4S());
+		}
+		else
+		{
+			const int i = scalar ? 0 : 1;
+//			xPMIN.SD(reg, ptr128[&sse4_maxvals[i][0]]);
+			armAsm->Smin(reg.V4S(), reg.V4S(), armLoadPtrV(PTR_CPU(mVUss4.sse4_maxvals[i][0])).V4S());
+//			xPMIN.UD(reg, ptr128[&sse4_minvals[i][0]]);
+			armAsm->Umin(reg.V4S(), reg.V4S(), armLoadPtrV(PTR_CPU(mVUss4.sse4_minvals[i][0])).V4S());
+		}
 		return;
 	}
 	else

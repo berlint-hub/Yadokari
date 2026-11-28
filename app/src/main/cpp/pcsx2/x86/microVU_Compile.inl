@@ -78,8 +78,15 @@ void mVUsetupRange(microVU& mVU, s32 pc, bool isStartPC)
 		return;
 	}
 
+	// Cache only the newly covered part. A merged range may contain many blocks
+	// already cached; recopying that whole union on every extension makes program
+	// discovery quadratic in the amount of microcode covered so far. An end of -1
+	// marks a newly opened range, whose first covered byte is its start.
+	const s32 copyStart = (mVUrange.end >= 0) ? mVUrange.end : mVUrange.start;
+	s32 copyEnd;
 	if (mVUrange.start <= cur_pc)
 	{
+		copyEnd = cur_pc;
 		mVUrange.end = cur_pc;
 		s32 rStart = mVUrange.start;
 		s32 rEnd = mVUrange.end;
@@ -97,14 +104,15 @@ void mVUsetupRange(microVU& mVU, s32 pc, bool isStartPC)
 	}
 	else
 	{
+		copyEnd = mVU.microMemSize;
 		mVUrange.end = mVU.microMemSize;
 		DevCon.WriteLn(Color_Green, "microVU%d: Prog Range Wrap [%04x] [%04x] PC %x", mVU.index, mVUrange.start, mVUrange.end, cur_pc);
 		microRange mRange = {0, cur_pc };
 		ranges->push_front(mRange);
 	}
 
-	if(!doWholeProgCompare)
-		mVUcacheProg(mVU, *mVU.prog.cur);
+	if (!doWholeProgCompare)
+		mVUcacheProgRange(mVU, *mVU.prog.cur, copyStart, copyEnd);
 }
 
 //------------------------------------------------------------------
@@ -1145,10 +1153,10 @@ _mVUt void* mVUcompileJIT(u32 startPC, uptr ptr)
 			microVU& mVU = mVUx;
 			auto* pBlock = (microBlock*)ptr;
 			microJumpCache& jc = pBlock->jumpCache[startPC_8];
-			if (jc.prog && jc.prog == mVU.prog.quick[startPC_8].prog)
+			if (jc.prog && jc.prog == mVU.getQuickProgram(startPC_8))
 				return jc.x86ptrStart;
 			void* v = mVUblockFetch(mVUx, startPC, (uptr)&pBlock->pStateEnd);
-			jc.prog = mVU.prog.quick[startPC_8].prog;
+			jc.prog = mVU.getQuickProgram(startPC_8);
 			jc.x86ptrStart = v;
 			return v;
 		}
@@ -1160,10 +1168,10 @@ _mVUt void* mVUcompileJIT(u32 startPC, uptr ptr)
 		microVU& mVU = mVUx;
 		auto* pBlock = (microBlock*)ptr;
 		microJumpCache& jc = pBlock->jumpCache[startPC_8];
-		if (jc.prog && jc.prog == mVU.prog.quick[startPC_8].prog)
+		if (jc.prog && jc.prog == mVU.getQuickProgram(startPC_8))
 			return jc.x86ptrStart;
 		void* v = mVUsearchProg<vuIndex>(startPC, (uptr)&pBlock->pStateEnd);
-		jc.prog = mVU.prog.quick[startPC_8].prog;
+		jc.prog = mVU.getQuickProgram(startPC_8);
 		jc.x86ptrStart = v;
 		return v;
 	}

@@ -201,6 +201,9 @@ Open it later from Settings → Open ARMSX2 directory.</string>
     <string name="settings_ee_cycle_rate_value">EE Cycle Rate: %1$d</string>
     <string name="settings_ee_cycle_skip_default">EE Cycle Skip: 0</string>
     <string name="settings_ee_cycle_skip_value">EE Cycle Skip: %1$d</string>
+    <string name="settings_vu1_cycle_skip_default">Experimental VU1 Cycle Skip: Off</string>
+    <string name="settings_vu1_cycle_skip_value">Experimental VU1 Cycle Skip: %1$s</string>
+    <string name="settings_vu1_cycle_skip_warning">Drops complete VU1 dispatches. May cause severe visual and gameplay errors; requires MTVU.</string>
     <string name="settings_vu_thread_mtvu">VU Thread (MTVU)</string>
     <string name="settings_wait_loop_detection">Wait Loop Detection</string>
     <string name="settings_intc_spin_detection">INTC Spin Detection</string>

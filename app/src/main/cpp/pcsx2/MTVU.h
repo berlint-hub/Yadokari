@@ -24,6 +24,8 @@ class VU_Thread final {
 	alignas(__cachelinesize) std::atomic<int> m_ato_write_pos;    // Only modified by EE thread
 	alignas(__cachelinesize) int  m_read_pos; // temporary read pos (local to the VU thread)
 	int  m_write_pos; // temporary write pos (local to the EE thread)
+	u32 m_vu1DispatchCount = 0; // VU worker thread only; used by experimental cycle skipping
+	u32 m_vu1SkippedDispatches = 0; // VU worker thread only; sampled for bounded diagnostics
 	Threading::WorkSema semaEvent;
 	std::atomic_bool m_shutdown_flag{false};
 

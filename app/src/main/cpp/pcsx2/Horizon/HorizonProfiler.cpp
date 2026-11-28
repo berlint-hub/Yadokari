@@ -996,6 +996,14 @@ namespace
 			line += " | mVU cache reset";
 		if (Counters(Counter::VKPipelines, c) != 0)
 			line += fmt::format(" | VK {} pipelines {:.1f} ms", Counters(Counter::VKPipelines, c), NsToMs(Counters(Counter::VKPipelineNs, c)));
+		if (Counters(Counter::A64AsmBlocks, c) != 0)
+			line += fmt::format(" | A64 asm {} blk {} KiB emit {:.1f} ms finalize {:.2f} setup {:.2f} free {:.2f} icache {:.2f} ms (VU0 {} blk {:.1f} KiB, VU1 {} blk {:.1f} KiB)",
+				Counters(Counter::A64AsmBlocks, c), Counters(Counter::A64AsmBytes, c) / 1024,
+				NsToMs(Counters(Counter::A64EmitNs, c)), NsToMs(Counters(Counter::A64FinalizeNs, c)),
+				NsToMs(Counters(Counter::A64SetupNs, c)), NsToMs(Counters(Counter::A64DestroyNs, c)),
+				NsToMs(Counters(Counter::A64IcacheNs, c)), Counters(Counter::VU0A64AsmBlocks, c),
+				Counters(Counter::VU0A64AsmBytes, c) / 1024, Counters(Counter::VU1A64AsmBlocks, c),
+				Counters(Counter::VU1A64AsmBytes, c) / 1024);
 		line += fmt::format(" | EE wait VU {:.1f} GS {:.1f} vsync {:.1f}", NsToMs(Counters(Counter::EEWaitVUNs, c)),
 			NsToMs(Counters(Counter::EEWaitGSNs, c)), NsToMs(Counters(Counter::EEWaitVsyncNs, c)));
 		line += fmt::format(" | GS wait idle {:.1f} swap {:.1f} gpu {:.1f}", NsToMs(Counters(Counter::GSWaitWorkNs, c)),
@@ -1116,6 +1124,19 @@ namespace
 			Counters(Counter::VU1Blocks, d), NsToMs(Counters(Counter::VU1CompileNs, d)), Counters(Counter::VU1Programs, d),
 			Counters(Counter::VU0CacheResets, d) + Counters(Counter::VU1CacheResets, d), Counters(Counter::VKPipelines, d),
 			NsToMs(Counters(Counter::VKPipelineNs, d)));
+		if (Counters(Counter::A64AsmBlocks, d) != 0)
+		{
+			const double asm_blocks = static_cast<double>(Counters(Counter::A64AsmBlocks, d));
+			INFO_LOG("[Perf]   A64/VIXL: {} blocks, {:.1f} KiB | emit {:.2f} ms ({:.1f} us/block) | setup {:.2f} finalize {:.2f} destroy {:.2f} icache {:.2f} ms | VU0 {} blk {:.1f} KiB {:.2f} ms | VU1 {} blk {:.1f} KiB {:.2f} ms",
+				Counters(Counter::A64AsmBlocks, d), Counters(Counter::A64AsmBytes, d) / 1024.0,
+				NsToMs(Counters(Counter::A64EmitNs, d)),
+				static_cast<double>(Counters(Counter::A64EmitNs, d)) / asm_blocks / 1000.0,
+				NsToMs(Counters(Counter::A64SetupNs, d)), NsToMs(Counters(Counter::A64FinalizeNs, d)),
+				NsToMs(Counters(Counter::A64DestroyNs, d)), NsToMs(Counters(Counter::A64IcacheNs, d)),
+				Counters(Counter::VU0A64AsmBlocks, d), Counters(Counter::VU0A64AsmBytes, d) / 1024.0,
+				NsToMs(Counters(Counter::VU0A64EmitNs, d)), Counters(Counter::VU1A64AsmBlocks, d),
+				Counters(Counter::VU1A64AsmBytes, d) / 1024.0, NsToMs(Counters(Counter::VU1A64EmitNs, d)));
+		}
 
 		for (const HitchRecord& h : fw.hitches)
 		{

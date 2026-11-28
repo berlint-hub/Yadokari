@@ -3502,6 +3502,7 @@ void VMManager::EnforceAchievementsChallengeModeSettings()
 	EmuConfig.Speedhacks.EECycleRate =
 		std::max<decltype(EmuConfig.Speedhacks.EECycleRate)>(EmuConfig.Speedhacks.EECycleRate, 0);
 	EmuConfig.Speedhacks.EECycleSkip = 0;
+	EmuConfig.Speedhacks.VU1CycleSkip = 0;
 }
 
 void VMManager::LogUnsafeSettingsToConsole(const std::string& messages)
@@ -3544,6 +3545,8 @@ void VMManager::WarnAboutUnsafeSettings()
 		append(ICON_FA_TACHOMETER_ALT,
 			TRANSLATE_SV("VMManager", "Cycle rate/skip is not at default, this may crash or make games run too slow."));
 	}
+	if (EmuConfig.Speedhacks.VU1CycleSkip != 0)
+		append(ICON_FA_EXCLAMATION_TRIANGLE, TRANSLATE_SV("VMManager", "Experimental VU1 cycle skipping drops complete VU1 dispatches and can cause severe graphical and gameplay errors."));
 
 	const bool is_sw_renderer = EmuConfig.GS.Renderer == GSRendererType::SW;
 	if (!is_sw_renderer)

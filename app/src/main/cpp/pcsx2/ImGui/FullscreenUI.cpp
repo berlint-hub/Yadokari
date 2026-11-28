@@ -3795,6 +3795,12 @@ void FullscreenUI::DrawEmulationSettingsPage()
 		FSUI_NSTR("Moderate Underclock"),
 		FSUI_NSTR("Maximum Underclock"),
 	};
+	static constexpr const char* vu1_cycle_skip_settings[] = {
+		FSUI_NSTR("Off (Default)"),
+		FSUI_NSTR("Drop every 2nd VU1 dispatch"),
+		FSUI_NSTR("Drop every 4th VU1 dispatch"),
+		FSUI_NSTR("Drop every 8th VU1 dispatch"),
+	};
 	static constexpr const char* queue_entries[] = {
 		FSUI_NSTR("0 Frames (Hard Sync)"),
 		FSUI_NSTR("1 Frame"),
@@ -3822,6 +3828,9 @@ void FullscreenUI::DrawEmulationSettingsPage()
 	DrawIntListSetting(bsi, FSUI_CSTR("EE Cycle Skipping"),
 		FSUI_CSTR("Makes the emulated Emotion Engine skip cycles. Helps a small subset of games like SOTC. Most of the time it's harmful to performance."), "EmuCore/Speedhacks", "EECycleSkip", 0,
 		ee_cycle_skip_settings, std::size(ee_cycle_skip_settings), true);
+	DrawIntListSetting(bsi, FSUI_CSTR("Experimental VU1 Cycle Skipping"),
+		FSUI_CSTR("Drops complete threaded VU1 dispatches and estimates their timing. This can remove geometry, state updates, or interrupts and may break games; use only for experiments."),
+		"EmuCore/Speedhacks", "VU1CycleSkip", 0, vu1_cycle_skip_settings, std::size(vu1_cycle_skip_settings), true);
 	DrawToggleSetting(bsi, FSUI_CSTR("Enable MTVU (Multi-Threaded VU1)"),
 		FSUI_CSTR("Generally a speedup on CPUs with 4 or more cores. Safe for most games, but a few are incompatible and may hang."), "EmuCore/Speedhacks", "vuThread", false);
 	DrawToggleSetting(bsi, FSUI_CSTR("Thread Pinning"),
