@@ -187,6 +187,7 @@ namespace FullscreenUI
 		GameList,
 		GameListSettings,
 		Settings,
+		Downloads,
 		PauseMenu,
 		Achievements,
 		Leaderboards,
@@ -236,6 +237,9 @@ namespace FullscreenUI
 	static void OpenPauseSubMenu(PauseSubMenu submenu);
 	static void DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size);
 	static void DrawLandingWindow();
+#ifdef __SWITCH__
+	static void DrawDownloadsWindow();
+#endif
 	static void DrawStartGameWindow();
 	static void DrawExitWindow();
 	static void DrawPauseMenu(MainWindowType type);
@@ -1042,6 +1046,11 @@ void FullscreenUI::Render()
 		case MainWindowType::Settings:
 			DrawSettingsWindow();
 			break;
+#ifdef __SWITCH__
+		case MainWindowType::Downloads:
+			DrawDownloadsWindow();
+			break;
+#endif
 		case MainWindowType::PauseMenu:
 			DrawPauseMenu(s_current_main_window);
 			break;
@@ -1489,7 +1498,7 @@ void FullscreenUI::DrawLandingWindow()
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
 #ifdef __SWITCH__
-	static constexpr u32 landing_item_count = 5; // + Update
+	static constexpr u32 landing_item_count = 5; // + Downloads
 #else
 	static constexpr u32 landing_item_count = 4;
 #endif
@@ -1518,10 +1527,11 @@ void FullscreenUI::DrawLandingWindow()
 		}
 
 #ifdef __SWITCH__
-		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Update"),
-				FSUI_CSTR("Check and install a build from the channel selected in Interface Settings.")))
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Downloads"),
+				FSUI_CSTR("Download updates and other available content.")))
 		{
-			Host::OnUpdateCheckRequested();
+			s_current_main_window = MainWindowType::Downloads;
+			QueueResetFocus(FocusResetType::WindowChanged);
 		}
 #endif
 
@@ -1572,6 +1582,56 @@ void FullscreenUI::DrawLandingWindow()
 		});
 	}
 }
+
+#ifdef __SWITCH__
+void FullscreenUI::DrawDownloadsWindow()
+{
+	ImVec2 menu_pos, menu_size;
+	DrawLandingTemplate(&menu_pos, &menu_size);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
+
+	if (BeginHorizontalMenu("downloads_window", menu_pos, menu_size, 2))
+	{
+		ResetFocusHere();
+
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit),
+				FSUI_CSTR("Download Update"), FSUI_CSTR("Check and install a build from the channel selected in Interface Settings.")))
+		{
+			Host::OnUpdateCheckRequested();
+		}
+
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/back-icon.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit),
+				FSUI_CSTR("Back"), FSUI_CSTR("Return to the previous menu.")) ||
+			(!AreAnyDialogsOpen() && WantsToCloseMenu()))
+		{
+			s_current_main_window = MainWindowType::Landing;
+			QueueResetFocus(FocusResetType::WindowChanged);
+		}
+	}
+	EndHorizontalMenu();
+
+	ImGui::PopStyleColor();
+
+	if (IsGamepadInputSource())
+	{
+		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+		SetFullscreenFooterText(std::array{
+			std::make_pair(ICON_PF_DPAD_LEFT_RIGHT, FSUI_VSTR("Navigate")),
+			std::make_pair(circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS, FSUI_VSTR("Select")),
+			std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Back")),
+		});
+	}
+	else
+	{
+		SetFullscreenFooterText(std::array{
+			std::make_pair(ICON_PF_ARROW_LEFT ICON_PF_ARROW_RIGHT, FSUI_VSTR("Navigate")),
+			std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
+			std::make_pair(ICON_PF_ESC, FSUI_VSTR("Back")),
+		});
+	}
+}
+#endif // __SWITCH__
 
 void FullscreenUI::DrawStartGameWindow()
 {
@@ -3181,14 +3241,20 @@ void FullscreenUI::DrawSettingsWindow()
 		const char* const* icons = game_settings ? per_game_icons : global_icons;
 		const SettingsPage* pages = game_settings ? per_game_pages : global_pages;
 		u32 index = 0;
+		bool current_page_found = false;
 		for (u32 i = 0; i < count; i++)
 		{
 			if (pages[i] == s_settings_page)
 			{
 				index = i;
+				current_page_found = true;
 				break;
 			}
 		}
+		// The visible page set changes when Show Advanced Settings changes. Never keep a stale
+		// page selected after it disappears from the per-game navigation list.
+		if (!current_page_found)
+			s_settings_page = pages[index];
 
 		BeginNavBar();
 
@@ -3621,7 +3687,7 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 	};
 	MenuHeading(FSUI_CSTR("Updates"));
 	DrawStringListSetting(bsi, FSUI_CSTR("Update Channel"),
-		FSUI_CSTR("Selects which build the Update menu checks. Nightly follows the default branch; the Arena channel follows this development branch."),
+		FSUI_CSTR("Selects which build the Downloads menu checks. Nightly follows the default branch; the Arena channel follows this development branch."),
 		"Horizon", "UpdateChannel", HorizonUpdater::GetDefaultChannel(), s_update_channel_names, s_update_channel_values,
 		std::size(s_update_channel_names), true);
 #endif
@@ -8090,12 +8156,13 @@ TRANSLATE_NOOP("FullscreenUI", "Achievements Settings");
 TRANSLATE_NOOP("FullscreenUI", "Controller Settings");
 TRANSLATE_NOOP("FullscreenUI", "Hotkey Settings");
 TRANSLATE_NOOP("FullscreenUI", "Advanced Settings");
-TRANSLATE_NOOP("FullscreenUI", "Update");
-TRANSLATE_NOOP("FullscreenUI", "Updates");
+TRANSLATE_NOOP("FullscreenUI", "Downloads");
+TRANSLATE_NOOP("FullscreenUI", "Download Update");
 TRANSLATE_NOOP("FullscreenUI", "Update Channel");
 TRANSLATE_NOOP("FullscreenUI", "Nightly (default branch)");
 TRANSLATE_NOOP("FullscreenUI", "This Arena branch");
-TRANSLATE_NOOP("FullscreenUI", "Selects which build the Update menu checks. Nightly follows the default branch; the Arena channel follows this development branch.");
+TRANSLATE_NOOP("FullscreenUI", "Download updates and other available content.");
+TRANSLATE_NOOP("FullscreenUI", "Selects which build the Downloads menu checks. Nightly follows the default branch; the Arena channel follows this development branch.");
 TRANSLATE_NOOP("FullscreenUI", "Check and install a build from the channel selected in Interface Settings.");
 TRANSLATE_NOOP("FullscreenUI", "Enable Show Advanced Settings in the app-wide Advanced Settings page to expose per-game VU clamping and recompiler options.");
 TRANSLATE_NOOP("FullscreenUI", "Patches");
