@@ -9,6 +9,11 @@
 #include "common/Console.h"
 #include "common/HostSys.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#include "Memory.h"
+#endif
+
 const a64::Register& armWRegister(int n)
 {
     using namespace vixl::aarch64;
@@ -67,6 +72,11 @@ const a64::VRegister& armQRegister(int n)
 #endif
 
 thread_local a64::MacroAssembler* armAsm;
+thread_local u32 armCodegenBarrier = 0;
+#ifdef __SWITCH__
+static thread_local u64 armEmitStartNs;
+static thread_local u32 armEmitTarget = 0; // 0 = other, 1 = VU0 code cache, 2 = VU1 code cache
+#endif
 thread_local u8* armAsmPtr;
 thread_local size_t armAsmCapacity;
 thread_local ArmConstantPool* armConstantPool;
@@ -104,9 +114,24 @@ u8* armStartBlock()
     pxAssert(!armAsm);
     // armAsmPtr is the executable pointer, which is identical the writeable
     // pointer on everything but Horizon because AAAAAAA
+#ifdef __SWITCH__
+    const uptr code_addr = reinterpret_cast<uptr>(armAsmPtr);
+    const uptr vu0_start = reinterpret_cast<uptr>(SysMemory::GetVU0Rec());
+    const uptr vu0_end = reinterpret_cast<uptr>(SysMemory::GetVU0RecEnd());
+    const uptr vu1_start = reinterpret_cast<uptr>(SysMemory::GetVU1Rec());
+    const uptr vu1_end = reinterpret_cast<uptr>(SysMemory::GetVU1RecEnd());
+    armEmitTarget = (code_addr >= vu0_start && code_addr < vu0_end) ? 1 :
+                    (code_addr >= vu1_start && code_addr < vu1_end) ? 2 : 0;
+    const u64 setup_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     armAsm = new a64::MacroAssembler(static_cast<vixl::byte*>(HostSys::JitGetWritablePointer(armAsmPtr)), armAsmCapacity);
     armAsm->GetScratchVRegisterList()->Remove(31);
     armAsm->GetScratchRegisterList()->Remove(RSCRATCHADDR.GetCode());
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64AsmBlocks);
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64SetupNs, HorizonProfiler::GetTimeNs() - setup_start_ns);
+    armEmitStartNs = HorizonProfiler::GetTimeNs();
+#endif
     return armAsmPtr;
 }
 
@@ -114,17 +139,52 @@ u8* armEndBlock()
 {
     pxAssert(armAsm);
 
+#ifdef __SWITCH__
+    const u64 emit_ns = HorizonProfiler::GetTimeNs() - armEmitStartNs;
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64EmitNs, emit_ns);
+    if (armEmitTarget == 1)
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64EmitNs, emit_ns);
+    else if (armEmitTarget == 2)
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64EmitNs, emit_ns);
+    const u64 finalize_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     armAsm->FinalizeCode();
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64FinalizeNs, HorizonProfiler::GetTimeNs() - finalize_start_ns);
+#endif
 
     const u32 size = static_cast<u32>(armAsm->GetSizeOfCodeGenerated());
     pxAssert(size < armAsmCapacity);
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64AsmBytes, size);
+    if (armEmitTarget == 1)
+    {
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64AsmBlocks);
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU0A64AsmBytes, size);
+    }
+    else if (armEmitTarget == 2)
+    {
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64AsmBlocks);
+        HorizonProfiler::Add(HorizonProfiler::Counter::VU1A64AsmBytes, size);
+    }
+    const u64 destroy_start_ns = HorizonProfiler::GetTimeNs();
+#endif
 
     delete armAsm;
     armAsm = nullptr;
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64DestroyNs, HorizonProfiler::GetTimeNs() - destroy_start_ns);
+#endif
 
     HostSys::EndCodeWrite();
 
+#ifdef __SWITCH__
+    const u64 icache_start_ns = HorizonProfiler::GetTimeNs();
+#endif
     HostSys::FlushInstructionCache(armAsmPtr, size);
+#ifdef __SWITCH__
+    HorizonProfiler::Add(HorizonProfiler::Counter::A64IcacheNs, HorizonProfiler::GetTimeNs() - icache_start_ns);
+#endif
 
     armAsmPtr = armAsmPtr + size;
     armAsmCapacity -= size;
@@ -150,6 +210,7 @@ void armDisassembleAndDumpCode(const void* ptr, size_t size)
 
 void armEmitJmp(const void* ptr, bool force_inline)
 {
+    armCodegenBarrier++;
     s64 displacement = GetPCDisplacement(armGetCurrentCodePointer(), ptr);
     bool use_blr = !vixl::IsInt26(displacement);
     if (use_blr && armConstantPool && !force_inline)
@@ -176,6 +237,7 @@ void armEmitJmp(const void* ptr, bool force_inline)
 
 void armEmitCall(const void* ptr, bool force_inline)
 {
+    armCodegenBarrier++;
     s64 displacement = GetPCDisplacement(armGetCurrentCodePointer(), ptr);
     bool use_blr = !vixl::IsInt26(displacement);
     if (use_blr && armConstantPool && !force_inline)
@@ -511,6 +573,7 @@ void armBind(a64::Label* p_label)
 {
     if(p_label->IsLinked()) {
         armAsm->Bind(p_label);
+        armCodegenBarrier++;
     }
 }
 
@@ -973,12 +1036,13 @@ void armEor(const a64::Register& p_reg, const void* p_mop, a64::Operand p_value)
 // kArm64I32x4BitMask
 void armMOVMSKPS(const a64::Register& reg32, const a64::VRegister& regQ)
 {
-    armAsm->Movi(RQSCRATCH2.V2D(), 0x0000'0008'0000'0004, 0x0000'0002'0000'0001);
-    ////
-    armAsm->Sshr(RQSCRATCH.V4S(), regQ.V4S(), 31);
-    armAsm->And(RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH.V16B());
-
-    armAsm->Addv(RQSCRATCH.S(), RQSCRATCH.V4S());
+    // Sign bits {a, b, c, d} -> a | b << 1 | c << 2 | d << 3 with shifts only: no constant and no state
+    // register, because this is also emitted into helpers that C++ calls directly (microVU's
+    // compareStateF), where x27 is not the CPU state pointer.
+    armAsm->Ushr(RQSCRATCH.V4S(), regQ.V4S(), 31);          // a, b, c, d (0 or 1)
+    armAsm->Usra(RQSCRATCH.V2D(), RQSCRATCH.V2D(), 31);     // low words: a + 2b, c + 2d
+    armAsm->Xtn(RQSCRATCH.V2S(), RQSCRATCH.V2D());          // {a + 2b, c + 2d}
+    armAsm->Usra(RQSCRATCH.D(), RQSCRATCH.D(), 30);         // low word: a + 2b + 4c + 8d
     armAsm->Fmov(reg32, RQSCRATCH.S());
 }
 
@@ -1017,18 +1081,71 @@ void armPMOVMSKB(const a64::Register& regDst, const a64::VRegister& regSrc)
     armAsm->Mov(regDst, tmp.V8H(), 0);
 }
 
+// dst = [dst[i0], dst[i1], src[i2], src[i3]]
 void armSHUFPS(const a64::VRegister& dstreg, const a64::VRegister& srcreg, int pIndex)
 {
-    armAsm->Mov(RQSCRATCH3, armLoadPtrV(PTR_CPU(shuffle.data[pIndex][1])).Q());
-    ////
+    pIndex &= 0xff;
+    if (dstreg.Is(srcreg))
+    {
+        armPSHUFD(dstreg, dstreg, pIndex);
+        return;
+    }
+
+    switch (pIndex)
+    {
+        case 0x00: // [d0,d0,s0,s0]
+            armAsm->Zip1(RQSCRATCH.V4S(), dstreg.V4S(), srcreg.V4S());
+            armAsm->Zip1(dstreg.V4S(), RQSCRATCH.V4S(), RQSCRATCH.V4S());
+            return;
+        case 0x44: armAsm->Mov(dstreg.V2D(), 1, srcreg.V2D(), 0); return; // [d0,d1,s0,s1]
+        case 0xE4: armAsm->Mov(dstreg.V2D(), 1, srcreg.V2D(), 1); return; // [d0,d1,s2,s3]
+        case 0x4E: armAsm->Ext(dstreg.V16B(), dstreg.V16B(), srcreg.V16B(), 8); return; // [d2,d3,s0,s1]
+        case 0xEE: armAsm->Zip2(dstreg.V2D(), dstreg.V2D(), srcreg.V2D()); return; // [d2,d3,s2,s3]
+        case 0x88: armAsm->Uzp1(dstreg.V4S(), dstreg.V4S(), srcreg.V4S()); return; // [d0,d2,s0,s2]
+        case 0xDD: armAsm->Uzp2(dstreg.V4S(), dstreg.V4S(), srcreg.V4S()); return; // [d1,d3,s1,s3]
+        default: break;
+    }
+
+    armAsm->Ldr(RQSCRATCH3.Q(), PTR_CPU(shuffle.data[pIndex][1]));
     armAsm->Mov(RQSCRATCH2, srcreg);
     armAsm->Mov(RQSCRATCH, dstreg);
-    armAsm->Tbx(dstreg.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH3.V16B());
+    armAsm->Tbl(dstreg.V16B(), RQSCRATCH.V16B(), RQSCRATCH2.V16B(), RQSCRATCH3.V16B());
 }
 
+// dst[i] = src[(pIndex >> 2i) & 3]. Common patterns map to one or two permute instructions instead of
+// a table load + TBL.
 void armPSHUFD(const a64::VRegister& dstreg, const a64::VRegister& srcreg, int pIndex)
 {
-    armAsm->Mov(RQSCRATCH3, armLoadPtrV(PTR_CPU(shuffle.data[pIndex][0])).Q());
+    pIndex &= 0xff;
+    switch (pIndex)
+    {
+        case 0xE4: // [0,1,2,3]
+            if (!dstreg.Is(srcreg))
+                armAsm->Mov(dstreg.V16B(), srcreg.V16B());
+            return;
+        case 0x00: case 0x55: case 0xAA: case 0xFF: // broadcast
+            armAsm->Dup(dstreg.V4S(), srcreg.V4S(), pIndex & 3);
+            return;
+        case 0xB1: armAsm->Rev64(dstreg.V4S(), srcreg.V4S()); return; // [1,0,3,2]
+        case 0x4E: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 8); return; // [2,3,0,1]
+        case 0x39: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 4); return; // [1,2,3,0]
+        case 0x93: armAsm->Ext(dstreg.V16B(), srcreg.V16B(), srcreg.V16B(), 12); return; // [3,0,1,2]
+        case 0x1B: // [3,2,1,0]
+            armAsm->Rev64(dstreg.V4S(), srcreg.V4S());
+            armAsm->Ext(dstreg.V16B(), dstreg.V16B(), dstreg.V16B(), 8);
+            return;
+        case 0x44: armAsm->Dup(dstreg.V2D(), srcreg.V2D(), 0); return; // [0,1,0,1]
+        case 0xEE: armAsm->Dup(dstreg.V2D(), srcreg.V2D(), 1); return; // [2,3,2,3]
+        case 0xA0: armAsm->Trn1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,0,2,2]
+        case 0xF5: armAsm->Trn2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [1,1,3,3]
+        case 0x50: armAsm->Zip1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,0,1,1]
+        case 0xFA: armAsm->Zip2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [2,2,3,3]
+        case 0x88: armAsm->Uzp1(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [0,2,0,2]
+        case 0xDD: armAsm->Uzp2(dstreg.V4S(), srcreg.V4S(), srcreg.V4S()); return; // [1,3,1,3]
+        default: break;
+    }
+
+    armAsm->Ldr(RQSCRATCH3.Q(), PTR_CPU(shuffle.data[pIndex][0]));
     armAsm->Tbl(dstreg.V16B(), srcreg.V16B(), RQSCRATCH3.V16B());
 }
 

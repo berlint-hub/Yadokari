@@ -7,6 +7,7 @@
 #include "common/HostSys.h"
 #include "common/Horizon/Horizon.h"
 #include "common/Horizon/HorizonFastmem.h"
+#include "pcsx2/Horizon/HorizonProfiler.h"
 
 #include <cstddef>
 #include <cstring>
@@ -155,5 +156,6 @@ extern "C" void __libnx_exception_handler(ThreadExceptionDump* ctx)
 
 	static constexpr char message[] = "Unhandled Horizon exception\n";
 	svcOutputDebugString(message, sizeof(message) - 1);
+	HorizonProfiler::WriteCrashReport(ctx);
 	svcExitProcess();
 }

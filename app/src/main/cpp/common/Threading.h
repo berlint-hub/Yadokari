@@ -84,6 +84,12 @@ namespace Threading
 #endif
 	};
 
+#ifdef __SWITCH__
+	/// Kernel handle of a thread started through Thread or registered by ThreadHandle::GetForCallingThread(),
+	/// 0 if it is unknown.
+	u32 GetHorizonKernelHandle(const ThreadHandle& thread);
+#endif
+
 	// --------------------------------------------------------------------------------------
 	//  Thread
 	// --------------------------------------------------------------------------------------

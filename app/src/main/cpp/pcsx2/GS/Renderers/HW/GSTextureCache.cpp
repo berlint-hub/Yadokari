@@ -6988,6 +6988,53 @@ bool GSTextureCache::Surface::Overlaps(u32 bp, u32 bw, u32 psm, const GSVector4i
 
 // GSTextureCache::Source
 
+#ifdef __SWITCH__
+namespace
+{
+	// Freed Source blocks, per thread (the texture cache lives on the GS thread).
+	struct SourceFreeList
+	{
+		static constexpr size_t CAPACITY = 1024;
+		std::vector<void*> blocks;
+
+		~SourceFreeList()
+		{
+			for (void* block : blocks)
+				_aligned_free(block);
+		}
+	};
+	thread_local SourceFreeList s_source_free_list;
+} // namespace
+
+void* GSTextureCache::Source::operator new(size_t size)
+{
+	std::vector<void*>& blocks = s_source_free_list.blocks;
+	if (size == sizeof(Source) && !blocks.empty())
+	{
+		void* const block = blocks.back();
+		blocks.pop_back();
+		return block;
+	}
+	return _aligned_malloc(size, 32);
+}
+
+void GSTextureCache::Source::operator delete(void* ptr, size_t size)
+{
+	if (!ptr)
+		return;
+
+	std::vector<void*>& blocks = s_source_free_list.blocks;
+	if (size == sizeof(Source) && blocks.size() < SourceFreeList::CAPACITY)
+	{
+		if (blocks.capacity() == 0)
+			blocks.reserve(SourceFreeList::CAPACITY);
+		blocks.push_back(ptr);
+		return;
+	}
+	_aligned_free(ptr);
+}
+#endif
+
 GSTextureCache::Source::Source(const GIFRegTEX0& TEX0, const GIFRegTEXA& TEXA)
 {
 	m_TEX0 = TEX0;

@@ -140,6 +140,20 @@ Threading::ThreadHandle& Threading::ThreadHandle::operator=(const ThreadHandle& 
 	return *this;
 }
 
+u32 Threading::GetHorizonKernelHandle(const ThreadHandle& thread)
+{
+	void* const native_handle = static_cast<void*>(thread);
+	if (!native_handle)
+		return 0;
+
+	if ((void*)pthread_self() == native_handle)
+		return threadGetCurHandle();
+
+	std::lock_guard<std::mutex> lock(s_thread_handle_map_mutex);
+	const auto it = s_thread_handle_map.find(native_handle);
+	return (it != s_thread_handle_map.end()) ? it->second : 0;
+}
+
 u64 Threading::ThreadHandle::GetCPUTime() const
 {
 	return get_thread_cpu_time_us(m_native_handle);

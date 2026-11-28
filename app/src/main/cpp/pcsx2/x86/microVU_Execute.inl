@@ -251,7 +251,8 @@ static void mVUGenerateCopyPipelineState(mV)
     mVU.copyPLState = armGetCurrentCodePointer();
     {
         auto mop_rax = a64::MemOperand(RAX);
-        auto mop_lpState = PTR_MVU(microVU[mVU.index].prog.lpState);
+        // prog is not part of vuRegistersPack (see microVU.h), so address it directly.
+        auto mop_lpState = armMemOperandPtr(&mVU.prog.lpState);
 
 //		xMOVAPS(xmm0, ptr[rax]);
         armAsm->Ldr(xmm0, mop_rax);
@@ -393,6 +394,9 @@ _mVUt void mVUcleanUp()
 	if ((mVU.prog.x86ptr < mVU.prog.x86start) || (mVU.prog.x86ptr >= mVU.prog.x86end))
 	{
 		Console.WriteLn(vuIndex ? Color_Orange : Color_Magenta, "microVU%d: Program cache limit reached.", mVU.index);
+#ifdef __SWITCH__
+		HorizonProfiler::Add(HorizonProfiler::VUCounter(mVU.index, HorizonProfiler::Counter::VU0CacheResets));
+#endif
 		mVUreset(mVU, false);
 	}
 

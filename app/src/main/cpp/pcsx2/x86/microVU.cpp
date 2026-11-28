@@ -10,6 +10,17 @@
 alignas(64) vuRegistersPack g_vuRegistersPack;
 VU_Thread& vu1Thread = g_vuRegistersPack.vu1Thread;
 
+static void mVUadvanceQuickGeneration(microVU& mVU)
+{
+	// Zero is reserved for never-initialized entries. On wrap, clear once so an
+	// ancient generation cannot become current again.
+	if (++mVU.prog.quickGeneration == 0)
+	{
+		std::memset(mVU.prog.quick, 0, (mVU.progSize >> 1) * sizeof(microProgramQuick));
+		mVU.prog.quickGeneration = 1;
+	}
+}
+
 //------------------------------------------------------------------
 // Micro VU - Main Functions
 //------------------------------------------------------------------
@@ -18,6 +29,7 @@ VU_Thread& vu1Thread = g_vuRegistersPack.vu1Thread;
 void mVUinit(microVU& mVU, uint vuIndex)
 {
 	std::memset(&mVU.prog, 0, sizeof(mVU.prog));
+	mVU.prog.quickGeneration = 1;
 
 	mVU.index        =  vuIndex;
 	mVU.cop2         =  0;
@@ -44,6 +56,8 @@ void mVUreset(microVU& mVU, bool resetReserve)
 		}
 		VU0.VI[REG_VPU_STAT].UL &= ~0x100;
 	}
+
+	mVUadvanceQuickGeneration(mVU);
 
 //	xSetPtr(mVU.cache);
     armSetAsmPtr(mVU.cache, mVU.index ? HostMemoryMap::mVU1recSize : HostMemoryMap::mVU0recSize, nullptr);
@@ -86,8 +100,9 @@ void mVUreset(microVU& mVU, bool resetReserve)
 			mVUdeleteProg(mVU, it[0]);
 		}
 		mVU.prog.prog[i]->clear();
-        mVU.prog.quick[i].block = NULL;
-        mVU.prog.quick[i].prog = NULL;
+		mVU.prog.quick[i].block = nullptr;
+		mVU.prog.quick[i].prog = nullptr;
+		mVU.prog.quick[i].generation = mVU.prog.quickGeneration;
 	}
 }
 
@@ -114,9 +129,10 @@ __fi void mVUclear(mV, u32 addr, u32 size)
 {
     if (!mVU.prog.cleared)
     {
-        mVU.prog.cleared = 1; // Next execution searches/creates a new microprogram
-        std::memset(&mVU.prog.lpState, 0, sizeof(mVU.prog.lpState)); // Clear pipeline state
-        std::memset(mVU.prog.quick, 0, (mVU.progSize >> 1) * sizeof(microProgramQuick)); // mVU.progSize / 2
+		mVU.prog.cleared = 1; // Next execution searches/creates a new microprogram
+		std::memset(&mVU.prog.lpState, 0, sizeof(mVU.prog.lpState)); // Clear pipeline state
+		// Invalidate all start-PC quick entries without clearing the full table.
+		mVUadvanceQuickGeneration(mVU);
     }
 }
 
@@ -142,6 +158,9 @@ __ri microProgram* mVUcreateProg(microVU& mVU, int startPC)
 	auto* prog = (microProgram*)_aligned_malloc(sizeof(microProgram), 64);
 	memset(prog, 0, sizeof(microProgram));
 	prog->idx = mVU.prog.total++;
+#ifdef __SWITCH__
+	HorizonProfiler::Add(HorizonProfiler::VUCounter(mVU.index, HorizonProfiler::Counter::VU0Programs));
+#endif
 	prog->ranges = new std::deque<microRange>();
 	prog->startPC = startPC;
 	if(doWholeProgCompare)
@@ -156,20 +175,31 @@ __ri microProgram* mVUcreateProg(microVU& mVU, int startPC)
 }
 
 // Caches Micro Program
+__ri void mVUcacheProgRange(microVU& mVU, microProgram& prog, s32 start, s32 end)
+{
+	pxAssert(!doWholeProgCompare);
+	pxAssert(start >= 0 && end >= start && end <= static_cast<s32>(mVU.microMemSize));
+	if (end > start)
+	{
+		const u8* const src = reinterpret_cast<const u8*>(mVU.regs().Micro) + start;
+		u8* const dst = reinterpret_cast<u8*>(prog.data) + start;
+		memcpy(dst, src, end - start);
+	}
+	mVUdumpProg(mVU, prog);
+}
+
 __ri void mVUcacheProg(microVU& mVU, microProgram& prog)
 {
 	if (!doWholeProgCompare)
 	{
-		auto cmpOffset = [&](void* x) { return (u8*)x + mVUrange.start; };
-		memcpy(cmpOffset(prog.data), cmpOffset(mVU.regs().Micro), (mVUrange.end - mVUrange.start));
+		mVUcacheProgRange(mVU, prog, mVUrange.start, mVUrange.end);
+		return;
 	}
+
+	if (!mVU.index)
+		memcpy(prog.data, mVU.regs().Micro, 0x1000);
 	else
-	{
-		if (!mVU.index)
-			memcpy(prog.data, mVU.regs().Micro, 0x1000);
-		else
-			memcpy(prog.data, mVU.regs().Micro, 0x4000);
-	}
+		memcpy(prog.data, mVU.regs().Micro, 0x4000);
 	mVUdumpProg(mVU, prog);
 }
 
@@ -263,6 +293,12 @@ _mVUt __fi void* mVUsearchProg(u32 startPC, uptr pState)
 
 	microProgramQuick& quick = mVU.prog.quick[regs_start_pc_8];
 	microProgramList*  list  = mVU.prog.prog [regs_start_pc_8];
+	if (quick.generation != mVU.prog.quickGeneration)
+	{
+		quick.block = nullptr;
+		quick.prog = nullptr;
+		quick.generation = mVU.prog.quickGeneration;
+	}
 
 	if (!quick.prog) // If null, we need to search for new program
 	{

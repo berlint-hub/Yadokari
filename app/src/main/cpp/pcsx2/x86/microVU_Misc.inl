@@ -366,21 +366,19 @@ __fi void mVUaddrFix(mV, const a64::Register& gprReg)
 	if (isVU1)
 	{
 //		xAND(xRegister32(gprReg.Id), 0x3ff); // wrap around
-        armAsm->And(reg32, reg32, 0x3ff);
 //		xSHL(xRegister32(gprReg.Id), 4);
-        armAsm->Lsl(reg32, reg32, 4);
+        armAsm->Ubfiz(reg32, reg32, 4, 10); // (addr & 0x3ff) << 4
 	}
 	else
 	{
 //		xTEST(xRegister32(gprReg.Id), 0x400);
-        armAsm->Tst(reg32, 0x400);
 //		xForwardJNZ8 jmpA; // if addr & 0x4000, reads VU1's VF regs and VI regs
-        a64::Label jmpA;
-        armAsm->B(&jmpA, a64::Condition::ne);
+        a64::Label jmpA, jmpB;
+        armAsm->Tbnz(reg32, 10, &jmpA);
 //			xAND(xRegister32(gprReg.Id), 0xff); // if !(addr & 0x4000), wrap around
-            armAsm->And(reg32, reg32, 0xff);
+//			xSHL(gprReg, 4);
+            armAsm->Ubfiz(reg32, reg32, 4, 8); // (addr & 0xff) << 4
 //			xForwardJump32 jmpB;
-            a64::Label jmpB;
             armAsm->B(&jmpB);
 //		jmpA.SetTarget();
         armBind(&jmpA);
@@ -407,11 +405,11 @@ __fi void mVUaddrFix(mV, const a64::Register& gprReg)
                 (reinterpret_cast<sptr>(&VU1.VF[0]) - reinterpret_cast<sptr>(VU0.Mem)) / 16;
             armAsm->Mov(REX, vu1RegDisp);
             armAsm->Add(gprReg, gprReg, REX);
+//			xSHL(gprReg, 4); // multiply by 16 (shift left by 4)
+            armAsm->Lsl(gprReg, gprReg, 4);
 
 //		jmpB.SetTarget();
         armBind(&jmpB);
-//		xSHL(gprReg, 4); // multiply by 16 (shift left by 4)
-        armAsm->Lsl(gprReg, gprReg, 4);
 	}
 }
 
@@ -461,8 +459,10 @@ __fi std::optional<a64::MemOperand> mVUoptimizeConstantAddr(mV, u32 srcreg, s32 
 // Warning: Modifies t1 and t2
 void MIN_MAX_PS(microVU& mVU, const xmm& to, const xmm& from, const xmm& t1in, const xmm& t2in, bool min)
 {
-	const xmm& t1 = t1in.IsNone() ? mVU.regAlloc->allocReg() : t1in;
-	const xmm& t2 = t2in.IsNone() ? mVU.regAlloc->allocReg() : t2in;
+	// Codegen scratch instead of allocating two VF temporaries (which can spill cached VF regs).
+	// to/from always come from the register allocator, so they never alias q29/q30.
+	const xmm t1 = t1in.IsNone() ? RQSCRATCH3 : t1in;
+	const xmm t2 = t2in.IsNone() ? RQSCRATCH : t2in;
 
     if (0) // use double comparison
     {
@@ -510,44 +510,33 @@ void MIN_MAX_PS(microVU& mVU, const xmm& to, const xmm& from, const xmm& t1in, c
         const xmm& c1 = min ? t2 : t1;
         const xmm& c2 = min ? t1 : t2;
 
-//		xMOVAPS  (t1, to);
-        armAsm->Mov(t1, to);
-//		xPSRA.D  (t1, 31);
-        armAsm->Sshr(t1.V4S(), t1.V4S(), 31);
-//		xPSRL.D  (t1,  1);
+        // Map the float bit patterns to integers with the same ordering:
+        // t = ((x >> 31) >>> 1) ^ x  (flips the magnitude bits of negative values)
+//		xMOVAPS(t1, to); xPSRAD(t1, 31); xPSRLD(t1, 1); xPXOR(t1, to);
+        armAsm->Sshr(t1.V4S(), to.V4S(), 31);
         armAsm->Ushr(t1.V4S(), t1.V4S(), 1);
-//		xPXOR    (t1, to);
         armAsm->Eor(t1.V16B(), t1.V16B(), to.V16B());
 
-//		xMOVAPS  (t2, from);
-        armAsm->Mov(t2, from);
-//		xPSRA.D  (t2, 31);
-        armAsm->Sshr(t2.V4S(), t2.V4S(), 31);
-//		xPSRL.D  (t2,  1);
+//		xMOVAPS(t2, from); xPSRAD(t2, 31); xPSRLD(t2, 1); xPXOR(t2, from);
+        armAsm->Sshr(t2.V4S(), from.V4S(), 31);
         armAsm->Ushr(t2.V4S(), t2.V4S(), 1);
-//		xPXOR    (t2, from);
         armAsm->Eor(t2.V16B(), t2.V16B(), from.V16B());
 
-//		xPCMP.GTD(c1, c2);
+        // at this point all comparisons are signed
+//		xPCMP.GTD(c1, c2); xPAND(to, c1); xPANDN(c1, from); xPOR(to, c1);
         armAsm->Cmgt(c1.V4S(), c1.V4S(), c2.V4S());
-//		xPAND    (to, c1);
-        armAsm->And(to.V16B(), to.V16B(), c1.V16B());
-//		xPANDN   (c1, from);
-        armAsm->Bic(c1.V16B(), from.V16B(), c1.V16B());
-//		xPOR     (to, c1);
-        armAsm->Orr(to.V16B(), to.V16B(), c1.V16B());
+        // to = c1 ? to : from. One BIF instead of AND/BIC/ORR, which also keeps MIN/MAX(x, x) == x when
+        // to and from are the same register (the AND used to clear it before it was read as from).
+        armAsm->Bif(to.V16B(), from.V16B(), c1.V16B());
     }
-
-//	if (t1 != t1in) mVU.regAlloc->clearNeeded(t1);
-    if (!t1.Is(t1in)) mVU.regAlloc->clearNeeded(t1);
-//	if (t2 != t2in) mVU.regAlloc->clearNeeded(t2);
-    if (!t2.Is(t2in)) mVU.regAlloc->clearNeeded(t2);
+    // t1/t2 are either the caller's temporaries or codegen scratch: nothing to free.
 }
 
 // Warning: Modifies to's upper 3 vectors, and t1
 void MIN_MAX_SS(mV, const xmm& to, const xmm& from, const xmm& t1in, bool min)
 {
-	const xmm& t1 = t1in.IsNone() ? mVU.regAlloc->allocReg() : t1in;
+	// q29 is free here: SHUFPS(to, from, 0) below only uses q30 and the mask loads use q30 too.
+	const xmm t1 = t1in.IsNone() ? RQSCRATCH3 : t1in;
 //	xSHUF.PS(to, from, 0);
     armSHUFPS(to, from, 0);
 //	xPAND   (to, ptr128[sseMasks.MIN_MAX_1]);
@@ -560,8 +549,6 @@ void MIN_MAX_SS(mV, const xmm& to, const xmm& from, const xmm& t1in, bool min)
 //	else	 xMAX.PD(to, t1);
     if (min) armAsm->Fminnm(to.V2D(), to.V2D(), t1.V2D());
     else     armAsm->Fmaxnm(to.V2D(), to.V2D(), t1.V2D());
-    if (!t1.Is(t1in))
-		mVU.regAlloc->clearNeeded(t1);
 }
 
 // Not Used! - TriAce games only need a portion of this code to boot (see function below)

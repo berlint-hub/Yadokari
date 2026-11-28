@@ -33,6 +33,10 @@
 #include "common/StringUtil.h"
 #include "common/Timer.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonSystemInfo.h"
+#endif
+
 #include "fmt/chrono.h"
 #include "fmt/format.h"
 #include "imgui.h"
@@ -226,6 +230,13 @@ __ri void ImGuiManager::DrawPerformanceOverlay(float& position_y, float scale, f
 		{
 			// CPU
 			text.clear();
+#ifdef __SWITCH__
+			// cpuinfo cannot identify the processor on Horizon.
+			if (const u32 mhz = HorizonSystemInfo::GetCPUClockMHz(); mhz != 0)
+				text.append_format("CPU: {} ({}C) @ {} MHz", HorizonSystemInfo::GetCPUName(), HorizonSystemInfo::CPU_CORES, mhz);
+			else
+				text.append_format("CPU: {} ({}C)", HorizonSystemInfo::GetCPUName(), HorizonSystemInfo::CPU_CORES);
+#else
 			if (cpuinfo_initialize())
 			{
 				const cpuinfo_package* const package = cpuinfo_get_package(0);
@@ -238,6 +249,7 @@ __ri void ImGuiManager::DrawPerformanceOverlay(float& position_y, float scale, f
 			{
 				text.append("CPU: Unknown");
 			}
+#endif
 			DRAW_LINE(fixed_font, text.c_str(), IM_COL32(255, 255, 255, 255));
 
 			// GPU

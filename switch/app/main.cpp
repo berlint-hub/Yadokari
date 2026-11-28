@@ -8,11 +8,15 @@
 
 #include "pcsx2/Config.h"
 #include "pcsx2/Host.h"
+#include "pcsx2/GS/GS.h"
 #include "pcsx2/INISettingsInterface.h"
 #include "pcsx2/ImGui/FullscreenUI.h"
 #include "pcsx2/ImGui/ImGuiManager.h"
+#include "pcsx2/Input/HorizonInputSettings.h"
 #include "pcsx2/Input/InputManager.h"
 #include "pcsx2/MTGS.h"
+#include "pcsx2/Patch.h"
+#include "pcsx2/Horizon/HorizonSystemInfo.h"
 #include "pcsx2/SIO/Pad/Pad.h"
 #include "pcsx2/SIO/Pad/PadDualshock2.h"
 #include "pcsx2/VMManager.h"
@@ -20,16 +24,23 @@
 #include <algorithm>
 #include <atomic>
 #include <array>
-#include <cmath>
+#include <iterator>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <sys/iosupport.h>
 #include <sys/stat.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 #include "common/Horizon/Horizon.h"
 
+#include "HorizonCores.h"
 #include "HorizonHost.h"
+#include "HorizonHotkeys.h"
+#include "HorizonInputMath.h"
+#include "HorizonUpdater.h"
 #include "HorizonUsbStorage.h"
 
 namespace
@@ -45,7 +56,6 @@ namespace
 	// CPU-thread idle tick while no VM is running
 	constexpr u64 IDLE_POLL_NS = 8'000'000ULL;
 
-	constexpr float STICK_DEADZONE = 0.15f;
 	constexpr u32 NUM_LOCAL_PLAYERS = 2;
 	constexpr const char* MULTIPLAYER_INPUT_VERSION_KEY = "MultiplayerInputVersion";
 	constexpr int MULTIPLAYER_INPUT_VERSION = 1;
@@ -102,36 +112,160 @@ namespace
 		{HidNpadButton_Plus, GenericInputBinding::Start},
 	};
 
-	float ApplyDeadzone(s32 raw)
+	// What the game should see from one controller. Default-constructed means nothing pressed.
+	struct GamePadState
 	{
-		const float v = std::clamp(static_cast<float>(raw) / static_cast<float>(JOYSTICK_MAX), -1.0f, 1.0f);
-		const float mag = std::fabs(v);
-		if (mag < STICK_DEADZONE)
-			return 0.0f;
-		const float scaled = (mag - STICK_DEADZONE) / (1.0f - STICK_DEADZONE);
-		return (v < 0.0f) ? -scaled : scaled;
+		u64 buttons = 0;
+		float left_x = 0.0f;
+		float left_y = 0.0f;
+		float right_x = 0.0f;
+		float right_y = 0.0f;
+	};
+	using GamePadSnapshot = std::array<GamePadState, NUM_LOCAL_PLAYERS>;
+
+	// The input thread only polls HID. Pad state is written on the CPU thread, which pumps its queue every
+	// vsync while a game runs (and from the idle loop otherwise). At most one apply task is queued at a time;
+	// it always applies the newest snapshot.
+	std::mutex s_game_pad_mutex;
+	GamePadSnapshot s_pending_game_pads{};
+	bool s_game_pad_apply_queued = false;
+
+	// Set after a system applet closes, so buttons still held from it are ignored until they are released.
+	std::atomic_bool s_input_resync{false};
+
+	u64 GetHotkeyButton(int button)
+	{
+		switch (button)
+		{
+			case HorizonInputSettings::R: return HidNpadButton_R;
+			case HorizonInputSettings::L: return HidNpadButton_L;
+			case HorizonInputSettings::ZR: return HidNpadButton_ZR;
+			case HorizonInputSettings::ZL: return HidNpadButton_ZL;
+			case HorizonInputSettings::DPadLeft: return HidNpadButton_Left;
+			case HorizonInputSettings::DPadRight: return HidNpadButton_Right;
+			case HorizonInputSettings::DPadUp: return HidNpadButton_Up;
+			case HorizonInputSettings::DPadDown: return HidNpadButton_Down;
+			case HorizonInputSettings::A: return HidNpadButton_A;
+			case HorizonInputSettings::B: return HidNpadButton_B;
+			case HorizonInputSettings::X: return HidNpadButton_X;
+			case HorizonInputSettings::Y: return HidNpadButton_Y;
+			case HorizonInputSettings::LeftStick: return HidNpadButton_StickL;
+			case HorizonInputSettings::RightStick: return HidNpadButton_StickR;
+			default: return 0;
+		}
 	}
 
-	void ApplyStick(u32 player, const HidAnalogStickState& s, PadDualshock2::Inputs left, PadDualshock2::Inputs right,
+	struct SwitchInputConfig
+	{
+		HorizonHotkeys::Buttons hotkeys;
+		float deadzone;
+	};
+
+	SwitchInputConfig ReadSwitchInputConfig()
+	{
+		auto lock = Host::GetSettingsLock();
+		u64 buttons[std::size(HorizonInputSettings::BINDINGS)]{};
+		for (size_t i = 0; i < std::size(buttons); i++)
+		{
+			const auto& binding = HorizonInputSettings::BINDINGS[i];
+			buttons[i] = GetHotkeyButton(s_settings_interface->GetIntValue(
+				HorizonInputSettings::SECTION, binding.key, binding.default_button));
+		}
+		const int deadzone = std::clamp(s_settings_interface->GetIntValue(HorizonInputSettings::SECTION,
+			HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE),
+			HorizonInputSettings::MIN_DEADZONE, HorizonInputSettings::MAX_DEADZONE);
+		return {{HidNpadButton_Minus, HidNpadButton_Plus, buttons[0], buttons[1], buttons[2], buttons[3], buttons[4]},
+			static_cast<float>(deadzone) / 100.0f};
+	}
+
+	float ApplyDeadzone(s32 raw, float deadzone)
+	{
+		return HorizonInputMath::ApplyDeadzone(static_cast<float>(raw) / static_cast<float>(JOYSTICK_MAX), deadzone);
+	}
+
+	GamePadState ReadGamePad(PadState& pad, u64 buttons, float deadzone)
+	{
+		const HidAnalogStickState left = padGetStickPos(&pad, 0);
+		const HidAnalogStickState right = padGetStickPos(&pad, 1);
+
+		GamePadState state;
+		state.buttons = buttons;
+		state.left_x = ApplyDeadzone(left.x, deadzone);
+		state.left_y = ApplyDeadzone(left.y, deadzone);
+		state.right_x = ApplyDeadzone(right.x, deadzone);
+		state.right_y = ApplyDeadzone(right.y, deadzone);
+		return state;
+	}
+
+	void ApplyStick(u32 player, float x, float y, PadDualshock2::Inputs left, PadDualshock2::Inputs right,
 		PadDualshock2::Inputs up, PadDualshock2::Inputs down)
 	{
-		const float x = ApplyDeadzone(s.x);
-		const float y = ApplyDeadzone(s.y);
 		Pad::SetControllerState(player, static_cast<u32>(right), x > 0.0f ? x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(left), x < 0.0f ? -x : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(up), y > 0.0f ? y : 0.0f);
 		Pad::SetControllerState(player, static_cast<u32>(down), y < 0.0f ? -y : 0.0f);
 	}
 
-	void FeedGamePad(u32 player, PadState& pad, u64 held)
+	void ApplyGamePad(u32 player, const GamePadState& state)
 	{
 		for (const ButtonMap& m : BUTTON_MAP)
-			Pad::SetControllerState(player, static_cast<u32>(m.ps2), (held & m.nx) ? 1.0f : 0.0f);
+			Pad::SetControllerState(player, static_cast<u32>(m.ps2), (state.buttons & m.nx) ? 1.0f : 0.0f);
 
-		ApplyStick(player, padGetStickPos(&pad, 0), PadDualshock2::Inputs::PAD_L_LEFT, PadDualshock2::Inputs::PAD_L_RIGHT,
-			PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN);
-		ApplyStick(player, padGetStickPos(&pad, 1), PadDualshock2::Inputs::PAD_R_LEFT, PadDualshock2::Inputs::PAD_R_RIGHT,
-			PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN);
+		ApplyStick(player, state.left_x, state.left_y, PadDualshock2::Inputs::PAD_L_LEFT,
+			PadDualshock2::Inputs::PAD_L_RIGHT, PadDualshock2::Inputs::PAD_L_UP, PadDualshock2::Inputs::PAD_L_DOWN);
+		ApplyStick(player, state.right_x, state.right_y, PadDualshock2::Inputs::PAD_R_LEFT,
+			PadDualshock2::Inputs::PAD_R_RIGHT, PadDualshock2::Inputs::PAD_R_UP, PadDualshock2::Inputs::PAD_R_DOWN);
+	}
+
+	// CPU thread
+	void ApplyPendingGamePads()
+	{
+		GamePadSnapshot snapshot;
+		{
+			const std::lock_guard lock(s_game_pad_mutex);
+			snapshot = s_pending_game_pads;
+			s_game_pad_apply_queued = false;
+		}
+
+		if (!VMManager::HasValidVM())
+			return;
+
+		for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
+			ApplyGamePad(player, snapshot[player]);
+	}
+
+	// Input thread
+	void PublishGamePads(const GamePadSnapshot& snapshot)
+	{
+		bool queue_apply;
+		{
+			const std::lock_guard lock(s_game_pad_mutex);
+			s_pending_game_pads = snapshot;
+			queue_apply = !s_game_pad_apply_queued;
+			s_game_pad_apply_queued = true;
+		}
+
+		if (queue_apply)
+			Host::RunOnCPUThread(&ApplyPendingGamePads, false);
+	}
+
+	// CPU thread. Opens the system controller applet so players can be assigned to controllers.
+	void ShowControllerSetup()
+	{
+		HidLaControllerSupportArg arg;
+		hidLaCreateControllerSupportArg(&arg);
+		arg.hdr.player_count_max = static_cast<s8>(NUM_LOCAL_PLAYERS);
+
+		HidLaControllerSupportResultInfo info = {};
+		const Result result = hidLaShowControllerSupport(&info, &arg);
+
+		// The button that closed the applet is usually still held.
+		s_input_resync.store(true, std::memory_order_release);
+
+		if (R_SUCCEEDED(result))
+			INFO_LOG("Controller setup finished with {} player(s)", static_cast<int>(info.player_count));
+		else
+			INFO_LOG("Controller setup closed without changes (0x{:08X})", static_cast<u32>(result));
 	}
 
 	void FeedNav(u64 held, u64 changed)
@@ -141,6 +275,42 @@ namespace
 			if (changed & m.nx)
 				ImGuiManager::ProcessGenericInputEvent(m.generic, InputLayout::Nintendo, (held & m.nx) ? 1.0f : 0.0f);
 		}
+	}
+
+	void DispatchHotkey(HorizonHotkeys::Action action)
+	{
+		if (action == HorizonHotkeys::Action::None)
+			return;
+
+		Host::RunOnCPUThread([action]() {
+			// The VM may have stopped while the command was waiting in the queue.
+			if (VMManager::GetState() != VMState::Running)
+				return;
+
+			static s32 slot = 1;
+			switch (action)
+			{
+				case HorizonHotkeys::Action::Save:
+					VMManager::SaveStateToSlot(slot);
+					break;
+				case HorizonHotkeys::Action::Load:
+					VMManager::LoadStateFromSlot(slot);
+					break;
+				case HorizonHotkeys::Action::PreviousSlot:
+					slot = (slot == 1) ? VMManager::NUM_SAVE_STATE_SLOTS : slot - 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::NextSlot:
+					slot = (slot == VMManager::NUM_SAVE_STATE_SLOTS) ? 1 : slot + 1;
+					Host::AddKeyedOSDMessage("HorizonSaveSlot", "Save state slot: " + std::to_string(slot));
+					break;
+				case HorizonHotkeys::Action::Screenshot:
+					MTGS::RunOnGSThread([]() { GSQueueSnapshot(std::string()); });
+					break;
+				case HorizonHotkeys::Action::None:
+					break;
+			}
+		});
 	}
 
 	void SetupSettings()
@@ -217,6 +387,26 @@ namespace
 			INFO_LOG("USB volume '{}' mounted at {} ({})", volume.label, volume.root, volume.filesystem);
 	}
 
+	// Closes the descriptors of files still open on a device that is about to be unmounted. newlib closes
+	// every FILE in exit(), after main(); for one on an unmounted device that looks up a devoptab entry that
+	// is gone and crashes in lseek/close ("the software was closed because an error occurred"). With the
+	// descriptor closed here, those calls fail with EBADF instead.
+	int CloseFilesOnDevice(const char* device)
+	{
+		const int dev = FindDevice(device);
+		if (dev < 0)
+			return 0;
+
+		int closed = 0;
+		for (int fd = 3; fd < 1024; fd++)
+		{
+			const __handle* const handle = __get_handle(fd);
+			if (handle && handle->device == dev && close(fd) == 0)
+				closed++;
+		}
+		return closed;
+	}
+
 	// Boot a disc image directly when passed as argv[1]
 	void BootImage(std::string path)
 	{
@@ -238,8 +428,17 @@ void Host::CommitBaseSettingChanges()
 		s_settings_interface->Save();
 }
 
+void Host::OnControllerSetupRequested()
+{
+	// Called from FullscreenUI on the GS thread. Show the applet on the CPU thread, like the software keyboard.
+	Host::RunOnCPUThread(&ShowControllerSetup, false);
+}
+
 int main(int argc, char** argv)
 {
+	// Before any thread exists: decides which cores helper threads go to.
+	HorizonCores::Initialize();
+
 	const bool have_socket = R_SUCCEEDED(socketInitializeDefault());
 	if (have_socket)
 		nxlinkStdio();
@@ -255,11 +454,14 @@ int main(int argc, char** argv)
 
 	INFO_LOG("================ ARMSX2-NX ================");
 	INFO_LOG("Logging to {}", LOG_PATH);
+	INFO_LOG("CPU cores: process may use mask 0x{:x}, helper threads go to mask 0x{:x}",
+		HorizonCores::GetAllowedCoreMask(), HorizonCores::GetHelperCoreMask());
 
-	// Mount the romfs so Deko3D can load its shaders
+	// Mount the romfs: it holds the runtime resources (fonts, UI, GameIndex), and the deko3d shaders when
+	// that renderer is built.
 	const bool have_romfs = R_SUCCEEDED(romfsInit());
 	if (!have_romfs)
-		ERROR_LOG("romfsInit() failed. Deko3d shaders will be unavailable. Things will be broken");
+		ERROR_LOG("romfsInit() failed. Falling back to resources on the SD card.");
 
 	EmuFolders::AppRoot = ARMSX2_ROOT;
 	EmuFolders::DataRoot = ARMSX2_ROOT;
@@ -271,6 +473,7 @@ int main(int argc, char** argv)
 		EmuFolders::SetResourcesDirectory();
 	INFO_LOG("Resources directory: {}", EmuFolders::Resources);
 	SetupSettings();
+	HorizonUpdater::Initialize((argc > 0) ? argv[0] : nullptr);
 	if (HorizonUsbStorage::Initialize())
 	{
 		SyncUsbGameRoots();
@@ -326,6 +529,8 @@ int main(int argc, char** argv)
 	{
 		MTGS::RunOnGSThread(&ImGuiManager::InitializeFullscreenUI);
 		Host::RefreshGameListAsync(false);
+		if (have_socket)
+			HorizonUpdater::CheckForUpdates(false);
 	}
 
 	padConfigureInput(NUM_LOCAL_PLAYERS, HidNpadStyleSet_NpadStandard);
@@ -340,36 +545,78 @@ int main(int argc, char** argv)
 	if (!boot_image.empty() && FileSystem::FileExists(boot_image.c_str()))
 		BootImage(std::move(boot_image));
 	else if (!boot_image.empty())
-		ERROR_LOG("Launch image not found: {}. Returing to game selector.", boot_image);
+		ERROR_LOG("Launch image not found: {}. Returning to game selector.", boot_image);
 	else if (!enable_fsui)
 		INFO_LOG("FullscreenUI disabled and no launch image. Please provide a target to display.");
 
 	std::atomic_bool stop_loop{false};
 	std::thread input_thread([&]() {
-		std::array<u64, NUM_LOCAL_PLAYERS> prev_held{};
+		std::array<u64, NUM_LOCAL_PLAYERS> held{};
+		// Buttons in these masks are ignored until they are released.
+		// game_block: the menu combo, and buttons that were held while a menu was open.
+		// nav_block: buttons already held when a menu opened or when a system applet closed.
+		std::array<u64, NUM_LOCAL_PLAYERS> game_block{};
+		u64 nav_block = 0;
+		u64 prev_nav = 0;
+		bool prev_fsui_active = false;
 		bool prev_menu_combo = false;
+		bool was_feeding_game = false;
+		SwitchInputConfig input_config = ReadSwitchInputConfig();
+		HorizonHotkeys::Chords hotkeys(input_config.hotkeys);
 		while (!stop_loop.load(std::memory_order_relaxed))
 		{
-			std::array<u64, NUM_LOCAL_PLAYERS> held{};
-			std::array<u64, NUM_LOCAL_PLAYERS> changed{};
+			const bool resync = s_input_resync.exchange(false, std::memory_order_acq_rel);
 			for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
 			{
 				padUpdate(&pads[player]);
 				held[player] = padGetButtons(&pads[player]);
-				changed[player] = held[player] ^ prev_held[player];
-				prev_held[player] = held[player];
+				game_block[player] = resync ? held[player] : (game_block[player] & held[player]);
 			}
 
 			const bool fsui_active = FullscreenUI::HasActiveWindow();
-			if (fsui_active)
-				FeedNav(held[0], changed[0]);
-			else if (VMManager::HasValidVM())
+			// The shortcuts and the deadzone can only change in the menu: read them again when it closes.
+			if (prev_fsui_active && !fsui_active)
+			{
+				input_config = ReadSwitchInputConfig();
+				hotkeys.Reconfigure(input_config.hotkeys, held[0]);
+			}
+			const auto hotkey = hotkeys.Update(held[0], !fsui_active && VMManager::GetState() == VMState::Running);
+			DispatchHotkey(hotkey.action);
+
+			const bool feed_game = !fsui_active && VMManager::HasValidVM();
+			const bool menu_combo = (held[0] & MENU_COMBO) == MENU_COMBO;
+
+			nav_block = (resync || (fsui_active && !prev_fsui_active)) ? held[0] : (nav_block & held[0]);
+			if (menu_combo)
+				game_block[0] |= MENU_COMBO;
+			if (!feed_game)
 			{
 				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
-					FeedGamePad(player, pads[player], held[player]);
+					game_block[player] |= held[player];
 			}
 
-			const bool menu_combo = (held[0] & MENU_COMBO) == MENU_COMBO;
+			// Menu navigation is player 1 only. When the menu closes, nav drops to 0 so every key gets released.
+			const u64 nav = fsui_active ? (held[0] & ~nav_block) : 0;
+			FeedNav(nav, nav ^ prev_nav);
+			prev_nav = nav;
+
+			// Neutral unless the game is being fed. One neutral snapshot goes out when a menu opens,
+			// so nothing stays pressed in the game while it is paused.
+			GamePadSnapshot game_pads{};
+			if (feed_game)
+			{
+				for (u32 player = 0; player < NUM_LOCAL_PLAYERS; player++)
+				{
+					// Player 1's shortcut chords (Minus + button) don't reach the game.
+					const u64 hidden = game_block[player] | ((player == 0) ? hotkey.consumed : 0);
+					game_pads[player] = ReadGamePad(pads[player], held[player] & ~hidden, input_config.deadzone);
+				}
+			}
+			if (feed_game || was_feeding_game)
+				PublishGamePads(game_pads);
+			was_feeding_game = feed_game;
+			prev_fsui_active = fsui_active;
+
 			if (menu_combo && !prev_menu_combo)
 			{
 				if (FullscreenUI::IsInitialized() && VMManager::HasValidVM())
@@ -419,6 +666,8 @@ int main(int argc, char** argv)
 	stop_loop.store(true, std::memory_order_relaxed);
 	input_thread.join();
 
+	HorizonUpdater::Shutdown();
+
 	Host::CancelGameListRefresh();
 
 	if (VMManager::GetState() != VMState::Shutdown)
@@ -430,9 +679,26 @@ int main(int argc, char** argv)
 	VMManager::Internal::CPUThreadShutdown();
 	INFO_LOG("================ Exiting ================");
 
+	// patches.zip is read from the romfs and would otherwise be closed at exit, after the romfs is gone.
+	Patch::ClosePatchesZip();
+
+	// CPU clock service session (performance overlay and log).
+	HorizonSystemInfo::Shutdown();
+
 	if (have_romfs)
+	{
+		if (const int left_open = CloseFilesOnDevice("romfs:"); left_open > 0)
+			WARNING_LOG("Closed {} file(s) still open on the romfs before unmounting it", left_open);
 		romfsExit();
+	}
+
+	// After romfsExit(): until then the running .nro is held open for its romfs.
+	HorizonUpdater::FinishPendingInstall();
+
 	if (have_socket)
+	{
+		CloseFilesOnDevice("soc:");
 		socketExit();
+	}
 	return 0;
 }

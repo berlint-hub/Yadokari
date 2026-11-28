@@ -19,12 +19,15 @@ option(PACKAGE_MODE "Use this option to ease packaging of PCSX2 (developer/distr
 #-------------------------------------------------------------------------------
 # Graphical option
 #-------------------------------------------------------------------------------
-if(NOT APPLE)
-	option(USE_OPENGL "Enable OpenGL GS renderer" ON)
-endif()
 if(HORIZON)
+	# The Switch build ships Vulkan (NXVK) only. OpenGL (Zink) and deko3d can still be built on request.
+	option(USE_OPENGL "Enable OpenGL GS renderer" OFF)
 	option(USE_VULKAN "Enable Vulkan GS renderer" ON)
+	option(USE_DK3D "Enable deko3d GS renderer" OFF)
 else()
+	if(NOT APPLE)
+		option(USE_OPENGL "Enable OpenGL GS renderer" ON)
+	endif()
 	option(USE_VULKAN "Enable Vulkan GS renderer" ON)
 endif()
 
@@ -255,6 +258,10 @@ endif()
 
 if(USE_VULKAN)
 	list(APPEND PCSX2_DEFS ENABLE_VULKAN)
+endif()
+
+if(HORIZON AND USE_DK3D)
+	list(APPEND PCSX2_DEFS ENABLE_DK3D)
 endif()
 
 if(X11_API)

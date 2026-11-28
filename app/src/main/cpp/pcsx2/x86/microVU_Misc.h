@@ -99,7 +99,11 @@ static const char branchSTR[16][8] = {
 #define xmmPQ  a64::q15 // Holds the Value and Backup Values of P and Q regs
 
 // microVU AArch64 register budget
-static constexpr int mVUTotalXmmSpan = 29;
+// q0..q26 are allocatable (q15 is PQ). q27/q28 hold the clamp constants (see mVUclamp1), q29-q31 are codegen
+// scratch.
+static constexpr int mVUTotalXmmSpan = 27;
+#define xmmClampMax a64::q27 // +FLT_MAX in every lane, loaded on demand
+#define xmmClampMin a64::q28 // -FLT_MAX in every lane
 
 #define gprT1  a64::w0 // eax - Temp Reg
 #define gprT2  a64::w1 // ecx - Temp Reg

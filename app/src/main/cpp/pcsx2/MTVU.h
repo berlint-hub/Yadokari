@@ -19,12 +19,13 @@
 class VU_Thread final {
 	static const s32 buffer_size = (_1mb * 16) / sizeof(s32);
 
-	u32 buffer[buffer_size];
 	// Note: keep atomic on separate cache line to avoid CPU conflict
 	alignas(__cachelinesize) std::atomic<int> m_ato_read_pos; // Only modified by VU thread
 	alignas(__cachelinesize) std::atomic<int> m_ato_write_pos;    // Only modified by EE thread
 	alignas(__cachelinesize) int  m_read_pos; // temporary read pos (local to the VU thread)
 	int  m_write_pos; // temporary write pos (local to the EE thread)
+	u32 m_vu1DispatchCount = 0; // VU worker thread only; used by experimental cycle skipping
+	u32 m_vu1SkippedDispatches = 0; // VU worker thread only; sampled for bounded diagnostics
 	Threading::WorkSema semaEvent;
 	std::atomic_bool m_shutdown_flag{false};
 
@@ -118,6 +119,10 @@ private:
 	void WriteRegs(VIFregisters* src);
 
 	u32 Get_vuCycles();
+
+	// The 16 MB ring buffer goes last: in front it put vifRegs and vuFBRST, which VU1 code reads, 16 MB past
+	// RSTATE_MVU, out of reach of an immediate offset.
+	alignas(__cachelinesize) u32 buffer[buffer_size];
 };
 
 extern VU_Thread& vu1Thread;

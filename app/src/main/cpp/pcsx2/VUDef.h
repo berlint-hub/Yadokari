@@ -181,10 +181,10 @@ struct mVU_Globals
     u32   one     [4] = __four(0x3f800000);
     u32   Pi4     [4] = __four(0x3f490fdb);
     u32   T1      [4] = __four(0x3f7ffff5);
-    u32   T5      [4] = __four(0xbeaaa61c);
-    u32   T2      [4] = __four(0x3e4c40a6);
-    u32   T3      [4] = __four(0xbe0e6c63);
-    u32   T4      [4] = __four(0x3dc577df);
+    u32   T2      [4] = __four(0xbeaaa61c);
+    u32   T3      [4] = __four(0x3e4c40a6);
+    u32   T4      [4] = __four(0xbe0e6c63);
+    u32   T5      [4] = __four(0x3dc577df);
     u32   T6      [4] = __four(0xbd6501c4);
     u32   T7      [4] = __four(0x3cb31652);
     u32   T8      [4] = __four(0xbb84d7e7);
@@ -237,6 +237,11 @@ struct SSEMasks
 
 struct mVU_SSE4
 {
+    // Per-lane bit weights for building MOVMSKPS-style masks (lane 0 = bit 0, or lane 0 = bit 3 when reversed).
+    // Kept first so they stay 16-byte aligned for single LDR Q loads.
+    u32 movmsk_weights[4] = {1, 2, 4, 8};
+    u32 movmsk_weights_rev[4] = {8, 4, 2, 1};
+    ////
     u32 sse4_minvals[2][4] = {
         {0xff7fffff, 0xffffffff, 0xffffffff, 0xffffffff}, //1000
         {0xff7fffff, 0xff7fffff, 0xff7fffff, 0xff7fffff}, //1111

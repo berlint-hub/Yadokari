@@ -11,6 +11,10 @@
 #include <memory>
 #include "Common.h"
 #include "VU.h"
+
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
 #include "MTVU.h"
 #include "GS.h"
 #include "Gif_Unit.h"
@@ -59,6 +63,7 @@ struct microProgramQuick
 {
 	microBlockManager* block; // Quick reference to valid microBlockManager for current startPC
 	microProgram*      prog;  // The microProgram who is the owner of 'block'
+	u32                generation; // Invalidated lazily when the VU microcode changes
 };
 
 struct microProgManager
@@ -66,6 +71,7 @@ struct microProgManager
 	microIR<mProgSize> IRinfo;             // IR information
 	microProgramList*  prog [mProgSizeHalf]; // List of microPrograms indexed by startPC values
 	microProgramQuick  quick[mProgSizeHalf]; // Quick reference to valid microPrograms for current execution
+	u32                quickGeneration;     // Generation for lazy invalidation of quick[] entries
 	microProgram*      cur;                // Pointer to currently running MicroProgram
 	int                total;              // Total Number of valid MicroPrograms
 	int                isSame;             // Current cached microProgram is Exact Same program as mVU.regs().Micro (-1 = unknown, 0 = No, 1 = Yes)
@@ -96,7 +102,10 @@ struct microVU
 	u32 progMemMask;  // VU Micro Memory Size (in u32's)
 	u32 cacheSize;    // VU Cache Size
 
-	microProgManager               prog;     // Micro Program Data
+	// Micro Program Data. Kept out of line: it is ~290 KB, and inside the struct it put the fields after it, and all of
+	// microVU[1], too far from RSTATE_MVU for an immediate offset, so every access from VU1 code (flag instances,
+	// branch and cycle state) first needed a MOVZ/MOVK of the offset.
+	microProgManager&              prog = *new microProgManager();
 	microProfiler                  profiler; // Opcode Profiler
 	std::unique_ptr<microRegAlloc> regAlloc; // Reg Alloc Class
 	std::FILE*                     logFile;  // Log File Pointer
@@ -136,6 +145,10 @@ struct microVU
 	__fi u32 compareState(microRegInfo* lhs, microRegInfo* rhs) const {
 		return reinterpret_cast<u32(*)(void*, void*)>(compareStateF)(lhs, rhs);
 	}
+	__fi microProgram* getQuickProgram(u32 slot) const {
+		const microProgramQuick& quick = prog.quick[slot];
+		return (quick.generation == prog.quickGeneration) ? quick.prog : nullptr;
+	}
 };
 
 class microBlockManager
@@ -144,6 +157,7 @@ private:
 	microBlockLink *qBlockList, *qBlockEnd; // Quick Search
 	microBlockLink *fBlockList, *fBlockEnd; // Full  Search
 	std::vector<microBlockLinkRef> quickLookup;
+	microBlockLinkRef lastQuickHit{};
 	int qListI, fListI;
 
 public:
@@ -175,6 +189,7 @@ public:
 		qBlockEnd = qBlockList = nullptr;
 		fBlockEnd = fBlockList = nullptr;
 		quickLookup.clear();
+		lastQuickHit = {};
 	};
 	microBlock* add(microVU& mVU, microBlock* pBlock)
 	{
@@ -208,6 +223,7 @@ public:
 			thisBlock = &newBlock->block;
 
 			quickLookup.push_back({&newBlock->block, pBlock->pState.quick64[0]});
+			lastQuickHit = quickLookup.back();
 		}
 		return thisBlock;
 	}
@@ -237,11 +253,17 @@ public:
 		else // Can do Simple Search (Only Matches the Important Pipeline Stuff)
 		{
 			const u64 quick64 = pState->quick64[0];
+			const auto matchesQuickState = [quick64, pState](const microBlockLinkRef& ref) {
+				return ref.pBlock && ref.quick == quick64 &&
+					(!doConstProp || (ref.pBlock->pState.vi15 == pState->vi15 && ref.pBlock->pState.vi15v == pState->vi15v));
+			};
+			if (matchesQuickState(lastQuickHit))
+				return lastQuickHit.pBlock;
+
 			for (const microBlockLinkRef& ref : quickLookup)
 			{
-				if (ref.quick != quick64) continue;
-				if (doConstProp && (ref.pBlock->pState.vi15 != pState->vi15))  continue;
-				if (doConstProp && (ref.pBlock->pState.vi15v != pState->vi15v)) continue;
+				if (!matchesQuickState(ref)) continue;
+				lastQuickHit = ref;
 				return ref.pBlock;
 			}
 		}
@@ -304,6 +326,7 @@ mVUop(mVUopL);
 
 // Private Functions
 extern void mVUcacheProg(microVU& mVU, microProgram& prog);
+extern void mVUcacheProgRange(microVU& mVU, microProgram& prog, s32 start, s32 end);
 extern void mVUdeleteProg(microVU& mVU, microProgram*& prog);
 _mVUt extern void* mVUsearchProg(u32 startPC, uptr pState);
 extern void* mVUexecuteVU0(u32 startPC, u32 cycles);

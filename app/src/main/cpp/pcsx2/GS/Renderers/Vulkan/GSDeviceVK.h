@@ -411,6 +411,31 @@ private:
 		m_tfx_fragment_shaders;
 	std::unordered_map<PipelineSelector, VkPipeline, PipelineSelectorHash> m_tfx_pipelines;
 
+#ifdef __SWITCH__
+	// Pipeline prewarming: every TFX pipeline a game uses is appended to a per-game history file. The next
+	// time that game starts, those pipelines are created again a few at a time after each presented frame
+	// (from the shader caches, so without compiling), instead of stalling the GS thread mid-frame the first
+	// time each one is drawn with.
+	void OpenPipelineHistory(const std::string& game_id);
+	void ClosePipelineHistory();
+	void RecordPipeline(const PipelineSelector& p);
+	void PrewarmPipelines();
+
+	std::FILE* m_pipeline_history = nullptr;
+	std::string m_pipeline_history_game;
+	u32 m_pipeline_history_count = 0;
+	std::vector<PipelineSelector> m_pipeline_prewarm;
+	size_t m_pipeline_prewarm_pos = 0;
+	u32 m_pipeline_prewarm_created = 0;
+	u64 m_pipeline_prewarm_time = 0; // Common::Timer::Value
+
+public:
+	/// Called on the GS thread when the running game changes.
+	void GameChanged();
+
+private:
+#endif
+
 	VkRenderPass m_utility_color_render_pass_load = VK_NULL_HANDLE;
 	VkRenderPass m_utility_color_render_pass_clear = VK_NULL_HANDLE;
 	VkRenderPass m_utility_color_render_pass_discard = VK_NULL_HANDLE;

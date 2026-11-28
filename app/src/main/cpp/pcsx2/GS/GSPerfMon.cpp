@@ -17,6 +17,7 @@ void GSPerfMon::Reset()
 	m_count = 0;
 	std::memset(m_counters, 0, sizeof(m_counters));
 	std::memset(m_stats, 0, sizeof(m_stats));
+	std::memset(m_totals, 0, sizeof(m_totals));
 }
 
 void GSPerfMon::EndFrame(bool frame_only)
@@ -38,6 +39,9 @@ void GSPerfMon::Update()
 
 		m_count = 0;
 	}
+
+	for (size_t i = 0; i < std::size(m_counters); i++)
+		m_totals[i] += m_counters[i];
 
 	memset(m_counters, 0, sizeof(m_counters));
 }

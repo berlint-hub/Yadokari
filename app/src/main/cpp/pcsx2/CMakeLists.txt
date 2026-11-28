@@ -883,6 +883,9 @@ set(pcsx2InputHeaders
 )
 
 if(HORIZON)
+	list(APPEND pcsx2Sources ImGui/HorizonCheatDownload.cpp ImGui/HorizonCheatValidation.cpp)
+	list(APPEND pcsx2Headers ImGui/HorizonCheatDownload.h)
+	list(APPEND pcsx2InputHeaders Input/HorizonInputSettings.h)
 	list(REMOVE_ITEM pcsx2HostSources Host/SDLAudioStream.cpp)
 	list(REMOVE_ITEM pcsx2HostSources Host/OboeAudioStream.cpp)
 	list(REMOVE_ITEM pcsx2HostHeaders Host/OboeAudioStream.h)
@@ -894,17 +897,19 @@ if(HORIZON)
 	list(REMOVE_ITEM pcsx2DEV9Sources DEV9/pcap_io.cpp)
 	list(APPEND pcsx2GSSources GS/Renderers/Null/GSDeviceNull.cpp)
 	list(APPEND pcsx2GSHeaders GS/Renderers/Null/GSDeviceNull.h)
-	# deko3d renderer
-	list(APPEND pcsx2GSSources GS/Renderers/DK3D/GSDeviceDK.cpp)
-	list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/GSDeviceDK.h)
-	list(APPEND pcsx2GSSources GS/Renderers/DK3D/GSTextureDK.cpp)
-	list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/GSTextureDK.h)
-	list(APPEND pcsx2GSSources GS/Renderers/DK3D/DKShaderCompiler.cpp)
-	list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/DKShaderCompiler.h)
-	list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/uam/UamBridge.h)
-	# The uam blob itself is built and linked by switch/app.
-	if(DK3D_RUNTIME_SHADERS)
-		target_compile_definitions(PCSX2_FLAGS INTERFACE DK3D_RUNTIME_SHADERS=1)
+	if(USE_DK3D)
+		# deko3d renderer
+		list(APPEND pcsx2GSSources GS/Renderers/DK3D/GSDeviceDK.cpp)
+		list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/GSDeviceDK.h)
+		list(APPEND pcsx2GSSources GS/Renderers/DK3D/GSTextureDK.cpp)
+		list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/GSTextureDK.h)
+		list(APPEND pcsx2GSSources GS/Renderers/DK3D/DKShaderCompiler.cpp)
+		list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/DKShaderCompiler.h)
+		list(APPEND pcsx2GSHeaders GS/Renderers/DK3D/uam/UamBridge.h)
+		# The uam blob itself is built and linked by switch/app.
+		if(DK3D_RUNTIME_SHADERS)
+			target_compile_definitions(PCSX2_FLAGS INTERFACE DK3D_RUNTIME_SHADERS=1)
+		endif()
 	endif()
 endif()
 
@@ -961,6 +966,8 @@ set(pcsx2FreeBSDSources
 set(pcsx2HorizonSources
 	CDVD/Horizon/DriveUtility.cpp
 	CDVD/Horizon/IOCtlSrc.cpp
+	Horizon/HorizonProfiler.cpp
+	Horizon/HorizonSystemInfo.cpp
 	)
 
 # Linux headers

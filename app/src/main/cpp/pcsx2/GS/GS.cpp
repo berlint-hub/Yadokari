@@ -22,6 +22,10 @@
 #include "GS/Renderers/HW/GSTextureReplacements.h"
 #include "VMManager.h"
 
+#ifdef __SWITCH__
+#include "Horizon/HorizonProfiler.h"
+#endif
+
 #ifdef ENABLE_OPENGL
 #include "GS/Renderers/OpenGL/GSDeviceOGL.h"
 #endif
@@ -36,6 +40,8 @@
 
 #ifdef __SWITCH__
 #include "GS/Renderers/Null/GSDeviceNull.h"
+#endif
+#ifdef ENABLE_DK3D
 #include "GS/Renderers/DK3D/GSDeviceDK.h"
 #endif
 
@@ -103,7 +109,7 @@ static RenderAPI GetAPIForRenderer(GSRendererType renderer)
 			return RenderAPI::Metal;
 #endif
 
-#ifdef __SWITCH__
+#ifdef ENABLE_DK3D
 		case GSRendererType::DK3D:
 			return RenderAPI::DK3D;
 #endif
@@ -158,6 +164,8 @@ static bool OpenGSDevice(GSRendererType renderer, bool clear_state_on_fail, bool
 		case RenderAPI::None:
 			g_gs_device = std::make_unique<GSDeviceNull>();
 			break;
+#endif
+#ifdef ENABLE_DK3D
 		case RenderAPI::DK3D:
 			g_gs_device = std::make_unique<GSDeviceDK>();
 			break;
@@ -189,7 +197,16 @@ static bool OpenGSDevice(GSRendererType renderer, bool clear_state_on_fail, bool
 		return false;
 	}
 
+#ifdef __SWITCH__
+	// The performance log reports GPU time too.
+	if (GSConfig.OsdShowGPU || HorizonProfiler::WantsGPUTiming())
+	{
+		const bool gpu_timing = g_gs_device->SetGPUTimingEnabled(true);
+		GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && gpu_timing;
+	}
+#else
 	GSConfig.OsdShowGPU = GSConfig.OsdShowGPU && g_gs_device->SetGPUTimingEnabled(true);
+#endif
 
 	Console.WriteLn(Color_StrongGreen, "%s Graphics Driver Info:", GSDevice::RenderAPIToString(new_api));
 	Console.WriteLn(g_gs_device->GetDriverInfo());
@@ -551,6 +568,11 @@ void GSGameChanged()
 	if (GSIsHardwareRenderer())
 		GSTextureReplacements::GameChanged();
 
+#if defined(__SWITCH__) && defined(ENABLE_VULKAN)
+	if (g_gs_device && g_gs_device->GetRenderAPI() == RenderAPI::Vulkan)
+		static_cast<GSDeviceVK*>(g_gs_device.get())->GameChanged();
+#endif
+
 	if (!VMManager::HasValidVM() && GSCapture::IsCapturing())
 		GSCapture::EndCapture();
 }
@@ -866,7 +888,11 @@ void GSUpdateConfig(const Pcsx2Config::GSOptions& new_config)
 
 	if (GSConfig.OsdShowGPU != old_config.OsdShowGPU)
 	{
+#ifdef __SWITCH__
+		if (!g_gs_device->SetGPUTimingEnabled(GSConfig.OsdShowGPU || HorizonProfiler::WantsGPUTiming()))
+#else
 		if (!g_gs_device->SetGPUTimingEnabled(GSConfig.OsdShowGPU))
+#endif
 			GSConfig.OsdShowGPU = false;
 	}
 }

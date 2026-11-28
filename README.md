@@ -32,14 +32,36 @@ ARMSX2-NX can be downloaded from [Github Releases](https://github.com/Palindromi
 This assumes you have DevkitPro installed. Install it if you don't.
 
 ```shell
-(dkp-)pacman -S switch-dev switch-libpng switch-libjpeg-turbo switch-ntfs-3g switch-lwext4
+(dkp-)pacman -S switch-dev switch-libpng switch-libjpeg-turbo switch-curl switch-ntfs-3g switch-lwext4
 ```
+
+- `switch-curl` is required for RetroAchievements (the Switch build always links curl).
+- `switch-ntfs-3g` and `switch-lwext4` are required for USB game loading.
 
 Initialize the submodules after cloning:
 
 ```shell
 git submodule update --init --recursive
 ```
+
+Only `switch/externals/libusbhsfs` is needed for the Switch build. The other submodules are used by the
+Android app, so `git submodule update --init switch/externals/libusbhsfs` is enough if you only build the `.nro`.
+
+### NXVK (Vulkan)
+
+The Switch build is Vulkan only. The Vulkan driver comes from NXVK, which has to be installed as a
+Switch portlib before configuring ARMSX2-NX:
+
+```shell
+git clone https://github.com/PalindromicBreadLoaf/nxvk
+cd nxvk
+make
+sudo make install
+```
+
+The Switch build discovers the installed `nxvk` package through devkitPro's target `pkg-config`.
+
+### Building the `.nro`
 
 Configure the native core with the Switch toolchain, then build the `.nro` target:
 
@@ -53,22 +75,198 @@ cmake --build build/switch-core --target armsx2_nro -j$(nproc)
 
 The output binary will be located at `build/switch-core/switch-app/armsx2nx.nro`
 
-The Vulkan backend is enabled by default. Install NXVK as a Switch portlib
-before configuring ARMSX2-NX:
+The GitHub Actions workflow `.github/workflows/switch_build.yml` does all of the above and uploads the
+`.nro` as a build artifact.
 
-```shell
-git clone https://github.com/PalindromicBreadLoaf/nxvk
-cd nxvk
-make
-sudo make install
+### Optional renderers
+
+OpenGL (Zink) and deko3d are off by default on Switch. They can still be built:
+
+- `-DUSE_OPENGL=ON` needs NXVK's OpenGL package (`make gl` / `sudo make install-gl`) and EGL headers
+  for CMake's `find_package(EGL)` (devkitPro's `switch-mesa`).
+- `-DUSE_DK3D=ON` builds the deko3d renderer. It compiles shaders at runtime with uam, which is built into
+  the `.nro` from source: clone https://github.com/devkitPro/uam next to the ARMSX2-NX checkout (or pass
+  `-DUAM_ROOT=/path/to/uam`) and install `bison`, `flex` and `python3` with `mako`. Add
+  `-DDK3D_RUNTIME_SHADERS=OFF` to use only the prebuilt shaders instead.
+
+## Controls
+
+| Switch | PS2 |
+| --- | --- |
+| A / B / X / Y | Circle / Cross / Triangle / Square |
+| L / R | L1 / R1 |
+| ZL / ZR | L2 / R2 |
+| Left / right stick click | L3 / R3 |
+| + / - | Start / Select |
+
+Hold **+** and **-** together to open the pause menu. Press both at the same time: if one of them is
+pressed noticeably earlier, the game may still see that button first.
+
+Two players are supported. Player 1 is the first controller (or the attached Joy-Cons in handheld mode),
+player 2 is the second controller. Use **Controller Setup** in the pause menu to open the system controller
+applet and assign the controllers to players.
+
+## CPU cores
+
+The EE, VU1 and GS threads are pinned to the first three cores the process may use. Every other thread
+(audio, ISO/USB reading, input, the Vulkan driver's helpers) is moved off the EE core when it starts: to
+the GS core, and to core 3 when the process is allowed to use it. The log (`sdmc:/switch/armsx2/logs/emulog.txt`)
+shows which cores were granted, e.g. `process may use mask 0x7` for cores 0-2 or `0xf` for cores 0-3.
+
+Launched from hbmenu the app gets cores 0-2. A forwarder runs with the cores its `main.npdm` allows:
+forwarders built from hbloader's NPDM also allow 0-2 (`"highest_cpu_id": 2`). With
+`"highest_cpu_id": 3` in the forwarder's NPDM, core 3 is used for the helper threads. Core 3 is shared
+with the system, which is why the EE/VU1/GS threads stay on cores 0-2.
+
+With [sphaira](https://github.com/berlint-hub/sphaira) there are two ways to get core 3:
+
+- Create a forwarder for `armsx2nx.nro` and set **CPU Cores** to **4 (Advanced)** in the forwarder editor.
+- Or, while sphaira itself runs from its forwarder, open the options for `armsx2nx.nro` in the homebrew
+  menu and set **CPU Cores** to **4 (Advanced)**.
+
+## Shader caches and pipeline prewarming
+
+The first time a game draws with a new combination of GS settings, the Vulkan pipeline for it has to be
+compiled, which stalls the GS thread (the log reports stalls over 100 ms as "GS thread blocked ...").
+Compiled shaders are kept on the SD card (`sdmc:/switch/armsx2/cache`), so this happens once:
+
+- the SPIR-V for each shader (written as soon as it is compiled),
+- NVK's compiled GPU code (`cache/mesa`, written as soon as it is compiled),
+- the Vulkan pipeline cache (written when the app exits).
+
+On top of that, every pipeline a game uses is listed in `cache/vk_pipelines/<serial>_<crc>.bin`. The next
+time that game starts, those pipelines are created again from the caches a few at a time (about 2 ms after
+each frame) during the boot logos and menus, so gameplay no longer pauses to create them. The list is
+discarded after an emulator, driver or GPU feature change. Turn it off with
+`[EmuCore/GS] VulkanPipelinePrewarm = false` in `armsx2.ini`.
+
+## VU1 clamping override
+
+The game database sets how strictly each game's VU1 code clamps out-of-range floats, and that normally replaces the
+**VU1 Clamping Mode** setting. **Settings > Advanced > VU1 Clamping Override** (best set in a game's own
+properties) replaces the database's choice in turn. Gran Turismo 4 is set to *Extra*, which clamps the operands
+and the result of every VU1 float operation; its hottest VU1 code is about a third clamps. *Normal* is much
+lighter on VU1 but can break graphics in games that need *Extra*.
+
+## Performance log and profiler
+
+While a game runs, the log (`sdmc:/switch/armsx2/logs/emulog.txt`) gets a summary every 5 seconds:
+
+```
+[Perf] 35-40s: speed 78% | 46.9 fps (game 60) | frame avg 21.3 max 48.1 ms | limiter EE | CPU 1224-1785 MHz (avg 1530)
+[Perf]   EE 97% 16.2ms/f (wait VU 0.3 GS 0.0 vsync 0.0) | VU1 41% 6.8ms/f | GS 55% 9.1ms/f (wait idle 8.1 swap 0.4 gpu 1.0) | GPU 9.2ms/f
+[Perf]   GS per vsync: 523 draws 2100 prims 401 draw calls 31.0 passes 4.0 barriers 12.0 uploads 3.0 copies 0.20 readbacks 0.20 GPU syncs
+[Perf]   JIT: EE 140 blk 9.0ms, 12 clears (3 hit) 0 discards 0 resets | VU0 0 blk 0.0ms 0 progs | VU1 20 blk 3.1ms 2 progs 0 resets | VK 0 pipelines 0.0ms
+[Perf]   A64/VIXL: 180 blocks, 92.4 KiB | emit 4.20 ms (23.3 us/block) | setup 0.08 finalize 0.24 destroy 0.02 icache 0.10 ms | VU0 12 blk 8.0 KiB 0.30 ms | VU1 34 blk 20.0 KiB 0.95 ms
 ```
 
-The Switch build discovers the installed `nxvk` package through devkitPro's target `pkg-config`.
+- CPU load of the EE, VU1 and GS threads (% of one core, and ms per vsync), and how long each waited for
+  the others, for vsync, for the swap chain and for the GPU. `limiter` is the stage nobody was waiting for.
+- The CPU clock during those 5 seconds (read 4 times a second), so a governor or overclock tool lowering it
+  shows up next to the speed. The performance overlay's hardware line shows the SoC and the current clock.
+- What the GS did per vsync, including GPU readbacks, which stall until the GPU is done.
+- Recompiler work: EE blocks compiled, code invalidated by self-modifying code / DMA, microVU programs,
+  and Vulkan pipelines created. VU0 runs on the EE thread (it has no separate CPU-load line); VU1 can run
+  on its own thread. The EE/VU1 samples and hottest JIT code in `profile.txt` show where their runtime goes.
+- `A64/VIXL` counts assembler blocks and generated bytes. `emit` measures the open assembler lifetime before
+  finalization; it includes PCSX2's code-generation logic and its VIXL calls, so it is **not** pure VIXL CPU
+  time. VU0/VU1 sub-totals count assembler blocks emitted into each VU's own code cache; VU0 macro-mode
+  instructions emitted inside EE blocks stay in the EE/global totals. `setup`, `finalize`, `destroy` and `icache`
+  isolate assembler construction, finalization, destruction and instruction-cache flush costs. These totals can
+  exceed wall time when EE and VU1 compile concurrently.
+  A `[Hitch]` line includes the same A64 breakdown when JIT work happened during that frame.
+
+Every frame that takes much longer than the ones around it gets a `[Hitch]` line with what happened during
+that frame (compiles, pipelines, waits, readbacks) and which functions each thread was running in it.
+
+The EE, VU1 and GS threads are also sampled about 250 times a second. Every 30 seconds the hottest
+functions per thread go to the log as `[Prof]` lines, and the full report (time spent waiting, self and
+inclusive time, callers, the hottest call stacks, the hottest JIT code as instruction words, and the hottest
+EE guest code) to `sdmc:/switch/armsx2/logs/profile.txt`, which is rewritten each time a game starts.
+
+If the app crashes, `sdmc:/switch/armsx2/logs/crash.txt` says which thread crashed where, with registers and
+a backtrace. JIT code shows up as `[EE JIT]`, `[VU1 JIT]`, etc. Function names come from a symbol table
+the build puts in the romfs (`-DARMSX2_EMBED_SYMBOLS=OFF` leaves it out; the report then shows NRO offsets).
+
+Both cost little, but can be turned off in `armsx2.ini`:
+
+```ini
+[Horizon]
+PerformanceLog = false
+Profiler = false
+```
+
+`PerformanceLogInterval` (seconds), `ProfilerReportInterval` (seconds) and `ProfilerPeriodUs` change the
+intervals.
+
+## Updating
+
+Every push builds the `.nro` with GitHub Actions and publishes it to an update channel: a pre-release on
+this repository tagged `nightly` for the default branch, or `nightly-<branch>` for other branches.
+
+Choose **Update** in the app's main menu to check the selected channel. On Switch, choose the channel in
+**Settings → Interface Settings → Updates → Update Channel**: `Nightly (default branch)` or `This Arena branch`.
+If there is a newer build, the app downloads it and installs it when it closes. **Restart now** restarts straight
+into the new build. The previous build is kept next to it as `armsx2nx.nro.bak`. The app also checks once on
+startup when it is online. Both need an internet connection on the Switch.
+
+The defaults come from the build. They can be overridden in `sdmc:/switch/armsx2/armsx2.ini`:
+
+```ini
+[Horizon]
+CheckForUpdatesOnStartup = true
+UpdateRepository = berlint-hub/Yadokari
+UpdateChannel = nightly
+```
+
+## Switch controller shortcuts
+
+Player 1 can use these shortcuts while a game is running. Hold **−** first, then press the
+other button; release both before using them in the game. They are disabled while the menu is open.
+These are the defaults; change or disable each action in **Settings → Hotkey Settings → Switch
+Controller Shortcuts**. The modifier `−` and the `−` + `+` pause-menu shortcut remain fixed.
+If two actions use the same button, both conflicting shortcuts are disabled until corrected.
+Changes take effect when the menu closes.
+
+| Shortcut | Action |
+| --- | --- |
+| `−` + `+` | Open the pause menu |
+| `−` + `R` | Save state to the selected slot (overwrites that slot) |
+| `−` + `L` | Load state from the selected slot |
+| `−` + D-pad left/right | Select the previous/next save-state slot (1–10) |
+| `−` + D-pad up | Save a screenshot |
+
+The shortcut slot starts at 1 each time the app starts and is separate from the slot selector in
+the pause menu. The buttons used by a recognized shortcut are suppressed until released, but the
+initial press of `−` can already reach the game as Select before the shortcut is recognized.
+Player 2 is unaffected. Loading a state also follows the existing RetroAchievements hardcore-mode
+and memory-card safety checks. Keep normal in-game memory-card saves as well: save states are not a
+substitute for them.
+
+The same settings page also provides a **Stick Deadzone** adjustment (0–50%, default 15%) for
+both sticks on both players' controllers. **Reset Switch Controls** restores the default shortcuts
+and deadzone.
+
+## Downloading cheats
+
+With the Switch connected to the internet, open a game's **Game Properties → Cheats** page and
+select **Download Cheats**. The downloader asks for confirmation and looks for a file matching the
+game's serial and CRC in the community-maintained
+[PCSX2 cheats collection](https://github.com/xs1l3n7x/pcsx2_cheats_collection), falling back to a
+CRC-only filename when necessary. Not every game, region, or revision is covered. Downloaded files
+are saved to the configured cheats directory (normally `sdmc:/switch/armsx2/cheats`), and an
+existing destination file is never overwritten. Delete or move it manually before downloading again.
+
+Enable cheats and select the desired codes in the same page. Unlabelled codes are rejected because
+they could activate without individual selection. Previously enabled codes with matching names may
+become active when the downloaded file is loaded. Cheats can cause crashes or damage saves; back up
+important memory cards first. RetroAchievements hardcore mode disables cheats. Downloads require
+working HTTPS certificate verification on the Switch; network or certificate errors are shown in the UI.
 
 ## USB game loading
 
 USB mass-storage drives are mounted automatically and their roots are scanned for games. Supported
-filesystesm are FAT12/16/32, exFAT, NTFS, and EXT2/3/4. USB volumes are mounted read-only to prevent
+filesystems are FAT12/16/32, exFAT, NTFS, and EXT2/3/4. USB volumes are mounted read-only to prevent
 corruption if they are unexpectedly unplugged.
 
 Do not unplug a drive while a game is running from it. Return to the game list first so ARMSX2 has
@@ -87,6 +285,9 @@ ARMSX2-NX is NOT affiliated with ARM Holding LTD in any way shape or form. Nor i
 All contributions to this project are welcome! There's a lot still to be re-implemented that was stubbed out from ARMSX2 and a lot of performance that needs to be gained if possible.
 
 If you don't know/don't want to code, please just open issues for games not rendering properly, app crashes, missing features, or anything else that needs done/fixing.
+
+[AGENTS.md](AGENTS.md) has the working notes for code changes: layout, building and testing without a Switch,
+reading the logs and crash reports, recompiler conventions, known traps and the current performance work.
 
 ## Additional Credits
 

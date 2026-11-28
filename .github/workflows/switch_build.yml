@@ -1,0 +1,254 @@
+name: Switch Build
+
+# Builds the Vulkan release armsx2nx.nro for the Nintendo Switch.
+#
+# - nxvk: builds the NXVK Vulkan portlib in NXVK's own toolchain image. The staged portlib is cached
+#   per NXVK commit, so only a new NXVK commit costs a full Mesa build.
+# - nro: builds the emulator (Release, Vulkan only) in devkitpro/devkita64 and uploads the .nro.
+# - publish: (pushes and manual runs only) puts the .nro on the branch's update channel, a pre-release
+#   tagged "nightly" for the default branch and "nightly-<branch>" otherwise. The app's Update menu
+#   downloads https://github.com/<repo>/releases/download/<channel>/armsx2nx.nro from there.
+
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      nxvk_repository:
+        description: 'NXVK repository (owner/name)'
+        required: false
+        default: 'PalindromicBreadLoaf/nxvk'
+      nxvk_ref:
+        description: 'NXVK branch, tag or commit (empty = default branch)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: switch-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NXVK_REPOSITORY: ${{ inputs.nxvk_repository || 'PalindromicBreadLoaf/nxvk' }}
+  NXVK_REF: ${{ inputs.nxvk_ref || '' }}
+
+jobs:
+  nxvk:
+    name: NXVK portlib (Vulkan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    outputs:
+      sha: ${{ steps.rev.outputs.sha }}
+
+    steps:
+      - name: Checkout NXVK
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.NXVK_REPOSITORY }}
+          ref: ${{ env.NXVK_REF }}
+          path: nxvk
+
+      - name: Resolve NXVK revision
+        id: rev
+        run: echo "sha=$(git -C nxvk rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore NXVK portlib
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: nxvk-portlib
+          key: nxvk-vk-${{ steps.rev.outputs.sha }}-v1
+
+      - name: Free disk space
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost \
+            /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Build NXVK toolchain image
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: docker build -t nxvk nxvk/switch/docker
+
+      # The NXVK scripts expect the repository at /work. CONTAINER= runs every step directly in this
+      # container, where devkitA64 (and its ar for the packaging step) is available.
+      - name: Build NXVK
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: docker run --rm -v "$PWD/nxvk:/work" -w /work nxvk make CONTAINER=
+
+      # Same files as `make install`, laid out like $DEVKITPRO/portlibs/switch.
+      - name: Stage NXVK portlib
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" nxvk
+          PKG=nxvk/switch/build/pkg/lib
+          mkdir -p nxvk-portlib/lib/pkgconfig nxvk-portlib/include nxvk-portlib/licenses/nxvk
+          cp "$PKG/libnvk.a" "$PKG/libnvk_support.a" nxvk-portlib/lib/
+          cp "$PKG/pkgconfig/nxvk.pc" nxvk-portlib/lib/pkgconfig/
+          cp -r nxvk/include/vulkan nxvk/include/vk_video nxvk-portlib/include/
+          cp nxvk/licenses/GPL-2.0-or-later nxvk-portlib/licenses/nxvk/
+          echo "${{ env.NXVK_REPOSITORY }}@${{ steps.rev.outputs.sha }}" > nxvk-portlib/licenses/nxvk/REVISION
+          ls -la nxvk-portlib/lib nxvk-portlib/lib/pkgconfig
+
+      - name: Upload NXVK portlib
+        uses: actions/upload-artifact@v4
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+          if-no-files-found: error
+          retention-days: 7
+
+  nro:
+    name: ARMSX2-NX (Vulkan release)
+    needs: nxvk
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    container: devkitpro/devkita64:latest
+    outputs:
+      update_tag: ${{ steps.channel.outputs.tag }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout libusbhsfs submodule
+        run: |
+          git config --global --add safe.directory '*'
+          git submodule update --init --depth 1 switch/externals/libusbhsfs
+
+      # Already part of the devkita64 image (switch-dev + switch-portlibs); listed so a missing one fails here.
+      - name: Check devkitPro packages
+        run: |
+          dkp-pacman -S --needed --noconfirm switch-dev switch-libpng switch-libjpeg-turbo switch-curl \
+            switch-ntfs-3g switch-lwext4
+
+      - name: Download NXVK portlib
+        uses: actions/download-artifact@v4
+        with:
+          name: nxvk-portlib
+          path: nxvk-portlib
+
+      - name: Install NXVK portlib
+        run: |
+          cp -r nxvk-portlib/. "$DEVKITPRO/portlibs/switch/"
+          "$DEVKITPRO/portlibs/switch/bin/aarch64-none-elf-pkg-config" --modversion nxvk
+
+      - name: Update channel
+        id: channel
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF_NAME" = "$DEFAULT_BRANCH" ]; then
+            TAG=nightly
+          else
+            TAG="nightly-$(printf '%s' "$GITHUB_REF_NAME" | tr -c 'A-Za-z0-9._-' '-')"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Update channel: $TAG"
+
+      - name: Configure
+        run: |
+          cmake -S app/src/main/cpp -B build/switch-core -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/Switch.cmake" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+            -DUSE_VULKAN=ON -DUSE_OPENGL=OFF -DUSE_DK3D=OFF \
+            -DARMSX2_BUILD_SHA="$GITHUB_SHA" \
+            -DARMSX2_UPDATE_REPO="$GITHUB_REPOSITORY" \
+            -DARMSX2_UPDATE_TAG="${{ steps.channel.outputs.tag }}"
+
+      - name: Build
+        run: |
+          set -o pipefail
+          if ! cmake --build build/switch-core --target armsx2_nro -j"$(nproc)" 2>&1 | tee /tmp/armsx2-build.log; then
+            errors=$(grep -E '(^|[[:space:]])(fatal )?error:|undefined reference|collect2:|make: \*\*\*|Error [0-9]' /tmp/armsx2-build.log | tail -n 20 || true)
+            if [ -z "$errors" ]; then
+              errors=$(tail -n 20 /tmp/armsx2-build.log)
+            fi
+            while IFS= read -r line; do
+              escaped=$(printf '%s' "$line" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' -e 's/\n/%0A/g')
+              echo "::error title=Build diagnostic::$escaped"
+            done <<< "$errors"
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          NRO=build/switch-core/switch-app/armsx2nx.nro
+          {
+            echo "### armsx2nx.nro (Vulkan release)"
+            echo ""
+            echo "- commit: \`${GITHUB_SHA}\`"
+            echo "- NXVK: \`${{ env.NXVK_REPOSITORY }}@${{ needs.nxvk.outputs.sha }}\`"
+            echo "- update channel: \`${{ steps.channel.outputs.tag }}\`"
+            echo "- size: $(stat -c %s "$NRO") bytes"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload .nro
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsx2nx-vulkan
+          path: build/switch-core/switch-app/armsx2nx.nro
+          if-no-files-found: error
+          retention-days: 30
+
+      # Unstripped ELF for resolving crash addresses from HorizonException logs.
+      - name: Upload ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: armsx2nx-vulkan-elf
+          path: build/switch-core/switch-app/armsx2.elf
+          if-no-files-found: warn
+          retention-days: 14
+
+  publish:
+    name: Publish to the update channel
+    needs: nro
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download .nro
+        uses: actions/download-artifact@v4
+        with:
+          name: armsx2nx-vulkan
+          path: artifact
+
+      - name: Publish release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.nro.outputs.update_tag }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          TITLE="${COMMIT_MESSAGE%%$'\n'*}"
+          printf 'sha=%s\ndate=%s\ntitle=%s\n' "$GITHUB_SHA" "$(date -u +%Y-%m-%d)" "$TITLE" > version.txt
+          cat version.txt
+
+          NAME="Switch build ($GITHUB_REF_NAME)"
+          NOTES="Automatic Vulkan build of \`$GITHUB_REF_NAME\` at $GITHUB_SHA. Install it from the app: main menu > Update."
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            # Move the channel's tag to this commit and refresh the release text.
+            gh api -X PATCH "repos/$GH_REPO/git/refs/tags/$TAG" -f sha="$GITHUB_SHA" -F force=true > /dev/null
+            gh release edit "$TAG" --title "$NAME" --notes "$NOTES" --prerelease
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --title "$NAME" --notes "$NOTES" --prerelease
+          fi
+
+          # The .nro goes up first: version.txt only announces a build once its .nro is in place.
+          gh release upload "$TAG" artifact/armsx2nx.nro --clobber
+          gh release upload "$TAG" version.txt --clobber
+          echo "Published https://github.com/$GH_REPO/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"

@@ -156,6 +156,40 @@
                 app:tickVisible="false" />
         </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_vu1_cycle_skip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_vu1_cycle_skip_default"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp" />
+
+            <com.google.android.material.slider.Slider
+                android:id="@+id/sb_vu1_cycle_skip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:value="0"
+                android:valueFrom="0"
+                android:valueTo="3"
+                android:stepSize="1"
+                app:haloRadius="16dp"
+                app:labelBehavior="gone"
+                app:tickVisible="false" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_vu1_cycle_skip_warning"
+                android:textColor="?attr/colorError"
+                android:textSize="12sp" />
+        </LinearLayout>
+
         <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/sw_vu_thread"
             android:layout_width="match_parent"

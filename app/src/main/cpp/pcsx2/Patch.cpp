@@ -361,8 +361,22 @@ bool Patch::OpenPatchesZip()
 		return false;
 	}
 
-	std::atexit([]() { zip_close(s_patches_zip); });
+	static bool s_close_registered = false;
+	if (!s_close_registered)
+	{
+		std::atexit(&Patch::ClosePatchesZip);
+		s_close_registered = true;
+	}
 	return true;
+}
+
+void Patch::ClosePatchesZip()
+{
+	if (s_patches_zip)
+	{
+		zip_close(s_patches_zip);
+		s_patches_zip = nullptr;
+	}
 }
 
 std::string Patch::GetPnachTemplate(const std::string_view serial, u32 crc, bool include_serial, bool add_wildcard, bool all_crcs)

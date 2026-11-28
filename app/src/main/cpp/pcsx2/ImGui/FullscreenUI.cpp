@@ -12,6 +12,11 @@
 #include "Host/AudioStream.h"
 #include "INISettingsInterface.h"
 #include "ImGui/FullscreenUI.h"
+#ifdef __SWITCH__
+#include "Horizon/HorizonUpdater.h"
+#include "ImGui/HorizonCheatDownload.h"
+#include "Input/HorizonInputSettings.h"
+#endif
 #include "ImGui/ImGuiFullscreen.h"
 #include "ImGui/ImGuiManager.h"
 #include "ImGui/ImGuiOverlays.h"
@@ -182,6 +187,7 @@ namespace FullscreenUI
 		GameList,
 		GameListSettings,
 		Settings,
+		Downloads,
 		PauseMenu,
 		Achievements,
 		Leaderboards,
@@ -231,6 +237,9 @@ namespace FullscreenUI
 	static void OpenPauseSubMenu(PauseSubMenu submenu);
 	static void DrawLandingTemplate(ImVec2* menu_pos, ImVec2* menu_size);
 	static void DrawLandingWindow();
+#ifdef __SWITCH__
+	static void DrawDownloadsWindow();
+#endif
 	static void DrawStartGameWindow();
 	static void DrawExitWindow();
 	static void DrawPauseMenu(MainWindowType type);
@@ -326,7 +335,7 @@ namespace FullscreenUI
 	static void DrawAchievementsSettingsPage(std::unique_lock<std::mutex>& settings_lock);
 	static void DrawControllerSettingsPage();
 	static void DrawHotkeySettingsPage();
-	static void DrawAdvancedSettingsPage();
+	static void DrawAdvancedSettingsPage(bool show_advanced_settings);
 	static void DrawPatchesOrCheatsSettingsPage(bool cheats);
 	static void DrawGameFixesSettingsPage();
 
@@ -414,6 +423,9 @@ namespace FullscreenUI
 	static SettingsPage s_settings_page = SettingsPage::Interface;
 	static std::unique_ptr<INISettingsInterface> s_game_settings_interface;
 	static std::unique_ptr<GameList::Entry> s_game_settings_entry;
+#ifdef __SWITCH__
+	static HorizonCheatDownload::Downloader s_cheat_downloader;
+#endif
 	static std::vector<std::pair<std::string, bool>> s_game_list_directories_cache;
 	static std::vector<GSAdapterInfo> s_graphics_adapter_list_cache;
 	static Patch::PatchInfoList s_game_patch_list;
@@ -945,6 +957,10 @@ void FullscreenUI::OpenPauseSubMenu(PauseSubMenu submenu)
 
 void FullscreenUI::Shutdown(bool clear_state)
 {
+#ifdef __SWITCH__
+	// Cancel and join before the graphics/UI state is destroyed.
+	s_cheat_downloader.Shutdown();
+#endif
 	if (clear_state)
 	{
 		CloseSaveStateSelector();
@@ -988,6 +1004,24 @@ void FullscreenUI::Render()
 
 	ImGuiFullscreen::BeginLayout();
 
+#ifdef __SWITCH__
+	if (auto result = s_cheat_downloader.Poll())
+	{
+		ShowToast(FSUI_STR("Download Cheats"), result->message, 8.0f);
+		if (result->success)
+		{
+			// The user may have navigated to a different game while downloading.
+			if (s_game_settings_interface && s_game_settings_entry &&
+				s_game_settings_entry->serial == result->serial && s_game_settings_entry->crc == result->crc)
+				PopulatePatchesAndCheatsList(result->serial, result->crc);
+			Host::RunOnCPUThread([serial = result->serial, crc = result->crc]() {
+				if (VMManager::HasValidVM() && VMManager::GetDiscSerial() == serial && VMManager::GetDiscCRC() == crc)
+					VMManager::ReloadPatches(true, true, false, false);
+			});
+		}
+	}
+#endif
+
 	// Primed achievements must come first, because we don't want the pause screen to be behind them.
 	if (s_current_main_window == MainWindowType::None && EmuConfig.Achievements.Overlays)
 		Achievements::DrawGameOverlays();
@@ -1012,6 +1046,11 @@ void FullscreenUI::Render()
 		case MainWindowType::Settings:
 			DrawSettingsWindow();
 			break;
+#ifdef __SWITCH__
+		case MainWindowType::Downloads:
+			DrawDownloadsWindow();
+			break;
+#endif
 		case MainWindowType::PauseMenu:
 			DrawPauseMenu(s_current_main_window);
 			break;
@@ -1458,7 +1497,12 @@ void FullscreenUI::DrawLandingWindow()
 
 	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
 
-	if (BeginHorizontalMenu("landing_window", menu_pos, menu_size, 4))
+#ifdef __SWITCH__
+	static constexpr u32 landing_item_count = 5; // + Downloads
+#else
+	static constexpr u32 landing_item_count = 4;
+#endif
+	if (BeginHorizontalMenu("landing_window", menu_pos, menu_size, landing_item_count))
 	{
 		ResetFocusHere();
 
@@ -1481,6 +1525,15 @@ void FullscreenUI::DrawLandingWindow()
 		{
 			SwitchToSettings();
 		}
+
+#ifdef __SWITCH__
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Downloads"),
+				FSUI_CSTR("Download updates and other available content.")))
+		{
+			s_current_main_window = MainWindowType::Downloads;
+			QueueResetFocus(FocusResetType::WindowChanged);
+		}
+#endif
 
 		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/exit.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit), FSUI_CSTR("Exit"),
 				FSUI_CSTR("Return to desktop mode, or exit the application.")) ||
@@ -1529,6 +1582,56 @@ void FullscreenUI::DrawLandingWindow()
 		});
 	}
 }
+
+#ifdef __SWITCH__
+void FullscreenUI::DrawDownloadsWindow()
+{
+	ImVec2 menu_pos, menu_size;
+	DrawLandingTemplate(&menu_pos, &menu_size);
+
+	ImGui::PushStyleColor(ImGuiCol_Text, UIBackgroundTextColor);
+
+	if (BeginHorizontalMenu("downloads_window", menu_pos, menu_size, 2))
+	{
+		ResetFocusHere();
+
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/update.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit),
+				FSUI_CSTR("Download Update"), FSUI_CSTR("Check and install a build from the channel selected in Interface Settings.")))
+		{
+			Host::OnUpdateCheckRequested();
+		}
+
+		if (HorizontalMenuItem(GetCachedSvgTexture("fullscreenui/back-icon.svg", LayoutScale(150.0f, 150.0f), SvgScaling::Fit),
+				FSUI_CSTR("Back"), FSUI_CSTR("Return to the previous menu.")) ||
+			(!AreAnyDialogsOpen() && WantsToCloseMenu()))
+		{
+			s_current_main_window = MainWindowType::Landing;
+			QueueResetFocus(FocusResetType::WindowChanged);
+		}
+	}
+	EndHorizontalMenu();
+
+	ImGui::PopStyleColor();
+
+	if (IsGamepadInputSource())
+	{
+		const bool circleOK = ImGui::GetIO().ConfigNavSwapGamepadButtons;
+		SetFullscreenFooterText(std::array{
+			std::make_pair(ICON_PF_DPAD_LEFT_RIGHT, FSUI_VSTR("Navigate")),
+			std::make_pair(circleOK ? ICON_PF_BUTTON_CIRCLE : ICON_PF_BUTTON_CROSS, FSUI_VSTR("Select")),
+			std::make_pair(circleOK ? ICON_PF_BUTTON_CROSS : ICON_PF_BUTTON_CIRCLE, FSUI_VSTR("Back")),
+		});
+	}
+	else
+	{
+		SetFullscreenFooterText(std::array{
+			std::make_pair(ICON_PF_ARROW_LEFT ICON_PF_ARROW_RIGHT, FSUI_VSTR("Navigate")),
+			std::make_pair(ICON_PF_ENTER, FSUI_VSTR("Select")),
+			std::make_pair(ICON_PF_ESC, FSUI_VSTR("Back")),
+		});
+	}
+}
+#endif // __SWITCH__
 
 void FullscreenUI::DrawStartGameWindow()
 {
@@ -3089,6 +3192,7 @@ void FullscreenUI::DrawSettingsWindow()
 			ICON_PF_PICTURE,
 			ICON_PF_SOUND,
 			ICON_PF_MEMORY_CARD,
+			ICON_FA_BIOHAZARD,
 			ICON_FA_EXCLAMATION_TRIANGLE,
 		};
 		static constexpr SettingsPage global_pages[] = {
@@ -3112,6 +3216,7 @@ void FullscreenUI::DrawSettingsWindow()
 			SettingsPage::Graphics,
 			SettingsPage::Audio,
 			SettingsPage::MemoryCard,
+			SettingsPage::Advanced,
 			SettingsPage::GameFixes,
 		};
 		static constexpr const char* titles[] = {
@@ -3136,14 +3241,20 @@ void FullscreenUI::DrawSettingsWindow()
 		const char* const* icons = game_settings ? per_game_icons : global_icons;
 		const SettingsPage* pages = game_settings ? per_game_pages : global_pages;
 		u32 index = 0;
+		bool current_page_found = false;
 		for (u32 i = 0; i < count; i++)
 		{
 			if (pages[i] == s_settings_page)
 			{
 				index = i;
+				current_page_found = true;
 				break;
 			}
 		}
+		// The visible page set changes when Show Advanced Settings changes. Never keep a stale
+		// page selected after it disappears from the per-game navigation list.
+		if (!current_page_found)
+			s_settings_page = pages[index];
 
 		BeginNavBar();
 
@@ -3273,7 +3384,8 @@ void FullscreenUI::DrawSettingsWindow()
 				break;
 
 			case SettingsPage::Advanced:
-				DrawAdvancedSettingsPage();
+				// The settings lock is held here; pass the value computed before locking to avoid re-locking it.
+				DrawAdvancedSettingsPage(show_advanced_settings);
 				break;
 
 			case SettingsPage::GameFixes:
@@ -3565,6 +3677,22 @@ void FullscreenUI::DrawInterfaceSettingsPage()
 		});
 	}
 
+#ifdef __SWITCH__
+	static constexpr const char* s_update_channel_names[] = {
+		FSUI_NSTR("Nightly (default branch)"),
+		FSUI_NSTR("This Arena branch"),
+	};
+	static constexpr const char* s_update_channel_values[] = {
+		"nightly",
+		"nightly-arena-ad7f4507-yadokari",
+	};
+	MenuHeading(FSUI_CSTR("Updates"));
+	DrawStringListSetting(bsi, FSUI_CSTR("Update Channel"),
+		FSUI_CSTR("Selects which build the Downloads menu checks. Nightly follows the default branch; the Arena channel follows this development branch."),
+		"Horizon", "UpdateChannel", HorizonUpdater::GetDefaultChannel(), s_update_channel_names, s_update_channel_values,
+		std::size(s_update_channel_names), true);
+#endif
+
 	MenuHeading(FSUI_CSTR("Integration"));
 	DrawToggleSetting(bsi, FSUI_ICONSTR(ICON_FA_USER_CIRCLE, "Enable Discord Presence"),
 		FSUI_CSTR("Shows the game you are currently playing as part of your profile on Discord."), "EmuCore", "EnableDiscordPresence", false);
@@ -3753,6 +3881,12 @@ void FullscreenUI::DrawEmulationSettingsPage()
 		FSUI_NSTR("Moderate Underclock"),
 		FSUI_NSTR("Maximum Underclock"),
 	};
+	static constexpr const char* vu1_cycle_skip_settings[] = {
+		FSUI_NSTR("Off (Default)"),
+		FSUI_NSTR("Drop every 2nd VU1 dispatch"),
+		FSUI_NSTR("Drop every 4th VU1 dispatch"),
+		FSUI_NSTR("Drop every 8th VU1 dispatch"),
+	};
 	static constexpr const char* queue_entries[] = {
 		FSUI_NSTR("0 Frames (Hard Sync)"),
 		FSUI_NSTR("1 Frame"),
@@ -3780,6 +3914,9 @@ void FullscreenUI::DrawEmulationSettingsPage()
 	DrawIntListSetting(bsi, FSUI_CSTR("EE Cycle Skipping"),
 		FSUI_CSTR("Makes the emulated Emotion Engine skip cycles. Helps a small subset of games like SOTC. Most of the time it's harmful to performance."), "EmuCore/Speedhacks", "EECycleSkip", 0,
 		ee_cycle_skip_settings, std::size(ee_cycle_skip_settings), true);
+	DrawIntListSetting(bsi, FSUI_CSTR("Experimental VU1 Cycle Skipping"),
+		FSUI_CSTR("Drops complete threaded VU1 dispatches and estimates their timing. This can remove geometry, state updates, or interrupts and may break games; use only for experiments."),
+		"EmuCore/Speedhacks", "VU1CycleSkip", 0, vu1_cycle_skip_settings, std::size(vu1_cycle_skip_settings), true);
 	DrawToggleSetting(bsi, FSUI_CSTR("Enable MTVU (Multi-Threaded VU1)"),
 		FSUI_CSTR("Generally a speedup on CPUs with 4 or more cores. Safe for most games, but a few are incompatible and may hang."), "EmuCore/Speedhacks", "vuThread", false);
 	DrawToggleSetting(bsi, FSUI_CSTR("Thread Pinning"),
@@ -3924,7 +4061,7 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 #ifdef __APPLE__
 		FSUI_NSTR("Metal"),
 #endif
-#ifdef __SWITCH__
+#ifdef ENABLE_DK3D
 		FSUI_NSTR("Deko3D"),
 #endif
 		FSUI_NSTR("Software"),
@@ -3945,7 +4082,7 @@ void FullscreenUI::DrawGraphicsSettingsPage(SettingsInterface* bsi, bool show_ad
 #ifdef __APPLE__
 		"17", //GSRendererType::Metal,
 #endif
-#ifdef __SWITCH__
+#ifdef ENABLE_DK3D
 		"18", //GSRendererType::DK3D,
 #endif
 		"13", //GSRendererType::SW,
@@ -5103,6 +5240,44 @@ void FullscreenUI::DrawHotkeySettingsPage()
 
 	BeginMenuButtons();
 
+#ifdef __SWITCH__
+	MenuHeading(FSUI_CSTR("Switch Controller Shortcuts (Player 1)"));
+	ActiveButton(FSUI_CSTR("Hold Minus, then press the selected button. Minus + Plus always opens the menu."),
+		false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+	bool used[HorizonInputSettings::Count] = {};
+	bool duplicate = false;
+	for (const auto& binding : HorizonInputSettings::BINDINGS)
+	{
+		const int button = bsi->GetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		if (button > HorizonInputSettings::Disabled && button < HorizonInputSettings::Count)
+		{
+			duplicate |= used[button];
+			used[button] = true;
+		}
+		DrawIntListSetting(bsi, Host::TranslateToCString(TR_CONTEXT, binding.label),
+			FSUI_CSTR("Button used together with Minus. Set to Disabled to turn this shortcut off."),
+			HorizonInputSettings::SECTION, binding.key, binding.default_button,
+			HorizonInputSettings::BUTTON_NAMES, HorizonInputSettings::Count, false);
+	}
+	if (duplicate)
+		ActiveButton(FSUI_CSTR("Conflicting shortcuts are disabled. Assign a different button to each action."),
+			false, false, ImGuiFullscreen::LAYOUT_MENU_BUTTON_HEIGHT_NO_SUMMARY);
+
+	MenuHeading(FSUI_CSTR("Switch Stick Settings"));
+	DrawIntRangeSetting(bsi, FSUI_CSTR("Stick Deadzone"),
+		FSUI_CSTR("Applied to both sticks and both players. Changes take effect when you close the menu."),
+		HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE,
+		HorizonInputSettings::MIN_DEADZONE, HorizonInputSettings::MAX_DEADZONE, "%d%%");
+	if (MenuButton(FSUI_ICONSTR(ICON_FA_UNDO, "Reset Switch Controls"),
+		FSUI_CSTR("Restore the default Switch shortcuts and stick deadzone.")))
+	{
+		for (const auto& binding : HorizonInputSettings::BINDINGS)
+			bsi->SetIntValue(HorizonInputSettings::SECTION, binding.key, binding.default_button);
+		bsi->SetIntValue(HorizonInputSettings::SECTION, HorizonInputSettings::DEADZONE, HorizonInputSettings::DEFAULT_DEADZONE);
+		SetSettingsChanged(bsi);
+	}
+#endif
+
 	const HotkeyInfo* last_category = nullptr;
 	for (const HotkeyInfo* hotkey : s_hotkey_list_cache)
 	{
@@ -5141,7 +5316,7 @@ void FullscreenUI::DrawFoldersSettingsPage()
 	EndMenuButtons();
 }
 
-void FullscreenUI::DrawAdvancedSettingsPage()
+void FullscreenUI::DrawAdvancedSettingsPage(bool show_advanced_settings)
 {
 	static constexpr const char* ee_rounding_mode_settings[] = {
 		FSUI_NSTR("Nearest"),
@@ -5152,9 +5327,13 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 
 	SettingsInterface* bsi = GetEditingSettingsInterface();
 
-	const bool show_advanced_settings = ShouldShowAdvancedSettings(bsi);
-
 	BeginMenuButtons();
+
+	if (IsEditingGameSettings(bsi) && !show_advanced_settings)
+	{
+		ImGui::TextWrapped("%s", FSUI_CSTR("Enable Show Advanced Settings in the app-wide Advanced Settings page to expose per-game VU clamping and recompiler options."));
+		ImGui::Spacing();
+	}
 
 	if (!IsEditingGameSettings(bsi))
 	{
@@ -5240,6 +5419,26 @@ void FullscreenUI::DrawAdvancedSettingsPage()
 			ee_rounding_mode_settings, std::size(ee_rounding_mode_settings), true);
 		DrawClampingModeSetting(bsi, FSUI_CSTR("VU1 Clamping Mode"),
 			FSUI_CSTR("Determines how out-of-range floating point numbers are handled. Some games need specific settings."), 1);
+#ifdef __SWITCH__
+		{
+			static constexpr const char* vu_clamp_override_options[] = {
+				FSUI_NSTR("Use Game Database"),
+				FSUI_NSTR("None"),
+				FSUI_NSTR("Normal (Default)"),
+				FSUI_NSTR("Extra"),
+				FSUI_NSTR("Extra + Preserve Sign"),
+			};
+			DrawIntListSetting(bsi, FSUI_CSTR("VU0 Clamping Override"),
+				FSUI_CSTR("Replaces the game database's VU0 clamping mode. Lower clamping is faster but can break games."),
+				"EmuCore/CPU/Recompiler", "vu0ClampOverride", -1, vu_clamp_override_options,
+				std::size(vu_clamp_override_options), true, -1);
+			DrawIntListSetting(bsi, FSUI_CSTR("VU1 Clamping Override"),
+				FSUI_CSTR("Replaces the game database's VU1 clamping mode, which otherwise takes precedence over the setting above. "
+						  "Lower clamping is faster but can break graphics."),
+				"EmuCore/CPU/Recompiler", "vu1ClampOverride", -1, vu_clamp_override_options,
+				std::size(vu_clamp_override_options), true, -1);
+		}
+#endif
 		DrawToggleSetting(bsi, FSUI_CSTR("Enable VU0 Recompiler (Micro Mode)"),
 			FSUI_CSTR("New Vector Unit recompiler with much improved compatibility. Recommended."), "EmuCore/CPU/Recompiler", "EnableVU0",
 			true);
@@ -5287,6 +5486,24 @@ void FullscreenUI::DrawPatchesOrCheatsSettingsPage(bool cheats)
 		MenuHeading(FSUI_CSTR("Settings"));
 		DrawToggleSetting(
 			bsi, FSUI_CSTR("Enable Cheats"), FSUI_CSTR("Enables loading cheats from pnach files."), "EmuCore", "EnableCheats", false);
+
+#ifdef __SWITCH__
+		if (s_game_settings_entry && MenuButton(FSUI_ICONSTR(ICON_FA_FILE_DOWNLOAD, "Download Cheats"),
+			FSUI_CSTR("Download cheats for this exact game version from the community database."), !s_cheat_downloader.Busy()))
+		{
+			const std::string serial = s_game_settings_entry->serial;
+			const u32 crc = s_game_settings_entry->crc;
+			const std::string filename = Patch::GetPnachFilename(serial, crc, true);
+			OpenConfirmMessageDialog(FSUI_STR("Download Cheats"),
+				FSUI_STR("Download community cheat codes from GitHub for this game version? Existing files are not overwritten. "
+					"Cheats can damage saves; previously enabled codes with matching names may become active. "
+					"RetroAchievements hardcore mode disables cheats."),
+				[serial, crc, filename](bool confirmed) {
+					if (confirmed && s_cheat_downloader.Start(serial, crc, filename))
+						ShowToast(FSUI_STR("Download Cheats"), FSUI_STR("Downloading cheat codes..."));
+				});
+		}
+#endif
 
 		if (patch_list.empty())
 		{
@@ -5534,7 +5751,11 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 			ImVec2(10.0f, 10.0f), ImGuiWindowFlags_NoBackground))
 	{
 		static constexpr u32 submenu_item_count[] = {
+#ifdef __SWITCH__
+			12, // None, including Controller Setup
+#else
 			11, // None
+#endif
 			4, // Exit
 			3, // Achievements
 		};
@@ -5607,6 +5828,11 @@ void FullscreenUI::DrawPauseMenu(MainWindowType type)
 					s_current_main_window = MainWindowType::None;
 					RequestChangeDisc();
 				}
+
+#ifdef __SWITCH__
+				if (ActiveButton(FSUI_ICONSTR(ICON_FA_GAMEPAD, "Controller Setup"), false))
+					Host::OnControllerSetupRequested();
+#endif
 
 				if (ActiveButton(FSUI_ICONSTR(ICON_FA_SLIDERS_H, "Settings"), false))
 					SwitchToSettings();
@@ -7769,6 +7995,11 @@ TRANSLATE_NOOP("FullscreenUI", "VU0 Rounding Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU0 Clamping Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU1 Rounding Mode");
 TRANSLATE_NOOP("FullscreenUI", "VU1 Clamping Mode");
+TRANSLATE_NOOP("FullscreenUI", "VU0 Clamping Override");
+TRANSLATE_NOOP("FullscreenUI", "VU1 Clamping Override");
+TRANSLATE_NOOP("FullscreenUI", "Replaces the game database's VU0 clamping mode. Lower clamping is faster but can break games.");
+TRANSLATE_NOOP("FullscreenUI", "Replaces the game database's VU1 clamping mode, which otherwise takes precedence over the setting above. Lower clamping is faster but can break graphics.");
+TRANSLATE_NOOP("FullscreenUI", "Use Game Database");
 TRANSLATE_NOOP("FullscreenUI", "Enable VU0 Recompiler (Micro Mode)");
 TRANSLATE_NOOP("FullscreenUI", "New Vector Unit recompiler with much improved compatibility. Recommended.");
 TRANSLATE_NOOP("FullscreenUI", "Enable VU1 Recompiler");
@@ -7924,6 +8155,15 @@ TRANSLATE_NOOP("FullscreenUI", "Achievements Settings");
 TRANSLATE_NOOP("FullscreenUI", "Controller Settings");
 TRANSLATE_NOOP("FullscreenUI", "Hotkey Settings");
 TRANSLATE_NOOP("FullscreenUI", "Advanced Settings");
+TRANSLATE_NOOP("FullscreenUI", "Downloads");
+TRANSLATE_NOOP("FullscreenUI", "Download Update");
+TRANSLATE_NOOP("FullscreenUI", "Update Channel");
+TRANSLATE_NOOP("FullscreenUI", "Nightly (default branch)");
+TRANSLATE_NOOP("FullscreenUI", "This Arena branch");
+TRANSLATE_NOOP("FullscreenUI", "Download updates and other available content.");
+TRANSLATE_NOOP("FullscreenUI", "Selects which build the Downloads menu checks. Nightly follows the default branch; the Arena channel follows this development branch.");
+TRANSLATE_NOOP("FullscreenUI", "Check and install a build from the channel selected in Interface Settings.");
+TRANSLATE_NOOP("FullscreenUI", "Enable Show Advanced Settings in the app-wide Advanced Settings page to expose per-game VU clamping and recompiler options.");
 TRANSLATE_NOOP("FullscreenUI", "Patches");
 TRANSLATE_NOOP("FullscreenUI", "Cheats");
 TRANSLATE_NOOP("FullscreenUI", "Dark");

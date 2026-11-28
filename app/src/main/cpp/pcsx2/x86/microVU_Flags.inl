@@ -393,15 +393,40 @@ __fi void mVUsetupFlags(mV, microFlagCycles& mFC)
 			break; \
 	}
 
-// Scan through instructions and check if flags are read (FSxxx, FMxxx, FCxxx opcodes)
-void _mVUflagPass(mV, u32 startPC, u32 sCount, u32 found, std::vector<u32>& v)
+// Most flag lookahead paths visit only a few branch targets. Keep those on the stack
+// so compiling a branch block does not allocate a heap-backed vector just for cycle detection.
+class mVUFlagPassVisitedPCs
 {
-    u32 i, e = v.size();
-	for (i = 0; i < e; ++i)
+public:
+	bool contains(u32 pc) const
 	{
-		if (v[i] == startPC)
-			return; // Prevent infinite recursion
+		for (size_t i = 0; i < m_inlineCount; ++i)
+		{
+			if (m_inline[i] == pc)
+				return true;
+		}
+		return std::find(m_overflow.begin(), m_overflow.end(), pc) != m_overflow.end();
 	}
+
+	void push_back(u32 pc)
+	{
+		if (m_inlineCount < m_inline.size())
+			m_inline[m_inlineCount++] = pc;
+		else
+			m_overflow.push_back(pc);
+	}
+
+private:
+	std::array<u32, 8> m_inline{};
+	size_t m_inlineCount = 0;
+	std::vector<u32> m_overflow;
+};
+
+// Scan through instructions and check if flags are read (FSxxx, FMxxx, FCxxx opcodes)
+void _mVUflagPass(mV, u32 startPC, u32 sCount, u32 found, mVUFlagPassVisitedPCs& v)
+{
+	if (v.contains(startPC))
+		return; // Prevent infinite recursion
 	v.push_back(startPC);
 
 	int oldPC = iPC;
@@ -464,8 +489,8 @@ void _mVUflagPass(mV, u32 startPC, u32 sCount, u32 found, std::vector<u32>& v)
 
 void mVUflagPass(mV, u32 startPC, u32 sCount = 0, u32 found = 0)
 {
-	std::vector<u32> v;
-	_mVUflagPass(mVU, startPC, sCount, found, v);
+	mVUFlagPassVisitedPCs visited;
+	_mVUflagPass(mVU, startPC, sCount, found, visited);
 }
 
 // Checks if the first ~4 instructions of a block will read flags

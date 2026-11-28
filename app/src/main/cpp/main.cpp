@@ -810,6 +810,26 @@ Java_kr_co_iefriends_pcsx2_NativeApp_speedhackEecycleskip(JNIEnv *env, jclass cl
 
 extern "C"
 JNIEXPORT void JNICALL
+Java_kr_co_iefriends_pcsx2_NativeApp_speedhackVu1cycleskip(JNIEnv *env, jclass clazz,
+                                                           jint p_value) {
+    const s32 clamped = std::clamp(static_cast<s32>(p_value), 0,
+        static_cast<s32>(Pcsx2Config::SpeedhackOptions::MAX_VU1_CYCLE_SKIP));
+
+    EmuConfig.Speedhacks.VU1CycleSkip = static_cast<u8>(clamped);
+
+    if (s_settings_interface)
+    {
+        s_settings_interface->SetIntValue("EmuCore/Speedhacks", "VU1CycleSkip", clamped);
+        s_settings_interface->Save();
+    }
+
+    VMManager::ApplySettings();
+    if (MTGS::IsOpen())
+        MTGS::ApplySettings();
+}
+
+extern "C"
+JNIEXPORT void JNICALL
 Java_kr_co_iefriends_pcsx2_NativeApp_renderUpscalemultiplier(JNIEnv *env, jclass clazz,
                                                              jfloat p_value) {
     const float clamped = std::clamp(p_value, 0.25f, 12.0f);

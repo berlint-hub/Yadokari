@@ -99,6 +99,11 @@ class ArmConstantPool;
 static const u32 SP_SCRATCH_OFFSET = 0;
 
 extern thread_local a64::MacroAssembler* armAsm;
+
+// Bumped where generated code can be reached from another path (a bound label) or calls out (the callee may
+// clobber caller-saved registers). A code generator that keeps a value in a register across instructions
+// compares it with the value it had when it emitted the load, and loads again if it changed.
+extern thread_local u32 armCodegenBarrier;
 extern thread_local u8* armAsmPtr;
 extern thread_local size_t armAsmCapacity;
 extern thread_local ArmConstantPool* armConstantPool;

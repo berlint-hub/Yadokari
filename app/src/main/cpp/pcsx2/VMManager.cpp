@@ -96,6 +96,7 @@
 
 #ifdef __SWITCH__
 #include "common/Horizon/Horizon.h"
+#include "Horizon/HorizonSystemInfo.h"
 #endif
 
 namespace VMManager
@@ -704,8 +705,10 @@ bool VMManager::Internal::CPUThreadInitialize()
 	// Use the default rounding mode, just in case it differs on some platform.
 	FPControlRegister::SetCurrent(FPControlRegister::GetDefault());
 
+#ifndef __SWITCH__ // Expected on Horizon: see HorizonSystemInfo.
 	if (!cpuinfo_initialize())
 		ConsoleLogWriter<LOGLEVEL_INFO>::Error("cpuinfo_initialize() failed.");
+#endif
 
 	LogCPUCapabilities();
 
@@ -1018,15 +1021,38 @@ void VMManager::ApplyGameFixes()
 	}
 
 	const GameDatabaseSchema::GameEntry* game = GameDatabase::findGame(s_disc_serial);
-	if (!game)
-		return;
+	if (game)
+	{
+		game->applyGameFixes(EmuConfig, EmuConfig.EnableGameFixes);
+		game->applyGSHardwareFixes(EmuConfig.GS);
 
-	game->applyGameFixes(EmuConfig, EmuConfig.EnableGameFixes);
-	game->applyGSHardwareFixes(EmuConfig.GS);
+		// Re-remove upscaling fixes, make sure they don't apply at native res.
+		// We do this in LoadCoreSettings(), but game fixes get applied afterwards because of the unsafe warning.
+		EmuConfig.GS.MaskUpscalingHacks();
+	}
 
-	// Re-remove upscaling fixes, make sure they don't apply at native res.
-	// We do this in LoadCoreSettings(), but game fixes get applied afterwards because of the unsafe warning.
-	EmuConfig.GS.MaskUpscalingHacks();
+#ifdef __SWITCH__
+	// Game database VU clamp modes normally replace the user's. These settings (often per game) can override them,
+	// trading accuracy for speed. Extra clamping is about a third of the hottest VU1 code in Gran Turismo 4.
+	// Called with the settings lock held, so read the layered interface directly.
+	const int vu0_clamp = Host::GetSettingsInterface()->GetIntValue("EmuCore/CPU/Recompiler", "vu0ClampOverride", -1);
+	if (vu0_clamp >= 0 && vu0_clamp <= 3)
+	{
+		Console.WriteLn("VU0 clamp mode %d (overrides the game database)", vu0_clamp);
+		EmuConfig.Cpu.Recompiler.vu0Overflow = (vu0_clamp >= 1);
+		EmuConfig.Cpu.Recompiler.vu0ExtraOverflow = (vu0_clamp >= 2);
+		EmuConfig.Cpu.Recompiler.vu0SignOverflow = (vu0_clamp >= 3);
+	}
+
+	const int vu1_clamp = Host::GetSettingsInterface()->GetIntValue("EmuCore/CPU/Recompiler", "vu1ClampOverride", -1);
+	if (vu1_clamp >= 0 && vu1_clamp <= 3)
+	{
+		Console.WriteLn("VU1 clamp mode %d (overrides the game database)", vu1_clamp);
+		EmuConfig.Cpu.Recompiler.vu1Overflow = (vu1_clamp >= 1);
+		EmuConfig.Cpu.Recompiler.vu1ExtraOverflow = (vu1_clamp >= 2);
+		EmuConfig.Cpu.Recompiler.vu1SignOverflow = (vu1_clamp >= 3);
+	}
+#endif
 }
 
 void VMManager::ApplySettings()
@@ -2848,6 +2874,13 @@ void VMManager::LogCPUCapabilities()
 		GetPhysicalMemory() / _1mb,
 		static_cast<double>(GetPhysicalMemory()) / static_cast<double>(_1gb));
 
+#ifdef __SWITCH__
+	// cpuinfo cannot identify the processor on Horizon.
+	ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  Processor        = {}", HorizonSystemInfo::GetCPUName());
+	ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  Core Count       = {} cores", HorizonSystemInfo::CPU_CORES);
+	if (const u32 mhz = HorizonSystemInfo::GetCPUClockMHz(); mhz != 0)
+		ConsoleLogWriter<LOGLEVEL_INFO>::WriteLnFmt("  CPU Clock        = {} MHz", mhz);
+#else
 	// This crashes on platforms that cannot get some of this information, so
 	// verify it can do so before running it.
 	if (cpuinfo_initialize())
@@ -2862,6 +2895,7 @@ void VMManager::LogCPUCapabilities()
 	{
 		ConsoleLogWriter<LOGLEVEL_INFO>::WriteLn("  Processor        = Unknown (cpuinfo unavailable)");
 	}
+#endif
 #ifdef _WIN32
 	LogUserPowerPlan();
 #endif
@@ -3477,6 +3511,7 @@ void VMManager::EnforceAchievementsChallengeModeSettings()
 	EmuConfig.Speedhacks.EECycleRate =
 		std::max<decltype(EmuConfig.Speedhacks.EECycleRate)>(EmuConfig.Speedhacks.EECycleRate, 0);
 	EmuConfig.Speedhacks.EECycleSkip = 0;
+	EmuConfig.Speedhacks.VU1CycleSkip = 0;
 }
 
 void VMManager::LogUnsafeSettingsToConsole(const std::string& messages)
@@ -3519,6 +3554,8 @@ void VMManager::WarnAboutUnsafeSettings()
 		append(ICON_FA_TACHOMETER_ALT,
 			TRANSLATE_SV("VMManager", "Cycle rate/skip is not at default, this may crash or make games run too slow."));
 	}
+	if (EmuConfig.Speedhacks.VU1CycleSkip != 0)
+		append(ICON_FA_EXCLAMATION_TRIANGLE, TRANSLATE_SV("VMManager", "Experimental VU1 cycle skipping drops complete VU1 dispatches and can cause severe graphical and gameplay errors."));
 
 	const bool is_sw_renderer = EmuConfig.GS.Renderer == GSRendererType::SW;
 	if (!is_sw_renderer)
@@ -4009,7 +4046,7 @@ void VMManager::SetEmuThreadAffinities()
 	// Try to find some threads for the software renderer.
 	// They should be in the same cluster as the main GS thread. If they're not, for example,
 	// we had 4 P cores and 6 E cores, let the OS schedule them instead.
-	// (Skipped on Switch: it uses the deko3d HW renderer, and cpuinfo aborts on Horizon.)
+	// (Skipped on Switch: cpuinfo aborts on Horizon.)
 	s_software_renderer_processor_list.reserve(s_processor_list.size() - (mtvu ? 3 : 2));
 	const u32 gs_cluster_id = cpuinfo_get_processor(gs_index)->cluster->cluster_id;
 	for (size_t i = mtvu ? 3 : 2; i < s_processor_list.size(); i++)
